@@ -14,12 +14,12 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/mods.toml file
-@Mod(TheMixinService.MOD_ID)
-public class TheMixinService {
-    public static final String MOD_ID = "corelinesystems";
+@Mod(CoralineSystems.MOD_ID)
+public class CoralineSystems {
+    public static final String MOD_ID = "coralinesystems";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    public TheMixinService() {
+    public CoralineSystems() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         modEventBus.addListener(this::commonSetup);

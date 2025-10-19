@@ -121,6 +121,13 @@ repositories {
     // flatDir {
     //     dir 'libs'
     // }
+    maven {
+        name = "MixinSquared"
+        url = "https://maven.bawnorton.com/releases"
+    }
+    maven {
+        url 'https://jitpack.io'
+    }
 }
 
 dependencies {
@@ -145,6 +152,10 @@ dependencies {
     // For more info:
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
+    compileOnly(annotationProcessor("com.github.bawnorton.mixinsquared:mixinsquared-common:0.3.7-beta.1"))
+    implementation(jarJar("com.github.bawnorton.mixinsquared:mixinsquared-forge:0.3.7-beta.1")) {
+        jarJar.ranged(it, "[0.3.7-beta.1,)")
+    }
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
