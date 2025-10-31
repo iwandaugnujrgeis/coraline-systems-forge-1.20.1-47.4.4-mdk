@@ -1,4 +1,4 @@
-package net.zharok01.corelinesystems;
+package net.zharok01.coralinesystems;
 
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.api.distmarker.Dist;
