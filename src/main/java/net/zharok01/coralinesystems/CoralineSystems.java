@@ -1,6 +1,7 @@
 package net.zharok01.coralinesystems;
 
 import com.mojang.logging.LogUtils;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
@@ -11,21 +12,30 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.zharok01.coralinesystems.registry.CoralineBlocks;
+import net.zharok01.coralinesystems.registry.CoralineItems;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(CoralineSystems.MOD_ID)
 public class CoralineSystems {
-    public static final String MOD_ID = "coralinesystems";
+    public static final String MOD_ID = "coraline_systems";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    public CoralineSystems() {
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+	public static ResourceLocation of(String path) {
+		return ResourceLocation.tryBuild(MOD_ID, path);
+	}
 
-        modEventBus.addListener(this::commonSetup);
+    public CoralineSystems() {
+        IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
+
+		CoralineBlocks.register(bus);
+		CoralineItems.register(bus);
+
+        bus.addListener(this::commonSetup);
 
         MinecraftForge.EVENT_BUS.register(this);
-        modEventBus.addListener(this::addCreative);
+        bus.addListener(this::addCreative);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
