@@ -9,6 +9,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.TorchBlock;
@@ -55,6 +56,12 @@ public class LimitedTorchBlock extends TorchBlock implements LimitedLightBlock {
 			return InteractionResult.sidedSuccess(level.isClientSide());
 		}
 		return super.use(state, level, pos, player, hand, hit);
+	}
+
+	@Override
+	public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
+		if (!state.hasProperty(BURN)) return 15;
+		return state.getValue(BURN) < 15 ? 15 : 0;
 	}
 
 }
