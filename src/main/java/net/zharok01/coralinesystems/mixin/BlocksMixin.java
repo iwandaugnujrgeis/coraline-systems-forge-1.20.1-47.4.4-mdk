@@ -5,7 +5,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.TorchBlock;
 import net.minecraft.world.level.block.WallTorchBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.zharok01.coralinesystems.content.block.LimitedLightBlock;
 import net.zharok01.coralinesystems.content.block.LimitedTorchBlock;
 import net.zharok01.coralinesystems.content.block.LimitedWallTorchBlock;
 import org.spongepowered.asm.mixin.Mixin;
@@ -26,7 +25,7 @@ public class BlocksMixin {
 		if (particleOptions != ParticleTypes.FLAME) {
 			return new TorchBlock(properties, particleOptions);
 		}
-		return new LimitedTorchBlock(properties.lightLevel(state -> state.getValue(LimitedLightBlock.BURN) < 15 ? 15 : 0), particleOptions);
+		return new LimitedTorchBlock(properties, particleOptions);
 	}
 
 	@Redirect(
@@ -40,7 +39,7 @@ public class BlocksMixin {
 		if (particleOptions != ParticleTypes.FLAME) {
 			return new WallTorchBlock(properties, particleOptions);
 		}
-		return new LimitedWallTorchBlock(properties.lightLevel(state -> state.getValue(LimitedLightBlock.BURN) < 15 ? 15 : 0), particleOptions);
+		return new LimitedWallTorchBlock(properties, particleOptions);
 	}
 
 }
