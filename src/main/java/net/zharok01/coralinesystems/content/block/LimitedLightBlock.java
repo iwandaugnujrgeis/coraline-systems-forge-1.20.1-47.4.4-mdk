@@ -7,7 +7,7 @@ public interface LimitedLightBlock {
 	IntegerProperty BURN = IntegerProperty.create("burn", 0, 15);
 
 	default float getBurnUpChance() {
-		return 1;
+		return 0.5;
 	}
 
 }
