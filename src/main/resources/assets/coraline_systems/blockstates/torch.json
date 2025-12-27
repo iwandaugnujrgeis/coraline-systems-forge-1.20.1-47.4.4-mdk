@@ -6,7 +6,7 @@
 		},
 		{
 			"when": { "burn": "15" },
-			"apply": { "model": "minecraft:block/burnt_torch" }
+			"apply": { "model": "coraline_systems:block/burnt_torch" }
 		}
 	]
 }

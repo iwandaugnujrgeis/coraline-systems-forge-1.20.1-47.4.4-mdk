@@ -18,19 +18,19 @@
 		},
 		{
 			"when": { "facing": "east", "burn": "15" },
-			"apply": { "model": "minecraft:block/burnt_wall_torch" }
+			"apply": { "model": "coraline_systems:block/burnt_wall_torch" }
 		},
 		{
 			"when": { "facing": "north", "burn": "15" },
-			"apply": { "model": "minecraft:block/burnt_wall_torch", "y": 270 }
+			"apply": { "model": "coraline_systems:block/burnt_wall_torch", "y": 270 }
 		},
 		{
 			"when": { "facing": "south", "burn": "15" },
-			"apply": { "model": "minecraft:block/burnt_wall_torch", "y": 90 }
+			"apply": { "model": "coraline_systems:block/burnt_wall_torch", "y": 90 }
 		},
 		{
 			"when": { "facing": "west", "burn": "15" },
-			"apply": { "model": "minecraft:block/burnt_wall_torch", "y": 180 }
+			"apply": { "model": "coraline_systems:block/burnt_wall_torch", "y": 180 }
 		}
 	]
 }

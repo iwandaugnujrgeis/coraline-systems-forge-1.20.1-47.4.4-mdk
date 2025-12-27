@@ -2,6 +2,9 @@ package net.zharok01.coralinesystems;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
@@ -42,9 +45,14 @@ public class CoralineSystems {
 
     }
 
-    // Add the example block item to the building blocks tab
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
-
+		if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
+			event.getEntries().putAfter(
+				Items.TORCH.getDefaultInstance(),
+				CoralineBlocks.TORCH.get().asItem().getDefaultInstance(),
+				CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS
+			);
+		}
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call
@@ -56,9 +64,15 @@ public class CoralineSystems {
     // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
     @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents {
+
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-
+			CoralineBlocks.registerRenderLayers();
         }
+
+//		@SubscribeEvent
+//		public static void registerRenderLayers(FMLClientSetupEvent event) {
+//		}
+
     }
 }
