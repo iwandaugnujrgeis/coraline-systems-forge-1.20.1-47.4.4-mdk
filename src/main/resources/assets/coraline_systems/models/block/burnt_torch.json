@@ -1,6 +1,6 @@
 {
 	"parent": "minecraft:block/template_torch",
 	"textures": {
-		"torch": "minecraft:block/burnt_torch"
+		"torch": "coraline_systems:block/burnt_torch"
 	}
 }
