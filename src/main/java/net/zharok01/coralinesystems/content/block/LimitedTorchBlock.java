@@ -15,7 +15,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.TorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 
 public class LimitedTorchBlock extends TorchBlock implements LimitedLightBlock {
 
@@ -52,6 +55,18 @@ public class LimitedTorchBlock extends TorchBlock implements LimitedLightBlock {
 		ItemStack stack = player.getItemInHand(hand);
 		if (state.getValue(BURN) >= 15 && stack.is(Items.FLINT_AND_STEEL)) {
 			level.setBlockAndUpdate(pos, state.setValue(BURN, 0));
+
+			level.playSound(
+					null,
+					pos,
+					SoundEvents.FLINTANDSTEEL_USE,
+					SoundSource.BLOCKS,
+					1.0F,
+					level.random.nextFloat() * 0.4f + 0.8f
+			);
+
+			level.gameEvent(player, GameEvent.BLOCK_CHANGE, pos);
+
 			stack.hurtAndBreak(1, player, pPlayer -> pPlayer.broadcastBreakEvent(hand));
 			return InteractionResult.sidedSuccess(level.isClientSide());
 		}
