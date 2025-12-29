@@ -53,7 +53,7 @@ public class LimitedTorchBlock extends TorchBlock implements LimitedLightBlock {
 	@Override
 	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		ItemStack stack = player.getItemInHand(hand);
-		if (state.getValue(BURN) >= 15 && stack.is(Items.FLINT_AND_STEEL)) {
+		if (state.getValue(BURN) >= 11 && stack.is(Items.FLINT_AND_STEEL)) {
 			level.setBlockAndUpdate(pos, state.setValue(BURN, 0));
 
 			level.playSound(
@@ -61,7 +61,7 @@ public class LimitedTorchBlock extends TorchBlock implements LimitedLightBlock {
 					pos,
 					SoundEvents.FLINTANDSTEEL_USE,
 					SoundSource.BLOCKS,
-					1.0F,
+					1.0f,
 					level.random.nextFloat() * 0.4f + 0.8f
 			);
 
