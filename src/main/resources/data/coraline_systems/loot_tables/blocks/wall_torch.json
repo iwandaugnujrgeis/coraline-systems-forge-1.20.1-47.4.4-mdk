@@ -1,0 +1,34 @@
+{
+	"type": "minecraft:block",
+	"pools": [
+		{
+			"bonus_rolls": 0,
+			"conditions": [],
+			"entries": [
+				{
+					"type": "minecraft:alternatives",
+					"children": [
+						{
+							"type": "minecraft:empty",
+							"conditions": [
+								{
+									"condition": "minecraft:block_state_property",
+									"block": "coraline_systems:wall_torch",
+									"properties": {
+										"burn": "15"
+									}
+								}
+							]
+						},
+						{
+							"type": "minecraft:item",
+							"name": "coraline_systems:torch"
+						}
+					]
+				}
+			],
+			"rolls": 1
+		}
+	],
+	"random_sequence": "coraline_systems:blocks/wall_torch"
+}
