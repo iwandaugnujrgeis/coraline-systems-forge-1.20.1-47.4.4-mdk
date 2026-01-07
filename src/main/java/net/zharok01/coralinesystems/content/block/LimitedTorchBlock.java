@@ -55,16 +55,7 @@ public class LimitedTorchBlock extends TorchBlock implements LimitedLightBlock {
 		ItemStack stack = player.getItemInHand(hand);
 		if (state.getValue(BURN) >= 11 && stack.is(Items.FLINT_AND_STEEL)) {
 			level.setBlockAndUpdate(pos, state.setValue(BURN, 0));
-
-			level.playSound(
-					null,
-					pos,
-					SoundEvents.FLINTANDSTEEL_USE,
-					SoundSource.BLOCKS,
-					1.0f,
-					level.random.nextFloat() * 0.4f + 0.8f
-			);
-
+			level.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0f, level.random.nextFloat() * 0.4f + 0.8f);
 			level.gameEvent(player, GameEvent.BLOCK_CHANGE, pos);
 
 			stack.hurtAndBreak(1, player, pPlayer -> pPlayer.broadcastBreakEvent(hand));

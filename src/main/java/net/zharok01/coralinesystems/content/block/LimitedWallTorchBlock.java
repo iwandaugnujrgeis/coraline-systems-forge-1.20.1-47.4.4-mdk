@@ -4,6 +4,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -16,6 +18,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.WallTorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.BlockHitResult;
 
 public class LimitedWallTorchBlock extends WallTorchBlock implements LimitedLightBlock {
@@ -52,8 +55,11 @@ public class LimitedWallTorchBlock extends WallTorchBlock implements LimitedLigh
 	@Override
 	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		ItemStack stack = player.getItemInHand(hand);
-		if (state.getValue(BURN) >= 15 && stack.is(Items.FLINT_AND_STEEL)) {
+		if (state.getValue(BURN) >= 11 && stack.is(Items.FLINT_AND_STEEL)) {
 			level.setBlockAndUpdate(pos, state.setValue(BURN, 0));
+			level.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0f, level.random.nextFloat() * 0.4f + 0.8f);
+			level.gameEvent(player, GameEvent.BLOCK_CHANGE, pos);
+
 			stack.hurtAndBreak(1, player, pPlayer -> pPlayer.broadcastBreakEvent(hand));
 			return InteractionResult.sidedSuccess(level.isClientSide());
 		}
