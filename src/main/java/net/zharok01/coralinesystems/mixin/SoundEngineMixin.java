@@ -16,7 +16,9 @@ import java.util.Random;
 public class SoundEngineMixin {
 
 	@Unique private static final Random RANDOM = new Random();
-	@Unique private static final float VARIANCE = 0.1f;
+
+	@Unique private static final float MIN_VARIANCE = -0.15f;
+	@Unique private static final float MAX_VARIANCE = 0;
 
 	@Inject(
 			method = "play",
@@ -28,7 +30,7 @@ public class SoundEngineMixin {
 	private void randomizeMusicPitch(SoundInstance sound, CallbackInfo ci) {
 		if (sound.getSource() == SoundSource.MUSIC && sound instanceof AbstractSoundInstance abstractSound) {
 			float pitch = abstractSound.getPitch();
-			pitch += RANDOM.nextFloat(VARIANCE * 2) - VARIANCE;
+			pitch += MAX_VARIANCE + RANDOM.nextFloat() * (MAX_VARIANCE - MIN_VARIANCE);
 			((AbstractSoundInstanceAccessor)abstractSound).setPitch(pitch);
 		}
 	}
