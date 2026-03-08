@@ -30,7 +30,7 @@ public class SoundEngineMixin {
 	private void randomizeMusicPitch(SoundInstance sound, CallbackInfo ci) {
 		if (sound.getSource() == SoundSource.MUSIC && sound instanceof AbstractSoundInstance abstractSound) {
 			float pitch = abstractSound.getPitch();
-			pitch += MAX_VARIANCE + RANDOM.nextFloat() * (MAX_VARIANCE - MIN_VARIANCE);
+			pitch += MIN_VARIANCE + RANDOM.nextFloat() * (MAX_VARIANCE - MIN_VARIANCE);
 			((AbstractSoundInstanceAccessor)abstractSound).setPitch(pitch);
 		}
 	}
