@@ -36,6 +36,9 @@ dependencies {
     include(implementation("io.github.llamalad7:mixinextras-forge:0.5.0"))
 
     implementation("maven.modrinth:rediscovered:2.1.0")
+
+    implementation("maven.modrinth:alexs-mobs:1.22.9")
+    implementation("maven.modrinth:citadel:2.6.3")
 }
 
 processResources {
