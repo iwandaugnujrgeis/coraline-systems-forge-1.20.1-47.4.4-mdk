@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(MusicManager.class)
 public class MusicManagerMixin {
 
-    @Unique private static final int DELAY = 5;
+    @Unique private static final int DELAY = 300;
 
     @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Ljava/lang/Math;min(II)I", ordinal = 1))
     private int changeMusicDelay(int nextSongDelay, int maxDelay) {
