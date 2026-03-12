@@ -19,6 +19,12 @@ public class CoralineMixinCanceller implements MixinCanceller {
         if (mixinClassName.equals("com.teamabnormals.caverns_and_chasms.core.mixin.CreeperMixin")) {
             return true;
         }
+        if (mixinClassName.equals("net.lerariemann.infinity.mixin.core.NetherPortalBlockMixin")) {
+            return true;
+        }
+        if (mixinClassName.equals("net.lerariemann.infinity.mixin.core.NetherPortalMixin")) {
+            return true;
+        }
         return false;
     }
 }
