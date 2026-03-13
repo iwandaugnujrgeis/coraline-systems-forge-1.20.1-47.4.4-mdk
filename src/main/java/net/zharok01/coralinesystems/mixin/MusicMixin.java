@@ -11,9 +11,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Music.class)
 public class MusicMixin {
 
-    @Unique private static final int MIN_DELAY = 240;
+    @Unique private static final int MIN_DELAY = 2400;
     @Unique
-    private static final int MAX_DELAY = 300;
+    private static final int MAX_DELAY = 3000;
 
     @Shadow @Mutable
     @Final
