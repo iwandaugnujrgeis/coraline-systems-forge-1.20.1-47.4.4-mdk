@@ -15,6 +15,7 @@
   },
   "mixins": [
     "JerboaEffectMixin",
+    "MusicMixin",
     "RediscoveredEventsMixin",
     "RespawnAnchorFuelMixin",
     "ServerPlayerMixin"
