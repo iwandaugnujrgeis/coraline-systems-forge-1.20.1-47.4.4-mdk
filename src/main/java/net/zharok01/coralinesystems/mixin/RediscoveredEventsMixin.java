@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class RediscoveredEventsMixin {
 
     @Inject(
-            method = "Lcom/legacy/rediscovered/event/RediscoveredEvents;onPlayerInteract(Lnet/minecraftforge/event/entity/player/PlayerInteractEvent$RightClickBlock;)V",
+            method = "onPlayerInteract(Lnet/minecraftforge/event/entity/player/PlayerInteractEvent$RightClickBlock;)V",
             at = @At("HEAD"),
             cancellable = true
     )
