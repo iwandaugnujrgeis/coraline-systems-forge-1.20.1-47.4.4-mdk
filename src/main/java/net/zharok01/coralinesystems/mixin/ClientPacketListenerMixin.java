@@ -20,4 +20,5 @@ public abstract class ClientPacketListenerMixin {
             ci.cancel();
         }
     }
+
 }

@@ -1,66 +1,62 @@
 package net.zharok01.coralinesystems.mixin;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.FogRenderer;
+import net.minecraft.util.Mth;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 @Mixin(FogRenderer.class)
 public class FogRendererMixin {
 
-	@Unique private static final int MORNING_START = 3000;
-	@Unique private static final int MORNING_END = 6000;
+	@Unique private static final int THICK_END = 2000;
+	@Unique private static final int FADE_END = 4000;
+	@Unique private static final float PEAK_MULT = 0.25F;
 
 	@Unique
 	private static float getMorningFogMultiplier() {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.level == null) return 1;
 
-		long dayTime = mc.level.getDayTime() % 24000L;
-		if (dayTime < MORNING_START) {
-			float t = dayTime / 3000F;
-			// 0.15 -> 0.50
-			return 0.15f + t * 0.35f;
-		} else if (dayTime < MORNING_END) {
-			float t = (dayTime - 3000) / 3000F;
-			// 0.50 -> 1.0
-			return 0.50f + t * 0.50f;
+		long dayTime = mc.level.getDayTime() % 24000;
+
+		if (dayTime >= 22000) {
+			// Night ramping into morning: 22000 → 24000, ease toward peak
+			float t = (dayTime - 22000) / 2000f;
+			return Mth.lerp(easeInOut(t), 1, PEAK_MULT);
+		} else if (dayTime < THICK_END) {
+			// Peak fog window: flat at minimum
+			return PEAK_MULT;
+		} else if (dayTime < FADE_END) {
+			// Fog lifting: ease back to normal
+			float t = (dayTime - THICK_END) / (float)(FADE_END - THICK_END);
+			return Mth.lerp(easeInOut(t), PEAK_MULT, 1);
 		}
+
 		return 1;
 	}
 
-	@Redirect(
-			method = "setupFog",
-			at = @At(
-					value = "INVOKE",
-					target = "Lcom/mojang/blaze3d/systems/RenderSystem;setShaderFogStart(F)V"
-			)
-	)
-	private static void redirectFogStart(float start, Camera camera, FogRenderer.FogMode fogMode, float renderDistance, boolean thickFog, float partialTick) {
-//		if (camera.getFluidInCamera() != FogType.NONE || thickFog) {
-//			RenderSystem.setShaderFogStart(start);
-//			return;
-//		}
-		RenderSystem.setShaderFogStart(start * getMorningFogMultiplier());
+	@Unique
+	private static float easeInOut(float t) {
+		return t * t * (3 - 2 * t);
 	}
 
-	@Redirect(
+	@ModifyArg(
 			method = "setupFog",
-			at = @At(
-					value = "INVOKE",
-					target = "Lcom/mojang/blaze3d/systems/RenderSystem;setShaderFogEnd(F)V"
-			)
+			at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;setShaderFogStart(F)V")
 	)
-	private static void redirectFogEnd(float end, Camera camera, FogRenderer.FogMode fogMode, float renderDistance, boolean thickFog, float partialTick) {
-//		if (camera.getFluidInCamera() != FogType.NONE || thickFog) {
-//			RenderSystem.setShaderFogEnd(end);
-//			return;
-//		}
-		RenderSystem.setShaderFogEnd(end * getMorningFogMultiplier());
+	private static float modifyFogStart(float start) {
+		return start * getMorningFogMultiplier();
+	}
+
+	@ModifyArg(
+			method = "setupFog",
+			at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;setShaderFogEnd(F)V")
+	)
+	private static float modifyFogEnd(float end) {
+		return end * (getMorningFogMultiplier() * 2);
 	}
 
 }

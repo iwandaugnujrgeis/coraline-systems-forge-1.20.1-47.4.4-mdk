@@ -15,4 +15,5 @@ public class MusicManagerMixin {
     private int changeMusicDelay(int nextSongDelay, int maxDelay) {
         return Math.min(nextSongDelay, DELAY * 20);
     }
+
 }

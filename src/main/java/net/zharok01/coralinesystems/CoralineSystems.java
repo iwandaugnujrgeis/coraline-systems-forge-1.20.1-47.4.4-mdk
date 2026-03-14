@@ -19,7 +19,6 @@ import net.zharok01.coralinesystems.registry.CoralineBlocks;
 import net.zharok01.coralinesystems.registry.CoralineItems;
 import org.slf4j.Logger;
 
-// The value here should match an entry in the META-INF/mods.toml file
 @Mod(CoralineSystems.MOD_ID)
 public class CoralineSystems {
     public static final String MOD_ID = "coraline_systems";
@@ -55,13 +54,6 @@ public class CoralineSystems {
 		}
     }
 
-    // You can use SubscribeEvent and let the Event Bus discover methods to call
-    @SubscribeEvent
-    public void onServerStarting(ServerStartingEvent event) {
-
-    }
-
-    // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
     @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents {
 
@@ -69,10 +61,6 @@ public class CoralineSystems {
         public static void onClientSetup(FMLClientSetupEvent event) {
 			CoralineBlocks.registerRenderLayers();
         }
-
-//		@SubscribeEvent
-//		public static void registerRenderLayers(FMLClientSetupEvent event) {
-//		}
 
     }
 }

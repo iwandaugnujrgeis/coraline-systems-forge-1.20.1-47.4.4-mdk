@@ -16,6 +16,10 @@ license="${mod_license}"
 # set this to true, and Forge will set the correct displayTest for you and skip loading your mod on dedicated servers.
 #clientSideOnly=true #optional - defaults to false if absent
 # A list of mods - how many allowed here is determined by the individual mod loader
+
+[[mixins]]
+config="${mod_id}.mixins.json"
+
 [[mods]] #mandatory
 # The modid of the mod
 modId="${mod_id}" #mandatory
@@ -65,7 +69,6 @@ description='''${mod_description}'''
     versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
-
 # Features are specific properties of the game environment, that you may want to declare you require. This example declares
 # that your mod requires GL version 3.2 or higher. Other features will be added. They are side aware so declaring this won't
 # stop your mod loading on the server for example.

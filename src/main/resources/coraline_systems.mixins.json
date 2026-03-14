@@ -6,7 +6,6 @@
 	"client": [
 		"AbstractSoundInstanceAccessor",
 		"ClientPacketListenerMixin",
-		"CraftingScreenScreenMixin",
 		"FogRendererMixin",
 		"MusicManagerMixin",
 		"OptionsMixin",

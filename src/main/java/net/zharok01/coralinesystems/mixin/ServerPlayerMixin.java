@@ -16,6 +16,6 @@ public abstract class ServerPlayerMixin {
                     target = "Lnet/minecraft/server/level/ServerPlayer;sendSystemMessage(Lnet/minecraft/network/chat/Component;)V"
             )
     )
-    private void silenceSpawnMessage(ServerPlayer instance, Component component) {
-    }
+    private void silenceSpawnMessage(ServerPlayer instance, Component component) {}
+
 }
