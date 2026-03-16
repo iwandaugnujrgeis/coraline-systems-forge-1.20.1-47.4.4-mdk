@@ -39,6 +39,9 @@ dependencies {
 
     implementation("maven.modrinth:alexs-mobs:1.22.9")
     implementation("maven.modrinth:citadel:2.6.3")
+
+    implementation("maven.modrinth:supplementaries:1.20-3.1.42-forge")
+    implementation("maven.modrinth:moonlight:1.20-2.16.28-forge")
 }
 
 processResources {

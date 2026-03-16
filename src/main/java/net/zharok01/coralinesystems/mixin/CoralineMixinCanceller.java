@@ -25,6 +25,10 @@ public class CoralineMixinCanceller implements MixinCanceller {
         if (mixinClassName.equals("net.lerariemann.infinity.mixin.core.NetherPortalMixin")) {
             return true;
         }
+        if (mixinClassName.equals("com.faboslav.friendsandfoes.common.mixin.StrongholdGeneratorMixin")) {
+            return true;
+        }
+
         return false;
     }
 }

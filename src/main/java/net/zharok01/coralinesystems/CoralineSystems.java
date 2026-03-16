@@ -17,6 +17,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.zharok01.coralinesystems.registry.CoralineBlocks;
 import net.zharok01.coralinesystems.registry.CoralineItems;
+import net.zharok01.coralinesystems.registry.IsotopicEntities;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/mods.toml file
@@ -34,6 +35,7 @@ public class CoralineSystems {
 
 		CoralineBlocks.register(bus);
 		CoralineItems.register(bus);
+        IsotopicEntities.register(bus);
 
         bus.addListener(this::commonSetup);
 

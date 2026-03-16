@@ -1,20 +1,36 @@
 {
 	"multipart": [
 		{
-			"when": { "facing": "east", "burn": "0|1|2|3|4|5|6|7|8|9|10|11|12|13|14" },
+			"when": { "facing": "east", "burn": "0|1|2|3|4|5|6|7|8|9|10" },
 			"apply": { "model": "minecraft:block/wall_torch" }
 		},
 		{
-			"when": { "facing": "north", "burn": "0|1|2|3|4|5|6|7|8|9|10|11|12|13|14" },
+			"when": { "facing": "north", "burn": "0|1|2|3|4|5|6|7|8|9|10" },
 			"apply": { "model": "minecraft:block/wall_torch", "y": 270 }
 		},
 		{
-			"when": { "facing": "south", "burn": "0|1|2|3|4|5|6|7|8|9|10|11|12|13|14" },
+			"when": { "facing": "south", "burn": "0|1|2|3|4|5|6|7|8|9|10" },
 			"apply": { "model": "minecraft:block/wall_torch", "y": 90 }
 		},
 		{
-			"when": { "facing": "west", "burn": "0|1|2|3|4|5|6|7|8|9|10|11|12|13|14" },
+			"when": { "facing": "west", "burn": "0|1|2|3|4|5|6|7|8|9|10" },
 			"apply": { "model": "minecraft:block/wall_torch", "y": 180 }
+		},
+		{
+			"when": { "facing": "east", "burn": "11|12|13|14" },
+			"apply": { "model": "coraline_systems:block/baked_wall_torch" }
+		},
+		{
+			"when": { "facing": "north", "burn": "11|12|13|14" },
+			"apply": { "model": "coraline_systems:block/baked_wall_torch", "y": 270 }
+		},
+		{
+			"when": { "facing": "south", "burn": "11|12|13|14" },
+			"apply": { "model": "coraline_systems:block/baked_wall_torch", "y": 90 }
+		},
+		{
+			"when": { "facing": "west", "burn": "11|12|13|14" },
+			"apply": { "model": "coraline_systems:block/baked_wall_torch", "y": 180 }
 		},
 		{
 			"when": { "facing": "east", "burn": "15" },

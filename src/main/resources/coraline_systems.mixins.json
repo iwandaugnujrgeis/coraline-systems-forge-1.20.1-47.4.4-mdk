@@ -6,7 +6,6 @@
   "client": [
     "AbstractSoundInstanceAccessor",
     "ClientPacketListenerMixin",
-    "MusicManagerMixin",
     "OptionsMixin",
     "SoundEngineMixin"
   ],
@@ -17,6 +16,10 @@
     "JerboaEffectMixin",
     "RediscoveredEventsMixin",
     "RespawnAnchorFuelMixin",
-    "ServerPlayerMixin"
+    "ServerPlayerMixin",
+    "StrongholdFiveCrossingSpawnerMixin",
+    "StrongholdPiecesMixin",
+    "StrongholdRoomCrossingSpawnerMixin",
+    "StructurePieceMixin"
   ]
 }
