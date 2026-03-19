@@ -1,3 +1,7 @@
 {
-	"block.coraline_systems.torch": "Torch"
+	"block.coraline_systems.torch": "Torch",
+	"coraline_systems.sound.subtitle.helper_buzz": "Buzz",
+	"coraline_systems.sound.subtitle.helper_idle": "Ominous presence?",
+	"coraline_systems.sound.subtitle.helper_hurt": "Helper asks",
+	"coraline_systems.sound.subtitle.helper_death": "Helper error"
 }

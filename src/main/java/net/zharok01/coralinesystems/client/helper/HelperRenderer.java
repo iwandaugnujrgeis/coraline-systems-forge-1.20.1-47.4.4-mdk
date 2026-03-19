@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.client;
+package net.zharok01.coralinesystems.client.helper;
 
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
@@ -13,6 +13,7 @@ public class HelperRenderer extends MobRenderer<HelperEntity, PlayerModel<Helper
     public HelperRenderer(EntityRendererProvider.Context context) {
         // 'false' here means we use the classic Steve arms (4px), not Alex arms (3px)
         super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5f);
+        this.addLayer(new HelperStaticLayer(this));
     }
 
     @Override

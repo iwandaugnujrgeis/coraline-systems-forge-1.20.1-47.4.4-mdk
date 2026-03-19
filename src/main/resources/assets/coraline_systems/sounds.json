@@ -1,0 +1,91 @@
+{
+  "static_buzz": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:static_buzz1",
+        "pitch": 1.0
+      },
+      {
+        "name": "coraline_systems:static_buzz2",
+        "pitch": 1.0
+      },
+      {
+        "name": "coraline_systems:static_buzz3",
+        "pitch": 1.0
+      },
+      {
+        "name": "coraline_systems:static_buzz4",
+        "pitch": 1.0
+      },
+      {
+        "name": "coraline_systems:static_buzz5",
+        "pitch": 1.0
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.helper_buzz"
+  },
+  "helper_idle": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/helper/whistle1",
+        "weight": 2
+      },
+      {
+        "name": "coraline_systems:entity/helper/whistle2",
+        "weight": 2
+      },
+      {
+        "name": "coraline_systems:entity/helper/intermission1",
+        "weight": 3
+      },
+      {
+        "name": "coraline_systems:entity/helper/exhale3",
+        "volume": 0.9,
+        "weight": 5
+      },
+      {
+        "name": "coraline_systems:entity/helper/exhale2",
+        "volume": 0.9,
+        "weight": 5
+      },
+      {
+        "name": "coraline_systems:entity/helper/exhale1",
+        "volume": 0.9,
+        "weight": 5
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.helper_idle"
+  },
+  "helper_hurt": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/helper/exhale3",
+        "volume": 0.9,
+        "weight": 5
+      },
+      {
+        "name": "coraline_systems:entity/helper/exhale2",
+        "volume": 0.9,
+        "weight": 5
+      },
+      {
+        "name": "coraline_systems:entity/helper/exhale1",
+        "volume": 0.9,
+        "weight": 5
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.helper_hurt"
+  },
+  "helper_death": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/helper/lost_signal1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.helper_death"
+  }
+}

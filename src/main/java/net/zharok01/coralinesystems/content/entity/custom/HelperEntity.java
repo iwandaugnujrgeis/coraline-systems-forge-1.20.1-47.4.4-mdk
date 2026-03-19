@@ -5,8 +5,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
@@ -26,12 +28,35 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.zharok01.coralinesystems.content.sound.CoralineSounds;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class HelperEntity extends Monster implements RangedAttackMob {
     private static final EntityDataAccessor<Integer> DATA_SKIN_ID = SynchedEntityData.defineId(HelperEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> IS_GLITCHING = SynchedEntityData.defineId(HelperEntity.class, EntityDataSerializers.BOOLEAN);
 
+    @Override
+    public void tick() {
+        super.tick();
+
+        if (!this.level().isClientSide) {
+            if (this.random.nextFloat() < 0.005F && !this.isGlitching()) {
+                this.setGlitching(true);
+                if (CoralineSounds.STATIC_BUZZ.isPresent()) {
+                    this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                            CoralineSounds.STATIC_BUZZ.get(), this.getSoundSource(), 1.0F, 1.0F);
+                }
+            }
+
+            if (this.isGlitching() && this.tickCount % 10 == 0) {
+                this.setGlitching(false);
+            }
+        }
+    }
+
+    public void setGlitching(boolean glitch) { this.entityData.set(IS_GLITCHING, glitch); }
+    public boolean isGlitching() { return this.entityData.get(IS_GLITCHING); }
     public HelperEntity(EntityType<? extends Monster> type, Level level) {
         super(type, level);
         ((GroundPathNavigation) this.getNavigation()).setCanOpenDoors(true);
@@ -46,17 +71,27 @@ public class HelperEntity extends Monster implements RangedAttackMob {
     }
 
     @Override
+    public boolean hurt(@NotNull DamageSource source, float amount) {
+        if (!this.level().isClientSide) {
+            this.setGlitching(true);
+
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                    CoralineSounds.STATIC_BUZZ.get(), this.getSoundSource(), 1.0F, 1.0F);
+        }
+
+        return super.hurt(source, amount);
+    }
+
+    @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
 
-        // Priority 2: Melee Attack (Only triggers if closer than 4 blocks)
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2D, false) {
             @Override
             public boolean canUse() {
-                // Only start melee if the target is within 4 blocks (16.0 squared)
                 if (!super.canUse()) return false;
                 assert HelperEntity.this.getTarget() != null;
-                return HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) <= 16.0D;
+                return HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) <= 32.0D;
             }
 
             @Override
@@ -64,7 +99,7 @@ public class HelperEntity extends Monster implements RangedAttackMob {
                 // Stop chasing for a punch if the player gets further than 5 blocks
                 if (!super.canContinueToUse()) return false;
                 assert HelperEntity.this.getTarget() != null;
-                return HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) <= 25.0D;
+                return HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) <= 36.0D;
             }
         });
 
@@ -72,10 +107,9 @@ public class HelperEntity extends Monster implements RangedAttackMob {
         this.goalSelector.addGoal(3, new RangedAttackGoal(this, 1.0D, 40, 20.0F) {
             @Override
             public boolean canUse() {
-                // Only start throwing bricks if the target is further than 4 blocks
                 if (!super.canUse()) return false;
                 assert HelperEntity.this.getTarget() != null;
-                return HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) > 16.0D;
+                return HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) > 32.0D;
             }
         });
 
@@ -109,6 +143,21 @@ public class HelperEntity extends Monster implements RangedAttackMob {
         this.level().addFreshEntity(brick);
     }
 
+    @Override
+    protected SoundEvent getAmbientSound() {
+        return CoralineSounds.HELPER_IDLE.get();
+    }
+
+    @Override
+    protected SoundEvent getHurtSound(DamageSource damageSource) {
+        return CoralineSounds.HELPER_HURT.get();
+    }
+
+    @Override
+    protected SoundEvent getDeathSound() {
+        return CoralineSounds.HELPER_DEATH.get();
+    }
+
     @Nullable
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData, @Nullable CompoundTag tag) {
@@ -124,6 +173,7 @@ public class HelperEntity extends Monster implements RangedAttackMob {
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(DATA_SKIN_ID, 0);
+        this.entityData.define(IS_GLITCHING, false);
     }
 
     public int getSkinId() { return this.entityData.get(DATA_SKIN_ID); }

@@ -5,7 +5,7 @@ import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.zharok01.coralinesystems.CoralineSystems;
-import net.zharok01.coralinesystems.client.HelperRenderer;
+import net.zharok01.coralinesystems.client.helper.HelperRenderer;
 import net.zharok01.coralinesystems.registry.IsotopicEntities;
 
 @Mod.EventBusSubscriber(modid = CoralineSystems.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
