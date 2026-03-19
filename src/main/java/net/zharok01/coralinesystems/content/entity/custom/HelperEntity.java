@@ -11,15 +11,10 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.SpawnGroupData;
-import net.minecraft.world.entity.ai.goal.FloatGoal;
-import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
-import net.minecraft.world.entity.ai.goal.OpenDoorGoal;
+import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.ai.goal.RangedAttackGoal;
-import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
@@ -46,16 +41,46 @@ public class HelperEntity extends Monster implements RangedAttackMob {
         return Monster.createMonsterAttributes()
                 .add(Attributes.MAX_HEALTH, 20.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.3D)
-                .add(Attributes.ATTACK_DAMAGE, 3.0D)
+                .add(Attributes.ATTACK_DAMAGE, 4.0D)
                 .add(Attributes.FOLLOW_RANGE, 32.0D);
     }
 
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(2, new RangedAttackGoal(this, 1.0D, 40, 16.0F));
-        this.goalSelector.addGoal(6, new OpenDoorGoal(this, true));
+
+        // Priority 2: Melee Attack (Only triggers if closer than 4 blocks)
+        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2D, false) {
+            @Override
+            public boolean canUse() {
+                // Only start melee if the target is within 4 blocks (16.0 squared)
+                if (!super.canUse()) return false;
+                assert HelperEntity.this.getTarget() != null;
+                return HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) <= 16.0D;
+            }
+
+            @Override
+            public boolean canContinueToUse() {
+                // Stop chasing for a punch if the player gets further than 5 blocks
+                if (!super.canContinueToUse()) return false;
+                assert HelperEntity.this.getTarget() != null;
+                return HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) <= 25.0D;
+            }
+        });
+
+        // Priority 3: Ranged Attack (Only triggers if further than 4 blocks)
+        this.goalSelector.addGoal(3, new RangedAttackGoal(this, 1.0D, 40, 20.0F) {
+            @Override
+            public boolean canUse() {
+                // Only start throwing bricks if the target is further than 4 blocks
+                if (!super.canUse()) return false;
+                assert HelperEntity.this.getTarget() != null;
+                return HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) > 16.0D;
+            }
+        });
+
         this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+        this.goalSelector.addGoal(6, new OpenDoorGoal(this, true));
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
 
