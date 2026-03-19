@@ -20,21 +20,20 @@ import net.zharok01.coralinesystems.registry.CoralineItems;
 import net.zharok01.coralinesystems.registry.IsotopicEntities;
 import org.slf4j.Logger;
 
-// The value here should match an entry in the META-INF/mods.toml file
 @Mod(CoralineSystems.MOD_ID)
 public class CoralineSystems {
     public static final String MOD_ID = "coraline_systems";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-	public static ResourceLocation of(String path) {
-		return ResourceLocation.tryBuild(MOD_ID, path);
-	}
+    public static ResourceLocation of(String path) {
+        return ResourceLocation.tryBuild(MOD_ID, path);
+    }
 
     public CoralineSystems() {
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
 
-		CoralineBlocks.register(bus);
-		CoralineItems.register(bus);
+        CoralineBlocks.register(bus);
+        CoralineItems.register(bus);
         IsotopicEntities.register(bus);
 
         bus.addListener(this::commonSetup);
@@ -48,33 +47,22 @@ public class CoralineSystems {
     }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
-		if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
-			event.getEntries().putAfter(
-				Items.TORCH.getDefaultInstance(),
-				CoralineBlocks.TORCH.get().asItem().getDefaultInstance(),
-				CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS
-			);
-		}
+        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
+            event.getEntries().putAfter(
+                    Items.TORCH.getDefaultInstance(),
+                    CoralineBlocks.TORCH.get().asItem().getDefaultInstance(),
+                    CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS
+            );
+        }
     }
 
-    // You can use SubscribeEvent and let the Event Bus discover methods to call
-    @SubscribeEvent
-    public void onServerStarting(ServerStartingEvent event) {
-
-    }
-
-    // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
     @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents {
 
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-			CoralineBlocks.registerRenderLayers();
+            CoralineBlocks.registerRenderLayers();
         }
-
-//		@SubscribeEvent
-//		public static void registerRenderLayers(FMLClientSetupEvent event) {
-//		}
 
     }
 }
