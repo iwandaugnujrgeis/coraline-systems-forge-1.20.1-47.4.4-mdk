@@ -1,6 +1,7 @@
 package net.zharok01.coralinesystems.content.entity.custom;
 
 import net.mehvahdjukaar.supplementaries.common.entities.ThrowableBrickEntity;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -8,6 +9,9 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -26,15 +30,28 @@ import com.legacy.rediscovered.entity.pigman.PigmanEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.JukeboxBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.zharok01.coralinesystems.content.sound.CoralineSounds;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
+
 public class HelperEntity extends Monster implements RangedAttackMob {
     private static final EntityDataAccessor<Integer> DATA_SKIN_ID = SynchedEntityData.defineId(HelperEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_GLITCHING = SynchedEntityData.defineId(HelperEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Optional<BlockState>> CARRIED_BLOCK = SynchedEntityData.defineId(HelperEntity.class, EntityDataSerializers.OPTIONAL_BLOCK_STATE);
+    private static final EntityDataAccessor<Boolean> IS_JAMMING = SynchedEntityData.defineId(HelperEntity.class, EntityDataSerializers.BOOLEAN);
+
+    public void setCarriedBlock(@Nullable BlockState state) { this.entityData.set(CARRIED_BLOCK, Optional.ofNullable(state)); }
+    @Nullable public BlockState getCarriedBlock() { return this.entityData.get(CARRIED_BLOCK).orElse(null); }
+    public void setJamming(boolean jamming) { this.entityData.set(IS_JAMMING, jamming); }
+    public boolean isJamming() { return this.entityData.get(IS_JAMMING); }
 
     @Override
     public void tick() {
@@ -52,6 +69,137 @@ public class HelperEntity extends Monster implements RangedAttackMob {
             if (this.isGlitching() && this.tickCount % 10 == 0) {
                 this.setGlitching(false);
             }
+        }
+
+        // Only check every second to save performance
+        if (!this.level().isClientSide && this.tickCount % 20 == 0) {
+            // We look for the Jukebox "Playing" event in the area
+            // 1010 is the internal ID for "Jukebox starts playing", 1011 is "stops"
+            // But for a simpler "Is music playing right now" check:
+            BlockPos pos = this.blockPosition();
+            boolean foundMusic = false;
+
+            // Scan a 16-block radius
+            for(BlockPos nearby : BlockPos.betweenClosed(pos.offset(-16, -4, -16), pos.offset(16, 4, 16))) {
+                BlockState state = this.level().getBlockState(nearby);
+                if (state.is(Blocks.JUKEBOX) && state.hasProperty(JukeboxBlock.HAS_RECORD) && state.getValue(JukeboxBlock.HAS_RECORD)) {
+                    foundMusic = true;
+                    break;
+                }
+            }
+            this.setJamming(foundMusic);
+        }
+    }
+
+    static class HelperTakeBlockGoal extends Goal {
+        private final HelperEntity helper;
+
+        public HelperTakeBlockGoal(HelperEntity helper) {
+            this.helper = helper;
+        }
+
+        @Override
+        public boolean canUse() {
+            if (!this.helper.isJamming() || this.helper.getCarriedBlock() != null) {
+                return false;
+            } else if (!this.helper.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+                return false;
+            } else {
+                // Increased frequency: check roughly every 1 second (20 ticks)
+                return this.helper.getRandom().nextInt(reducedTickDelay(20)) == 0;
+            }
+        }
+
+        @Override
+        public void tick() {
+            RandomSource random = this.helper.getRandom();
+            Level level = this.helper.level();
+
+            // WIDENED SEARCH: Looks in an 8x3x8 area around the Helper
+            int i = Mth.floor(this.helper.getX() - 4.0D + random.nextDouble() * 8.0D);
+            int j = Mth.floor(this.helper.getY() - 1.0D + random.nextDouble() * 3.0D);
+            int k = Mth.floor(this.helper.getZ() - 4.0D + random.nextDouble() * 8.0D);
+
+            BlockPos blockpos = new BlockPos(i, j, k);
+            BlockState blockstate = level.getBlockState(blockpos);
+
+            // Check if the block is something they should pick up
+            // Inside HelperTakeBlockGoal -> tick()
+            if (blockstate.is(BlockTags.DIRT) || blockstate.is(BlockTags.MINEABLE_WITH_PICKAXE)) {
+                this.helper.setCarriedBlock(blockstate);
+                level.setBlock(blockpos, Blocks.AIR.defaultBlockState(), 3);
+
+                // FIX: Change SoundEvents.ENDERMAN_TELEPORT to a block sound or a generic "pop"
+                this.helper.level().playSound(null, this.helper.blockPosition(),
+                        blockstate.getSoundType().getHitSound(), // Use the block's own sound
+                        SoundSource.NEUTRAL, 0.5F, 1.2F);
+            }
+        }
+    }
+
+    static class HelperLeaveBlockGoal extends Goal {
+        private final HelperEntity helper;
+
+        public HelperLeaveBlockGoal(HelperEntity helper) {
+            this.helper = helper;
+        }
+
+        @Override
+        public boolean canUse() {
+            if (!this.helper.isJamming() || this.helper.getCarriedBlock() == null) {
+                return false;
+            } else if (!this.helper.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+                return false;
+            } else {
+                // MASSIVELY increased frequency: (Changed from 2000 to 40)
+                // Now they will try to place it roughly every 2 seconds
+                return this.helper.getRandom().nextInt(reducedTickDelay(40)) == 0;
+            }
+        }
+
+        @Override
+        public void tick() {
+            RandomSource random = this.helper.getRandom();
+            Level level = this.helper.level();
+
+            // SEARCH: Looks for a place to put the block down
+            int i = Mth.floor(this.helper.getX() - 4.0D + random.nextDouble() * 8.0D);
+            int j = Mth.floor(this.helper.getY() - 1.0D + random.nextDouble() * 3.0D);
+            int k = Mth.floor(this.helper.getZ() - 4.0D + random.nextDouble() * 8.0D);
+
+            BlockPos blockpos = new BlockPos(i, j, k);
+            BlockState blockstate = level.getBlockState(blockpos);
+            BlockPos belowPos = blockpos.below();
+            BlockState belowState = level.getBlockState(belowPos);
+            BlockState carried = this.helper.getCarriedBlock();
+
+            // Placement conditions:
+            // 1. Target block is AIR
+            // 2. Block BELOW is SOLID
+            if (carried != null && blockstate.isAir() && !belowState.isAir() && belowState.isSolidRender(level, belowPos)) {
+                level.setBlock(blockpos, carried, 3);
+                this.helper.setCarriedBlock(null);
+            }
+        }
+    }
+
+    @Override
+    public boolean canAttack(@NotNull LivingEntity target) {
+        // If music is playing, the Helper is physically incapable of starting an attack
+        if (this.isJamming()) {
+            return false;
+        }
+        return super.canAttack(target);
+    }
+
+    @Override
+    public void setTarget(@Nullable LivingEntity target) {
+        // If they are jamming and something tries to set a target (like getting hit),
+        // we force it back to null immediately.
+        if (this.isJamming()) {
+            super.setTarget(null);
+        } else {
+            super.setTarget(target);
         }
     }
 
@@ -86,30 +234,38 @@ public class HelperEntity extends Monster implements RangedAttackMob {
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
 
+        // Priority 1: BUILDING (Only active when isJamming is true)
+        // These take precedence over combat!
+        this.goalSelector.addGoal(1, new HelperTakeBlockGoal(this));
+        this.goalSelector.addGoal(1, new HelperLeaveBlockGoal(this));
+
+        // Priority 2: MELEE (Only triggers if distance <= 32)
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2D, false) {
             @Override
             public boolean canUse() {
+                // Added check: If jamming, we can't use combat goals
+                if (HelperEntity.this.isJamming()) return false;
                 if (!super.canUse()) return false;
-                assert HelperEntity.this.getTarget() != null;
-                return HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) <= 32.0D;
+                return HelperEntity.this.getTarget() != null &&
+                        HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) <= 32.0D;
             }
 
             @Override
             public boolean canContinueToUse() {
-                // Stop chasing for a punch if the player gets further than 5 blocks
-                if (!super.canContinueToUse()) return false;
-                assert HelperEntity.this.getTarget() != null;
-                return HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) <= 36.0D;
+                if (HelperEntity.this.isJamming()) return false;
+                return super.canContinueToUse() &&
+                        HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) <= 36.0D;
             }
         });
 
-        // Priority 3: Ranged Attack (Only triggers if further than 4 blocks)
+        // Priority 3: RANGED (Only triggers if distance > 32)
         this.goalSelector.addGoal(3, new RangedAttackGoal(this, 1.0D, 40, 20.0F) {
             @Override
             public boolean canUse() {
+                if (HelperEntity.this.isJamming()) return false;
                 if (!super.canUse()) return false;
-                assert HelperEntity.this.getTarget() != null;
-                return HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) > 32.0D;
+                return HelperEntity.this.getTarget() != null &&
+                        HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) > 32.0D;
             }
         });
 
@@ -174,6 +330,8 @@ public class HelperEntity extends Monster implements RangedAttackMob {
         super.defineSynchedData();
         this.entityData.define(DATA_SKIN_ID, 0);
         this.entityData.define(IS_GLITCHING, false);
+        this.entityData.define(CARRIED_BLOCK, Optional.empty());
+        this.entityData.define(IS_JAMMING, false);
     }
 
     public int getSkinId() { return this.entityData.get(DATA_SKIN_ID); }

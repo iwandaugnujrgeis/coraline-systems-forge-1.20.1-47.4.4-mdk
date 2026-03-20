@@ -14,6 +14,7 @@ public class HelperRenderer extends MobRenderer<HelperEntity, PlayerModel<Helper
         // 'false' here means we use the classic Steve arms (4px), not Alex arms (3px)
         super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5f);
         this.addLayer(new HelperStaticLayer(this));
+        this.addLayer(new HelperCarriedBlockLayer(this));
     }
 
     @Override
