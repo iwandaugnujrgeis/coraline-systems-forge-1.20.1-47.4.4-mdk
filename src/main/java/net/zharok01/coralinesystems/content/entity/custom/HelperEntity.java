@@ -36,6 +36,7 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.JukeboxBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.zharok01.coralinesystems.content.entity.ai.HelperBreakBlockGoal;
 import net.zharok01.coralinesystems.content.sound.CoralineSounds;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -48,10 +49,25 @@ public class HelperEntity extends Monster implements RangedAttackMob {
     private static final EntityDataAccessor<Optional<BlockState>> CARRIED_BLOCK = SynchedEntityData.defineId(HelperEntity.class, EntityDataSerializers.OPTIONAL_BLOCK_STATE);
     private static final EntityDataAccessor<Boolean> IS_JAMMING = SynchedEntityData.defineId(HelperEntity.class, EntityDataSerializers.BOOLEAN);
 
-    public void setCarriedBlock(@Nullable BlockState state) { this.entityData.set(CARRIED_BLOCK, Optional.ofNullable(state)); }
-    @Nullable public BlockState getCarriedBlock() { return this.entityData.get(CARRIED_BLOCK).orElse(null); }
-    public void setJamming(boolean jamming) { this.entityData.set(IS_JAMMING, jamming); }
-    public boolean isJamming() { return this.entityData.get(IS_JAMMING); }
+    public void setCarriedBlock(@Nullable BlockState state) {
+        // If the state passed is null, we safely store Air instead
+        BlockState nonNullState = (state == null) ? Blocks.AIR.defaultBlockState() : state;
+        this.entityData.set(CARRIED_BLOCK, Optional.of(nonNullState));
+    }
+
+    public BlockState getCarriedBlock() {
+        // We look into the Optional. If it's empty, we return Air.
+        // This ensures the method NEVER returns null to the AI goal.
+        return this.entityData.get(CARRIED_BLOCK).orElse(Blocks.AIR.defaultBlockState());
+    }
+
+    public void setJamming(boolean jamming) {
+        this.entityData.set(IS_JAMMING, jamming);
+    }
+
+    public boolean isJamming() {
+        return this.entityData.get(IS_JAMMING);
+    }
 
     @Override
     public void tick() {
@@ -233,6 +249,8 @@ public class HelperEntity extends Monster implements RangedAttackMob {
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
+
+        this.goalSelector.addGoal(1, new HelperBreakBlockGoal(this));
 
         // Priority 1: BUILDING (Only active when isJamming is true)
         // These take precedence over combat!

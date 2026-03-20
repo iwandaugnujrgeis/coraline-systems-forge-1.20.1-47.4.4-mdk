@@ -36,7 +36,7 @@ public class HelperCarriedBlockLayer extends RenderLayer<HelperEntity, PlayerMod
             poseStack.translate(-0.0625D, 0.6D, 0.0D);
             poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F));
             poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
-            poseStack.scale(1.0F, 1.0F, 1.0F);
+            poseStack.scale(0.9F, 0.9F, 0.9F);
 
             ItemStack blockStack = new ItemStack(blockstate.getBlock());
 
