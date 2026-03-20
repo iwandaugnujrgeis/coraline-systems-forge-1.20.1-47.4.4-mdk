@@ -6,6 +6,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.zharok01.coralinesystems.content.entity.custom.HelperEntity;
+import net.zharok01.coralinesystems.registry.CoralineTags;
 
 import java.util.EnumSet;
 
@@ -13,18 +14,30 @@ public class HelperBreakBlockGoal extends Goal {
     private final HelperEntity helper;
     private BlockPos targetPos;
     private int breakingTime;
-    private static final int MAX_BREAKING_TIME = 40; // 2 seconds (20 ticks = 1s)
+    private int cooldownTicks = 0;
+
+    private static final int MAX_BREAKING_TIME = 40;
+    private static final int COOLDOWN_AFTER_MINE = 400;
 
     public HelperBreakBlockGoal(HelperEntity helper) {
         this.helper = helper;
-        // Flag.MOVE prevents them from wandering off mid-mine
-        // Flag.LOOK allows the AI to control the head orientation
         this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
     }
 
     @Override
     public boolean canUse() {
-        // Safer check for the carried block to prevent NullPointerExceptions
+        // 1. MUST BE JAMMING (Music is playing)
+        if (!helper.isJamming()) {
+            return false;
+        }
+
+        // 2. Cooldown check
+        if (cooldownTicks > 0) {
+            cooldownTicks--;
+            return false;
+        }
+
+        // 3. Carrying check
         BlockState carried = helper.getCarriedBlock();
         if (carried != null && !carried.isAir()) {
             return false;
@@ -34,14 +47,28 @@ public class HelperBreakBlockGoal extends Goal {
         return this.targetPos != null;
     }
 
-    private BlockPos findTargetBlock() {
-        // Look for a block at feet level in front of them
-        BlockPos pos = helper.blockPosition().relative(helper.getDirection());
-        if (!helper.level().getBlockState(pos).isAir()) return pos;
+    @Override
+    public boolean canContinueToUse() {
+        // If the music stops (isJamming becomes false), stop mining immediately
+        return helper.isJamming() && targetPos != null &&
+                !helper.level().getBlockState(targetPos).isAir() &&
+                breakingTime < MAX_BREAKING_TIME;
+    }
 
-        // Also check eye level
+    private BlockPos findTargetBlock() {
+        BlockPos pos = helper.blockPosition().relative(helper.getDirection());
+        BlockState state = helper.level().getBlockState(pos);
+
+        // NEW: Check if the block is in our custom tag
+        if (state.is(CoralineTags.HELPER_MINEABLE)) {
+            return pos;
+        }
+
         BlockPos eyePos = pos.above();
-        if (!helper.level().getBlockState(eyePos).isAir()) return eyePos;
+        BlockState eyeState = helper.level().getBlockState(eyePos);
+        if (eyeState.is(CoralineTags.HELPER_MINEABLE)) {
+            return eyePos;
+        }
 
         return null;
     }
@@ -49,18 +76,14 @@ public class HelperBreakBlockGoal extends Goal {
     @Override
     public void start() {
         this.breakingTime = 0;
-        // Trigger the "Crazy Jamming" arms in your Mixin
-        this.helper.setJamming(true);
     }
 
     @Override
     public void tick() {
         if (targetPos == null) return;
 
-        // 1. Face the block
         this.helper.getLookControl().setLookAt(targetPos.getX() + 0.5D, targetPos.getY() + 0.5D, targetPos.getZ() + 0.5D);
 
-        // 2. Play sound effects and swing arm every 10 ticks
         if (breakingTime % 10 == 0) {
             BlockState state = helper.level().getBlockState(targetPos);
             SoundType soundType = state.getSoundType(helper.level(), targetPos, helper);
@@ -68,7 +91,6 @@ public class HelperBreakBlockGoal extends Goal {
             this.helper.swing(this.helper.getUsedItemHand());
         }
 
-        // 3. Update block cracking overlay (0-10 progress stages)
         int progress = (int) ((float) breakingTime / (float) MAX_BREAKING_TIME * 10.0F);
         if (progress < 10) {
             this.helper.level().destroyBlockProgress(this.helper.getId(), targetPos, progress);
@@ -76,35 +98,25 @@ public class HelperBreakBlockGoal extends Goal {
 
         breakingTime++;
 
-        // 4. Finalize breaking
         if (breakingTime >= MAX_BREAKING_TIME) {
             Level level = helper.level();
             BlockState state = level.getBlockState(targetPos);
 
             if (!level.isClientSide) {
-                // Clear the cracks immediately before the block is removed
                 level.destroyBlockProgress(this.helper.getId(), targetPos, -1);
-
                 this.helper.setCarriedBlock(state);
                 level.destroyBlock(targetPos, false);
             }
+            this.cooldownTicks = COOLDOWN_AFTER_MINE;
             this.stop();
         }
     }
 
     @Override
-    public boolean canContinueToUse() {
-        return targetPos != null && !helper.level().getBlockState(targetPos).isAir() && breakingTime < MAX_BREAKING_TIME;
-    }
-
-    @Override
     public void stop() {
-        // Clear the cracking overlay if the goal stops for any reason
         if (targetPos != null) {
             this.helper.level().destroyBlockProgress(this.helper.getId(), targetPos, -1);
         }
-
-        this.helper.setJamming(false);
         this.targetPos = null;
     }
 }
