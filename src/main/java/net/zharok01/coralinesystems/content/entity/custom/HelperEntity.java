@@ -37,6 +37,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.JukeboxBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.zharok01.coralinesystems.content.entity.ai.HelperBreakBlockGoal;
+import net.zharok01.coralinesystems.content.entity.ai.HelperPlaceBlockGoal;
 import net.zharok01.coralinesystems.content.sound.CoralineSounds;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -251,6 +252,7 @@ public class HelperEntity extends Monster implements RangedAttackMob {
         this.goalSelector.addGoal(0, new FloatGoal(this));
 
         this.goalSelector.addGoal(1, new HelperBreakBlockGoal(this));
+        this.goalSelector.addGoal(2, new HelperPlaceBlockGoal(this));
 
         // Priority 1: BUILDING (Only active when isJamming is true)
         // These take precedence over combat!

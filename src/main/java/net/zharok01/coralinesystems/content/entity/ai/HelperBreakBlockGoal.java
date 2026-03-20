@@ -17,12 +17,14 @@ public class HelperBreakBlockGoal extends Goal {
 
     public HelperBreakBlockGoal(HelperEntity helper) {
         this.helper = helper;
+        // Flag.MOVE prevents them from wandering off mid-mine
+        // Flag.LOOK allows the AI to control the head orientation
         this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
     }
 
     @Override
     public boolean canUse() {
-        // FIX: Safer check for the carried block
+        // Safer check for the carried block to prevent NullPointerExceptions
         BlockState carried = helper.getCarriedBlock();
         if (carried != null && !carried.isAir()) {
             return false;
@@ -47,6 +49,7 @@ public class HelperBreakBlockGoal extends Goal {
     @Override
     public void start() {
         this.breakingTime = 0;
+        // Trigger the "Crazy Jamming" arms in your Mixin
         this.helper.setJamming(true);
     }
 
@@ -54,8 +57,10 @@ public class HelperBreakBlockGoal extends Goal {
     public void tick() {
         if (targetPos == null) return;
 
+        // 1. Face the block
         this.helper.getLookControl().setLookAt(targetPos.getX() + 0.5D, targetPos.getY() + 0.5D, targetPos.getZ() + 0.5D);
 
+        // 2. Play sound effects and swing arm every 10 ticks
         if (breakingTime % 10 == 0) {
             BlockState state = helper.level().getBlockState(targetPos);
             SoundType soundType = state.getSoundType(helper.level(), targetPos, helper);
@@ -63,13 +68,23 @@ public class HelperBreakBlockGoal extends Goal {
             this.helper.swing(this.helper.getUsedItemHand());
         }
 
+        // 3. Update block cracking overlay (0-10 progress stages)
+        int progress = (int) ((float) breakingTime / (float) MAX_BREAKING_TIME * 10.0F);
+        if (progress < 10) {
+            this.helper.level().destroyBlockProgress(this.helper.getId(), targetPos, progress);
+        }
+
         breakingTime++;
 
+        // 4. Finalize breaking
         if (breakingTime >= MAX_BREAKING_TIME) {
             Level level = helper.level();
             BlockState state = level.getBlockState(targetPos);
 
             if (!level.isClientSide) {
+                // Clear the cracks immediately before the block is removed
+                level.destroyBlockProgress(this.helper.getId(), targetPos, -1);
+
                 this.helper.setCarriedBlock(state);
                 level.destroyBlock(targetPos, false);
             }
@@ -84,6 +99,11 @@ public class HelperBreakBlockGoal extends Goal {
 
     @Override
     public void stop() {
+        // Clear the cracking overlay if the goal stops for any reason
+        if (targetPos != null) {
+            this.helper.level().destroyBlockProgress(this.helper.getId(), targetPos, -1);
+        }
+
         this.helper.setJamming(false);
         this.targetPos = null;
     }
