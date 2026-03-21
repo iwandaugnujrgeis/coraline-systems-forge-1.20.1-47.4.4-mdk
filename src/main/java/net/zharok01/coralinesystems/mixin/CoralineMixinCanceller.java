@@ -5,15 +5,30 @@ import com.bawnorton.mixinsquared.api.MixinCanceller;
 import java.util.List;
 
 public class CoralineMixinCanceller implements MixinCanceller {
-
     @Override
     public boolean shouldCancel(List<String> targetClassNames, String mixinClassName) {
-        return switch (mixinClassName) {
-            case "com.ordana.spelunkery.mixins.MineshaftMixin",
-                 "net.mehvahdjukaar.supplementaries.mixins.StrongholdRoomSconceMixin",
-                 "net.mehvahdjukaar.supplementaries.mixins.StrongholdCrossingSconceMixin",
-                 "com.teamabnormals.caverns_and_chasms.core.mixin.CreeperMixin" -> true;
-            default -> false;
-        };
+        if (mixinClassName.equals("com.ordana.spelunkery.mixins.MineshaftMixin")) {
+            return true;
+        }
+        if (mixinClassName.equals("net.mehvahdjukaar.supplementaries.mixins.StrongholdRoomSconceMixin")) {
+            return true;
+        }
+        if (mixinClassName.equals("net.mehvahdjukaar.supplementaries.mixins.StrongholdCrossingSconceMixin")) {
+            return true;
+        }
+        if (mixinClassName.equals("com.teamabnormals.caverns_and_chasms.core.mixin.CreeperMixin")) {
+            return true;
+        }
+        if (mixinClassName.equals("net.lerariemann.infinity.mixin.core.NetherPortalBlockMixin")) {
+            return true;
+        }
+        if (mixinClassName.equals("net.lerariemann.infinity.mixin.core.NetherPortalMixin")) {
+            return true;
+        }
+        if (mixinClassName.equals("com.faboslav.friendsandfoes.common.mixin.StrongholdGeneratorMixin")) {
+            return true;
+        }
+
+        return false;
     }
 }

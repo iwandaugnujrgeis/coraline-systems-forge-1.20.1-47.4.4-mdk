@@ -354,7 +354,7 @@ public class HelperEntity extends Monster implements RangedAttackMob {
 
         // Only pick a random skin if there isn't one saved in the NBT already
         if (tag == null || !tag.contains("SkinId")) {
-            this.setSkinId(level.getRandom().nextInt(3));
+            this.setSkinId(level.getRandom().nextInt(5));
         }
 
         return spawnData;
