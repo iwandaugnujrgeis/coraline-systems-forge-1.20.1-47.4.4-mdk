@@ -3,5 +3,7 @@
 	"coraline_systems.sound.subtitle.helper_buzz": "Buzz",
 	"coraline_systems.sound.subtitle.helper_idle": "Ominous presence?",
 	"coraline_systems.sound.subtitle.helper_hurt": "Helper asks",
-	"coraline_systems.sound.subtitle.helper_death": "Helper error"
+	"coraline_systems.sound.subtitle.helper_death": "Helper error",
+	"entity.coraline_systems.helper": "Helper",
+	"item.coraline_systems.helper_spawn_egg": "Helper Spawn Egg"
 }

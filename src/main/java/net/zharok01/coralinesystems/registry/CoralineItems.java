@@ -1,8 +1,10 @@
 package net.zharok01.coralinesystems.registry;
 
+import com.github.alexthe666.alexsmobs.entity.AMEntityRegistry;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.StandingAndWallBlockItem;
+import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -22,6 +24,9 @@ public class CoralineItems {
 		new Item.Properties(),
 		Direction.DOWN
 	));
+
+	public static final RegistryObject<Item> HELPER_SPAWN_EGG = register("helper_spawn_egg",
+			() -> new ForgeSpawnEggItem(IsotopicEntities.HELPER, 0x322136, 0x1fe770, new Item.Properties()));
 
 	private static <T extends Item> RegistryObject<T> register(String name, Supplier<T> supplier) {
 		return REGISTRY.register(name, supplier);

@@ -71,6 +71,22 @@ public class HelperEntity extends Monster implements RangedAttackMob {
     }
 
     @Override
+    public void addAdditionalSaveData(CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        tag.putInt("SkinId", this.getSkinId());
+        tag.putBoolean("IsGlitching", this.isGlitching());
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        if (tag.contains("SkinId", 99)) { // 99 is the ID for all Number types in NBT
+            this.setSkinId(tag.getInt("SkinId"));
+        }
+        this.setGlitching(tag.getBoolean("IsGlitching"));
+    }
+
+    @Override
     public void tick() {
         super.tick();
 
@@ -88,8 +104,8 @@ public class HelperEntity extends Monster implements RangedAttackMob {
             }
         }
 
-        // Only check every second to save performance
-        if (!this.level().isClientSide && this.tickCount % 20 == 0) {
+        // Check every 60 ticks:
+        if (!this.level().isClientSide && this.tickCount % 60 == 0) {
             // We look for the Jukebox "Playing" event in the area
             // 1010 is the internal ID for "Jukebox starts playing", 1011 is "stops"
             // But for a simpler "Is music playing right now" check:
@@ -122,8 +138,8 @@ public class HelperEntity extends Monster implements RangedAttackMob {
             } else if (!this.helper.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
                 return false;
             } else {
-                // Increased frequency: check roughly every 1 second (20 ticks)
-                return this.helper.getRandom().nextInt(reducedTickDelay(20)) == 0;
+                //60-tick check:
+                return this.helper.getRandom().nextInt(reducedTickDelay(60)) == 0;
             }
         }
 
@@ -132,7 +148,7 @@ public class HelperEntity extends Monster implements RangedAttackMob {
             RandomSource random = this.helper.getRandom();
             Level level = this.helper.level();
 
-            // WIDENED SEARCH: Looks in an 8x3x8 area around the Helper
+            //Looks in an 8x3x8 area around the Helper:
             int i = Mth.floor(this.helper.getX() - 4.0D + random.nextDouble() * 8.0D);
             int j = Mth.floor(this.helper.getY() - 1.0D + random.nextDouble() * 3.0D);
             int k = Mth.floor(this.helper.getZ() - 4.0D + random.nextDouble() * 8.0D);
@@ -146,7 +162,7 @@ public class HelperEntity extends Monster implements RangedAttackMob {
                 this.helper.setCarriedBlock(blockstate);
                 level.setBlock(blockpos, Blocks.AIR.defaultBlockState(), 3);
 
-                // FIX: Change SoundEvents.ENDERMAN_TELEPORT to a block sound or a generic "pop"
+                //The sounds of the blocks:
                 this.helper.level().playSound(null, this.helper.blockPosition(),
                         blockstate.getSoundType().getHitSound(), // Use the block's own sound
                         SoundSource.NEUTRAL, 0.5F, 1.2F);
@@ -168,9 +184,9 @@ public class HelperEntity extends Monster implements RangedAttackMob {
             } else if (!this.helper.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
                 return false;
             } else {
-                // MASSIVELY increased frequency: (Changed from 2000 to 40)
-                // Now they will try to place it roughly every 2 seconds
-                return this.helper.getRandom().nextInt(reducedTickDelay(40)) == 0;
+                // Increased frequency: changed from 2000 to 40;
+                // Now they will try to place it every 200 ticks:
+                return this.helper.getRandom().nextInt(reducedTickDelay(200)) == 0;
             }
         }
 
@@ -179,7 +195,7 @@ public class HelperEntity extends Monster implements RangedAttackMob {
             RandomSource random = this.helper.getRandom();
             Level level = this.helper.level();
 
-            // SEARCH: Looks for a place to put the block down
+            // Searching for a place to put the block down:
             int i = Mth.floor(this.helper.getX() - 4.0D + random.nextDouble() * 8.0D);
             int j = Mth.floor(this.helper.getY() - 1.0D + random.nextDouble() * 3.0D);
             int k = Mth.floor(this.helper.getZ() - 4.0D + random.nextDouble() * 8.0D);
@@ -252,14 +268,10 @@ public class HelperEntity extends Monster implements RangedAttackMob {
         this.goalSelector.addGoal(0, new FloatGoal(this));
 
         this.goalSelector.addGoal(1, new HelperBreakBlockGoal(this));
-        this.goalSelector.addGoal(2, new HelperPlaceBlockGoal(this));
-
-        // Priority 1: BUILDING (Only active when isJamming is true)
-        // These take precedence over combat!
         this.goalSelector.addGoal(1, new HelperTakeBlockGoal(this));
         this.goalSelector.addGoal(1, new HelperLeaveBlockGoal(this));
+        this.goalSelector.addGoal(2, new HelperPlaceBlockGoal(this));
 
-        // Priority 2: MELEE (Only triggers if distance <= 32)
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2D, false) {
             @Override
             public boolean canUse() {
@@ -267,6 +279,7 @@ public class HelperEntity extends Monster implements RangedAttackMob {
                 if (HelperEntity.this.isJamming()) return false;
                 if (!super.canUse()) return false;
                 return HelperEntity.this.getTarget() != null &&
+                        //Trigger melee if distance <= 32 (8 blocks?):
                         HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) <= 32.0D;
             }
 
@@ -339,8 +352,10 @@ public class HelperEntity extends Monster implements RangedAttackMob {
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData, @Nullable CompoundTag tag) {
         spawnData = super.finalizeSpawn(level, difficulty, reason, spawnData, tag);
 
-        // Randomly pick 1 of 3 skins (0, 1, or 2)
-        this.setSkinId(level.getRandom().nextInt(3));
+        // Only pick a random skin if there isn't one saved in the NBT already
+        if (tag == null || !tag.contains("SkinId")) {
+            this.setSkinId(level.getRandom().nextInt(3));
+        }
 
         return spawnData;
     }
@@ -356,4 +371,8 @@ public class HelperEntity extends Monster implements RangedAttackMob {
 
     public int getSkinId() { return this.entityData.get(DATA_SKIN_ID); }
     public void setSkinId(int id) { this.entityData.set(DATA_SKIN_ID, id); }
+
+    public static boolean checkHelperSpawnRules(EntityType<HelperEntity> type, ServerLevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random) {
+        return Monster.checkMonsterSpawnRules(type, level, spawnType, pos, random);
+    }
 }
