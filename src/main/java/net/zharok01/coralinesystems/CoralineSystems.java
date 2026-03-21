@@ -15,6 +15,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.zharok01.coralinesystems.content.sound.CoralineSounds;
 import net.zharok01.coralinesystems.registry.CoralineBlocks;
 import net.zharok01.coralinesystems.registry.CoralineItems;
 import net.zharok01.coralinesystems.registry.IsotopicEntities;
@@ -35,6 +36,7 @@ public class CoralineSystems {
         CoralineBlocks.register(bus);
         CoralineItems.register(bus);
         IsotopicEntities.register(bus);
+        CoralineSounds.register(bus);
 
         bus.addListener(this::commonSetup);
 
