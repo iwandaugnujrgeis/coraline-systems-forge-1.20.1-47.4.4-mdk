@@ -36,6 +36,7 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.JukeboxBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.zharok01.coralinesystems.content.entity.ai.HelperBreakBlockGoal;
 import net.zharok01.coralinesystems.content.entity.ai.HelperPlaceBlockGoal;
 import net.zharok01.coralinesystems.content.sound.CoralineSounds;
@@ -218,8 +219,13 @@ public class HelperEntity extends Monster implements RangedAttackMob {
 
     @Override
     public boolean canAttack(@NotNull LivingEntity target) {
-        // If music is playing, the Helper is physically incapable of starting an attack
+        //Stop being hostile when the Jukebox is playing!
         if (this.isJamming()) {
+            return false;
+        }
+
+        //Helpers don't attack each other!
+        if (target instanceof HelperEntity) {
             return false;
         }
         return super.canAttack(target);
@@ -261,6 +267,14 @@ public class HelperEntity extends Monster implements RangedAttackMob {
         }
 
         return super.hurt(source, amount);
+    }
+
+    //Make Helpers pass through Cobwebs:
+    public void makeStuckInBlock(BlockState state, Vec3 motionMultiplier) {
+        if (!state.is(Blocks.COBWEB)) {
+            super.makeStuckInBlock(state, motionMultiplier);
+        }
+
     }
 
     @Override
@@ -354,7 +368,7 @@ public class HelperEntity extends Monster implements RangedAttackMob {
 
         // Only pick a random skin if there isn't one saved in the NBT already
         if (tag == null || !tag.contains("SkinId")) {
-            this.setSkinId(level.getRandom().nextInt(5));
+            this.setSkinId(level.getRandom().nextInt(7));
         }
 
         return spawnData;
