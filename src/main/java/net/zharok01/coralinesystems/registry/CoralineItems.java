@@ -28,6 +28,9 @@ public class CoralineItems {
 	public static final RegistryObject<Item> HELPER_SPAWN_EGG = register("helper_spawn_egg",
 			() -> new ForgeSpawnEggItem(IsotopicEntities.HELPER, 0x322136, 0x1fe770, new Item.Properties()));
 
+	public static final RegistryObject<Item> MONSTER_SPAWN_EGG = register("monster_spawn_egg",
+			() -> new ForgeSpawnEggItem(IsotopicEntities.MONSTER, 0x1A1A1A, 0xE0E0FF, new Item.Properties()));
+
 	private static <T extends Item> RegistryObject<T> register(String name, Supplier<T> supplier) {
 		return REGISTRY.register(name, supplier);
 	}

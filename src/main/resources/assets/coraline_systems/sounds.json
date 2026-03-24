@@ -87,5 +87,14 @@
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.helper_death"
+  },
+  "monster_stare": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "minecraft:ambient/cave/cave14"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.monster_stare"
   }
 }
