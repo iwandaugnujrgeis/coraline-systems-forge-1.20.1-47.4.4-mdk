@@ -15,6 +15,7 @@
     "defaultRequire": 1
   },
   "mixins": [
+    "BreakDoorGoalMixin",
     "JerboaEffectMixin",
     "RediscoveredEventsMixin",
     "RespawnAnchorFuelMixin",
@@ -22,6 +23,7 @@
     "StrongholdFiveCrossingSpawnerMixin",
     "StrongholdPiecesMixin",
     "StrongholdRoomCrossingSpawnerMixin",
-    "StructurePieceMixin"
+    "StructurePieceMixin",
+    "ZombieMixin"
   ]
 }
