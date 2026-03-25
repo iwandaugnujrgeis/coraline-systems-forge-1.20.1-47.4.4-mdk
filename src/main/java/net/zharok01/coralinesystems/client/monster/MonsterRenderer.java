@@ -27,6 +27,32 @@ public class MonsterRenderer extends MobRenderer<MonsterEntity, PlayerModel<Mons
         return entity.isSpotted() ? TEXTURE : INVISIBLE;
     }
 
+    @Override
+    public void render(MonsterEntity entity, float entityYaw, float partialTicks, com.mojang.blaze3d.vertex.PoseStack poseStack, net.minecraft.client.renderer.MultiBufferSource buffer, int packedLight) {
+
+        if (!entity.isSpotted()) {
+            this.shadowRadius = 0.0F;
+        } else {
+            this.shadowRadius = 0.5F;
+        }
+
+        poseStack.pushPose();
+
+        // Extreme visual jitter ONLY during the 5-second spotted phase
+        if (entity.isGlitching()) {
+            float speed = (entity.tickCount + partialTicks) * 2.5F; // Very fast
+            float intensity = 0.15F; // Aggressive shaking distance
+
+            float xOffset = (float)(Math.sin(speed * 3.5) * intensity);
+            float zOffset = (float)(Math.cos(speed * 4.1) * intensity);
+
+            poseStack.translate(xOffset, 0, zOffset);
+        }
+
+        super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
+        poseStack.popPose();
+    }
+
     @Nullable
     @Override
     protected RenderType getRenderType(MonsterEntity entity, boolean bodyVisible, boolean translucent, boolean glowing) {

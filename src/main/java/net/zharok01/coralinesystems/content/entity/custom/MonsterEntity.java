@@ -1,9 +1,7 @@
 package net.zharok01.coralinesystems.content.entity.custom;
 
-import com.github.alexthe666.alexsmobs.client.particle.AMParticleRegistry;
 import com.legacy.rediscovered.entity.pigman.PigmanEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -25,6 +23,7 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.Vec3;
 import net.zharok01.coralinesystems.content.sound.CoralineSounds;
+import net.zharok01.coralinesystems.registry.CoralineUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
@@ -32,6 +31,12 @@ import java.util.EnumSet;
 public class MonsterEntity extends Monster {
     private static final EntityDataAccessor<Boolean> IS_ANGRY = SynchedEntityData.defineId(MonsterEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_SPOTTED = SynchedEntityData.defineId(MonsterEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> IS_GLITCHING = SynchedEntityData.defineId(MonsterEntity.class, EntityDataSerializers.BOOLEAN);
+
+    public int glitchTimer = 0; // Counts down the 5 seconds (100 ticks)
+
+    public void setGlitching(boolean glitching) { this.entityData.set(IS_GLITCHING, glitching); }
+    public boolean isGlitching() { return this.entityData.get(IS_GLITCHING); }
 
     public MonsterEntity(EntityType<? extends Monster> type, Level level) {
         super(type, level);
@@ -62,30 +67,55 @@ public class MonsterEntity extends Monster {
         super.defineSynchedData();
         this.entityData.define(IS_ANGRY, false);
         this.entityData.define(IS_SPOTTED, false);
+        this.entityData.define(IS_GLITCHING, false);
     }
 
     @Override
     public void aiStep() {
-        if (this.level().isClientSide) {
-            // Particle logic from your prompt
-            if (this.random.nextInt(5) == 0) {
-                this.level().addParticle(AMParticleRegistry.STATIC_SPARK.get(),
-                        this.getRandomX(0.5D), this.getRandomY(), this.getRandomZ(0.5D), 0, 0, 0);
+        if (!this.level().isClientSide) {
+
+            if (this.getTarget() != null && !this.getTarget().isAlive()) {
+                this.setTarget(null);
             }
-        } else {
+
             Player player = this.level().getNearestPlayer(this, 64.0D);
-            if (player != null) {
+
+            // 1. THE SIGHT TRIGGER
+            if (player != null && !player.getAbilities().instabuild && !player.isSpectator()) {
                 boolean looking = this.isLookingAtMe(player);
 
-                // Update spotted status for the Renderer
                 if (looking && !this.isSpotted()) {
-                    this.setSpotted(true);
-                    this.playSound(CoralineSounds.MONSTER_STARE.get(), 1.0F, 1.0F); // Ominous sound
+                    this.setSpotted(true); // Lock the trigger!
+                    this.setGlitching(true);
+                    this.glitchTimer = 100; // 5 seconds
+                    this.playSound(CoralineSounds.MONSTER_STARE.get(), 1.0F, 1.0F);
                 }
 
-                if (looking && !this.isAngry()) {
+                // Start chasing the player if spotted by sight and we don't have a target yet
+                if (this.isSpotted() && !this.isAngry() && this.getTarget() == null) {
                     this.setAngry(true);
                     this.setTarget(player);
+                }
+            }
+
+            // 2. THE GLITCH EVENT EXECUTION
+            if (this.isGlitching()) {
+                if (this.glitchTimer > 0) {
+                    this.glitchTimer--;
+
+                    // Force "walk in place" by killing momentum and navigation
+                    this.getNavigation().stop();
+                    this.setDeltaMovement(0, this.getDeltaMovement().y, 0);
+
+                    // Teleport randomly within a 3-block radius every 10 ticks
+                    if (this.glitchTimer % 10 == 0) {
+                        double tx = this.getX() + (this.random.nextDouble() - 0.5D) * 6.0D;
+                        double tz = this.getZ() + (this.random.nextDouble() - 0.5D) * 6.0D;
+                        CoralineUtils.randomTeleportStatic(this, tx, this.getY(), tz, true);
+                    }
+                } else {
+                    // Timer is up, let the chase begin!
+                    this.setGlitching(false);
                 }
             }
         }
@@ -118,11 +148,36 @@ public class MonsterEntity extends Monster {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
+        // 1. Projectile dodge logic (Keep this!)
         if (source.is(DamageTypeTags.IS_PROJECTILE)) {
             for(int i = 0; i < 64; ++i) {
                 if (this.teleport()) return false;
             }
         }
+
+        Entity attacker = source.getEntity();
+
+        // 2. Ignore Creative/Spectator players entirely
+        if (attacker instanceof Player player) {
+            if (player.getAbilities().instabuild || player.isSpectator()) {
+                return super.hurt(source, amount);
+            }
+        }
+
+        // 3. THE PHYSICAL TRIGGER: Only glitch if we haven't been spotted yet!
+        if (!this.level().isClientSide && !this.isSpotted()) {
+            this.setSpotted(true);     // Lock the trigger so it only happens once!
+            this.setGlitching(true);
+            this.glitchTimer = 100;    // 5 seconds
+            this.playSound(CoralineSounds.MONSTER_STARE.get(), 1.0F, 1.5F); // Pitch 1.5 for pain
+
+            // Make the attacker the target immediately
+            if (attacker instanceof LivingEntity living) {
+                this.setTarget(living);
+                this.setAngry(true);
+            }
+        }
+
         return super.hurt(source, amount);
     }
 
@@ -136,14 +191,14 @@ public class MonsterEntity extends Monster {
             double d0 = this.getX() + (this.random.nextDouble() - 0.5D) * 32.0D;
             double d1 = this.getY() + (double)(this.random.nextInt(16) - 8);
             double d2 = this.getZ() + (this.random.nextDouble() - 0.5D) * 32.0D;
-            return this.randomTeleport(d0, d1, d2, true);
+
+            return CoralineUtils.randomTeleportStatic(this, d0, d1, d2, true);
         }
         return false;
     }
 
     static class MonsterGlitchAttackGoal extends Goal {
         private final MonsterEntity monster;
-        private int glitchTicks;
 
         public MonsterGlitchAttackGoal(MonsterEntity monster) {
             this.monster = monster;
@@ -152,12 +207,8 @@ public class MonsterEntity extends Monster {
 
         @Override
         public boolean canUse() {
-            return monster.getTarget() != null && monster.isAngry();
-        }
-
-        @Override
-        public void start() {
-            this.glitchTicks = 0;
+            // Only chase if angry AND the 5-second glitch phase is over
+            return monster.getTarget() != null && monster.isAngry() && !monster.isGlitching();
         }
 
         @Override
@@ -167,18 +218,28 @@ public class MonsterEntity extends Monster {
                 this.monster.getLookControl().setLookAt(target, 30.0F, 30.0F);
                 double dist = this.monster.distanceToSqr(target);
 
-                if (this.glitchTicks < 40) { // Glitch phase (2 seconds)
-                    this.monster.setDeltaMovement(0, this.monster.getDeltaMovement().y, 0); // Walk in place
-                    this.glitchTicks++;
+                if (dist > 4.0D) {
+                    this.monster.getNavigation().moveTo(target, 1.5D); // Fast chase speed
                 } else {
-                    // Attack phase
-                    if (dist > 4.0D) {
-                        this.monster.getNavigation().moveTo(target, 1.5D);
-                    } else {
-                        this.monster.doHurtTarget(target);
-                        this.glitchTicks = 0; // Reset to glitch/retreat again
-                    }
+                    this.monster.doHurtTarget(target); // Whack 'em and teleport away (via doHurtTarget)
                 }
+            }
+        }
+    }
+
+    @Override
+    public void setTarget(@Nullable LivingEntity target) {
+        super.setTarget(target);
+
+        // If the target is lost (null)
+        if (target == null) {
+            this.setSpotted(false);
+            this.setAngry(false);
+            this.setGlitching(false);
+
+            // THE FIX: Erase the path so it stops walking to your death coordinates
+            if (!this.level().isClientSide) {
+                this.getNavigation().stop();
             }
         }
     }

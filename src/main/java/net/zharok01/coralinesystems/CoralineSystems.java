@@ -18,6 +18,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.zharok01.coralinesystems.content.sound.CoralineSounds;
 import net.zharok01.coralinesystems.registry.CoralineBlocks;
 import net.zharok01.coralinesystems.registry.CoralineItems;
+import net.zharok01.coralinesystems.registry.CoralineUtils;
 import net.zharok01.coralinesystems.registry.IsotopicEntities;
 import org.slf4j.Logger;
 
