@@ -1,5 +1,6 @@
 package net.zharok01.coralinesystems.content.entity.custom;
 
+import com.github.alexthe666.alexsmobs.client.particle.AMParticleRegistry;
 import com.legacy.rediscovered.entity.pigman.PigmanEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -68,7 +69,7 @@ public class MonsterEntity extends Monster {
         if (this.level().isClientSide) {
             // Particle logic from your prompt
             if (this.random.nextInt(5) == 0) {
-                this.level().addParticle(ParticleTypes.CLOUD,
+                this.level().addParticle(AMParticleRegistry.STATIC_SPARK.get(),
                         this.getRandomX(0.5D), this.getRandomY(), this.getRandomZ(0.5D), 0, 0, 0);
             }
         } else {
@@ -92,12 +93,17 @@ public class MonsterEntity extends Monster {
     }
 
     private boolean isLookingAtMe(Player player) {
+        // FIX: Ignore players who can't be targeted (Creative/Spectator)
+        if (player.isSpectator() || player.getAbilities().instabuild) {
+            return false;
+        }
+
         Vec3 vec3 = player.getViewVector(1.0F).normalize();
         Vec3 vec31 = new Vec3(this.getX() - player.getX(), this.getEyeY() - player.getEyeY(), this.getZ() - player.getZ());
         double d0 = vec31.length();
         vec31 = vec31.normalize();
         double d1 = vec3.dot(vec31);
-        return d1 > 1.0D - 0.025D / d0 && player.hasLineOfSight(this);
+        return d1 > 1.0D - 0.025D / d0;
     }
 
     @Override
@@ -120,8 +126,6 @@ public class MonsterEntity extends Monster {
         return super.hurt(source, amount);
     }
 
-    // --- Helper Methods ---
-
     public void setAngry(boolean angry) { this.entityData.set(IS_ANGRY, angry); }
     public boolean isAngry() { return this.entityData.get(IS_ANGRY); }
     public void setSpotted(boolean spotted) { this.entityData.set(IS_SPOTTED, spotted); }
@@ -136,8 +140,6 @@ public class MonsterEntity extends Monster {
         }
         return false;
     }
-
-    // --- Inner Goal Class for Glitch Attack ---
 
     static class MonsterGlitchAttackGoal extends Goal {
         private final MonsterEntity monster;
