@@ -28,6 +28,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
 
+//Test
+
 public class MonsterEntity extends Monster {
     private static final EntityDataAccessor<Boolean> IS_ANGRY = SynchedEntityData.defineId(MonsterEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_SPOTTED = SynchedEntityData.defineId(MonsterEntity.class, EntityDataSerializers.BOOLEAN);
