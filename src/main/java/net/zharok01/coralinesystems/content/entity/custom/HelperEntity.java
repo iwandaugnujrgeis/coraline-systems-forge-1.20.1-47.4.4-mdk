@@ -34,7 +34,6 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.JukeboxBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.zharok01.coralinesystems.content.entity.ai.HelperBreakBlockGoal;
@@ -51,6 +50,8 @@ public class HelperEntity extends Monster implements RangedAttackMob {
     private static final EntityDataAccessor<Optional<BlockState>> CARRIED_BLOCK = SynchedEntityData.defineId(HelperEntity.class, EntityDataSerializers.OPTIONAL_BLOCK_STATE);
     private static final EntityDataAccessor<Boolean> IS_JAMMING = SynchedEntityData.defineId(HelperEntity.class, EntityDataSerializers.BOOLEAN);
 
+    public int dancingDuration = 0; // NEW: Tracks the exact length of the song
+
     public void setCarriedBlock(@Nullable BlockState state) {
         // If the state passed is null, we safely store Air instead
         BlockState nonNullState = (state == null) ? Blocks.AIR.defaultBlockState() : state;
@@ -61,6 +62,57 @@ public class HelperEntity extends Monster implements RangedAttackMob {
         // We look into the Optional. If it's empty, we return Air.
         // This ensures the method NEVER returns null to the AI goal.
         return this.entityData.get(CARRIED_BLOCK).orElse(Blocks.AIR.defaultBlockState());
+    }
+
+    public void setDancingDuration(int duration) {
+        this.dancingDuration = duration;
+        this.setJamming(duration > 0);
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+
+        if (!this.level().isClientSide) {
+            // Glitch Logic
+            if (this.random.nextFloat() < 0.005F && !this.isGlitching()) {
+                this.setGlitching(true);
+                if (CoralineSounds.STATIC_BUZZ.isPresent()) {
+                    this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                            CoralineSounds.STATIC_BUZZ.get(), this.getSoundSource(), 1.0F, 1.0F);
+                }
+            }
+
+            if (this.isGlitching() && this.tickCount % 10 == 0) {
+                this.setGlitching(false);
+            }
+
+            // NEW: Tick down the dancing duration
+            if (this.dancingDuration > 0) {
+                this.dancingDuration--;
+                if (this.dancingDuration <= 0) {
+                    this.setJamming(false);
+                }
+            }
+
+            // NEW: 10-second (200 ticks) fallback check
+            if (this.tickCount % 200 == 0 && this.isJamming()) {
+                boolean foundPlaying = false;
+                BlockPos pos = this.blockPosition();
+
+                for (BlockPos nearby : BlockPos.betweenClosed(pos.offset(-16, -4, -16), pos.offset(16, 4, 16))) {
+                    if (this.level().getBlockEntity(nearby) instanceof net.minecraft.world.level.block.entity.JukeboxBlockEntity jukebox) {
+                        if (jukebox.isRecordPlaying()) {
+                            foundPlaying = true;
+                            break;
+                        }
+                    }
+                }
+                if (!foundPlaying) {
+                    this.setDancingDuration(0);
+                }
+            }
+        }
     }
 
     public void setJamming(boolean jamming) {
@@ -85,44 +137,6 @@ public class HelperEntity extends Monster implements RangedAttackMob {
             this.setSkinId(tag.getInt("SkinId"));
         }
         this.setGlitching(tag.getBoolean("IsGlitching"));
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-
-        if (!this.level().isClientSide) {
-            if (this.random.nextFloat() < 0.005F && !this.isGlitching()) {
-                this.setGlitching(true);
-                if (CoralineSounds.STATIC_BUZZ.isPresent()) {
-                    this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                            CoralineSounds.STATIC_BUZZ.get(), this.getSoundSource(), 1.0F, 1.0F);
-                }
-            }
-
-            if (this.isGlitching() && this.tickCount % 10 == 0) {
-                this.setGlitching(false);
-            }
-        }
-
-        // Check every 60 ticks:
-        if (!this.level().isClientSide && this.tickCount % 60 == 0) {
-            // We look for the Jukebox "Playing" event in the area
-            // 1010 is the internal ID for "Jukebox starts playing", 1011 is "stops"
-            // But for a simpler "Is music playing right now" check:
-            BlockPos pos = this.blockPosition();
-            boolean foundMusic = false;
-
-            // Scan a 16-block radius
-            for(BlockPos nearby : BlockPos.betweenClosed(pos.offset(-16, -4, -16), pos.offset(16, 4, 16))) {
-                BlockState state = this.level().getBlockState(nearby);
-                if (state.is(Blocks.JUKEBOX) && state.hasProperty(JukeboxBlock.HAS_RECORD) && state.getValue(JukeboxBlock.HAS_RECORD)) {
-                    foundMusic = true;
-                    break;
-                }
-            }
-            this.setJamming(foundMusic);
-        }
     }
 
     static class HelperTakeBlockGoal extends Goal {

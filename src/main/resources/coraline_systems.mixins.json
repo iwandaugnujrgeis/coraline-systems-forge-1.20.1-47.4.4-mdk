@@ -6,7 +6,6 @@
   "client": [
     "AbstractSoundInstanceAccessor",
     "ClientPacketListenerMixin",
-    "ClientPlayNetworkHandlerMixin",
     "HelperAnimationMixin",
     "OptionsMixin",
     "SoundEngineMixin"
@@ -17,6 +16,7 @@
   "mixins": [
     "BreakDoorGoalMixin",
     "JerboaEffectMixin",
+    "JukeboxBlockEntityMixin",
     "RediscoveredEventsMixin",
     "RespawnAnchorFuelMixin",
     "ServerPlayerMixin",
