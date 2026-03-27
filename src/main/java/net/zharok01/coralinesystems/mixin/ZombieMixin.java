@@ -2,24 +2,19 @@ package net.zharok01.coralinesystems.mixin;
 
 import net.minecraft.world.entity.monster.Zombie;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.injection.Constant;
-import org.spongepowered.asm.mixin.injection.ModifyConstant;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 @Mixin(Zombie.class)
 public class ZombieMixin {
-    @ModifyConstant(method = "finalizeSpawn", constant = @Constant(floatValue = 0.1F))
-    private float coraline$setBreakDoorChance(float constant) {
-        return 1.0F; // 100% of zombies get the goal assigned
-    }
 
     /**
-     * @author
-     * @reason
+     * Intercepts the boolean parameter passed into setCanBreakDoors.
+     * Whether the game tries to pass 'false' from a spawn roll or an old save file,
+     * this will overwrite it and force the Zombie to true.
      */
-
-    @Overwrite
-    public boolean canBreakDoors() {
-        return true; // Bypasses internal checks
+    @ModifyVariable(method = "setCanBreakDoors", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+    private boolean coraline$forceBreakDoors(boolean original) {
+        return true;
     }
 }
