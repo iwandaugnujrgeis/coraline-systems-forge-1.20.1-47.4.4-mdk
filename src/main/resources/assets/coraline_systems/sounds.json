@@ -96,5 +96,38 @@
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.monster_stare"
+  },
+  "monster_idle": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/monster/say1"
+      },
+      {
+        "name": "coraline_systems:entity/monster/say2"
+      },
+      {
+        "name": "coraline_systems:entity/monster/say3"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.monster_idle"
+  },
+  "monster_death": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:static_buzz1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.monster_death"
+  },
+  "monster_hurt": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:static_buzz1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.monster_hurt"
   }
 }

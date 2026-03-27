@@ -6,6 +6,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.entity.*;
@@ -21,6 +22,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.zharok01.coralinesystems.content.sound.CoralineSounds;
 import net.zharok01.coralinesystems.registry.CoralineUtils;
@@ -28,14 +31,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
 
-//Test
-
 public class MonsterEntity extends Monster {
     private static final EntityDataAccessor<Boolean> IS_ANGRY = SynchedEntityData.defineId(MonsterEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_SPOTTED = SynchedEntityData.defineId(MonsterEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> IS_GLITCHING = SynchedEntityData.defineId(MonsterEntity.class, EntityDataSerializers.BOOLEAN);
 
-    public int glitchTimer = 0; // Counts down the 5 seconds (100 ticks)
+    public int glitchTimer = 0;
 
     public void setGlitching(boolean glitching) { this.entityData.set(IS_GLITCHING, glitching); }
     public boolean isGlitching() { return this.entityData.get(IS_GLITCHING); }
@@ -46,10 +47,7 @@ public class MonsterEntity extends Monster {
 
     @Override
     protected void registerGoals() {
-        // Priority 0: The "Glitch and Stare" phase
         this.goalSelector.addGoal(0, new MonsterGlitchAttackGoal(this));
-
-        // Priority 1: Tracking from distance
         this.goalSelector.addGoal(1, new LookAtPlayerGoal(this, Player.class, 64.0F, 1.0F));
         this.goalSelector.addGoal(2, new RandomLookAroundGoal(this));
 
@@ -61,15 +59,7 @@ public class MonsterEntity extends Monster {
                 .add(Attributes.MAX_HEALTH, 40.0D) // 20 hearts
                 .add(Attributes.MOVEMENT_SPEED, 0.35D) // Slightly faster than a player
                 .add(Attributes.ATTACK_DAMAGE, 7.0D) // 3.5 hearts per hit
-                .add(Attributes.FOLLOW_RANGE, 64.0D); // Matches your "Herobrine" look distance
-    }
-
-    @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(IS_ANGRY, false);
-        this.entityData.define(IS_SPOTTED, false);
-        this.entityData.define(IS_GLITCHING, false);
+                .add(Attributes.FOLLOW_RANGE, 64.0D);
     }
 
     @Override
@@ -81,8 +71,26 @@ public class MonsterEntity extends Monster {
             }
 
             Player player = this.level().getNearestPlayer(this, 64.0D);
+            if (player != null && !player.getAbilities().instabuild && !player.isSpectator()) {
 
-            // 1. THE SIGHT TRIGGER
+                // Triggered if the player gets too close while the Monster is still invisible:
+                if (!this.isSpotted() && this.distanceToSqr(player) < 12.25D) {
+                    if (this.random.nextFloat() < 0.25F) { //25% chance to attack, instead of teleporting away!
+                        this.setSpotted(true);
+                        this.setGlitching(true);
+                        this.glitchTimer = 100;
+                        this.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                                CoralineSounds.MONSTER_STARE.get(), this.getSoundSource(), 1.0F, 1.0F);
+                    } else {
+                        double tx = this.getX() + (this.random.nextDouble() - 0.5D) * 32.0D;
+                        double tz = this.getZ() + (this.random.nextDouble() - 0.5D) * 32.0D;
+                        double ty = this.getY() + (double) (this.random.nextInt(16) - 8);
+                        CoralineUtils.randomTeleportStatic(this, tx, ty, tz, true);
+                    }
+                }
+            }
+
+            //The "sighting" trigger:
             if (player != null && !player.getAbilities().instabuild && !player.isSpectator()) {
                 boolean looking = this.isLookingAtMe(player);
 
@@ -90,17 +98,17 @@ public class MonsterEntity extends Monster {
                     this.setSpotted(true); // Lock the trigger!
                     this.setGlitching(true);
                     this.glitchTimer = 100; // 5 seconds
-                    this.playSound(CoralineSounds.MONSTER_STARE.get(), 1.0F, 1.0F);
+                    this.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                            CoralineSounds.MONSTER_STARE.get(), this.getSoundSource(), 1.0F, 1.0F);
                 }
 
-                // Start chasing the player if spotted by sight and we don't have a target yet
                 if (this.isSpotted() && !this.isAngry() && this.getTarget() == null) {
                     this.setAngry(true);
                     this.setTarget(player);
                 }
             }
 
-            // 2. THE GLITCH EVENT EXECUTION
+            //The "glitch" event:
             if (this.isGlitching()) {
                 if (this.glitchTimer > 0) {
                     this.glitchTimer--;
@@ -125,7 +133,6 @@ public class MonsterEntity extends Monster {
     }
 
     private boolean isLookingAtMe(Player player) {
-        // FIX: Ignore players who can't be targeted (Creative/Spectator)
         if (player.isSpectator() || player.getAbilities().instabuild) {
             return false;
         }
@@ -150,7 +157,6 @@ public class MonsterEntity extends Monster {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        // 1. Projectile dodge logic (Keep this!)
         if (source.is(DamageTypeTags.IS_PROJECTILE)) {
             for(int i = 0; i < 64; ++i) {
                 if (this.teleport()) return false;
@@ -159,21 +165,20 @@ public class MonsterEntity extends Monster {
 
         Entity attacker = source.getEntity();
 
-        // 2. Ignore Creative/Spectator players entirely
         if (attacker instanceof Player player) {
             if (player.getAbilities().instabuild || player.isSpectator()) {
                 return super.hurt(source, amount);
             }
         }
 
-        // 3. THE PHYSICAL TRIGGER: Only glitch if we haven't been spotted yet!
+        // 3. The "hurt" trigger:
         if (!this.level().isClientSide && !this.isSpotted()) {
             this.setSpotted(true);     // Lock the trigger so it only happens once!
             this.setGlitching(true);
             this.glitchTimer = 100;    // 5 seconds
             this.playSound(CoralineSounds.MONSTER_STARE.get(), 1.0F, 1.5F); // Pitch 1.5 for pain
 
-            // Make the attacker the target immediately
+            // Make the attacker the target immediately:
             if (attacker instanceof LivingEntity living) {
                 this.setTarget(living);
                 this.setAngry(true);
@@ -193,10 +198,24 @@ public class MonsterEntity extends Monster {
             double d0 = this.getX() + (this.random.nextDouble() - 0.5D) * 32.0D;
             double d1 = this.getY() + (double)(this.random.nextInt(16) - 8);
             double d2 = this.getZ() + (this.random.nextDouble() - 0.5D) * 32.0D;
-
             return CoralineUtils.randomTeleportStatic(this, d0, d1, d2, true);
         }
         return false;
+    }
+
+    @Override
+    protected SoundEvent getAmbientSound() {
+        return CoralineSounds.MONSTER_IDLE.get();
+    }
+
+    @Override
+    protected SoundEvent getHurtSound(DamageSource damageSource) {
+        return CoralineSounds.MONSTER_HURT.get();
+    }
+
+    @Override
+    protected SoundEvent getDeathSound() {
+        return CoralineSounds.MONSTER_DEATH.get();
     }
 
     static class MonsterGlitchAttackGoal extends Goal {
@@ -209,7 +228,7 @@ public class MonsterEntity extends Monster {
 
         @Override
         public boolean canUse() {
-            // Only chase if angry AND the 5-second glitch phase is over
+            // Only chase if angry and the 5-second glitch phase is over:
             return monster.getTarget() != null && monster.isAngry() && !monster.isGlitching();
         }
 
@@ -229,21 +248,35 @@ public class MonsterEntity extends Monster {
         }
     }
 
+    //Reset the target if the target is lost:
     @Override
     public void setTarget(@Nullable LivingEntity target) {
         super.setTarget(target);
 
-        // If the target is lost (null)
         if (target == null) {
             this.setSpotted(false);
             this.setAngry(false);
             this.setGlitching(false);
 
-            // THE FIX: Erase the path so it stops walking to your death coordinates
             if (!this.level().isClientSide) {
                 this.getNavigation().stop();
             }
         }
+    }
+
+    //Make Monsters pass through Cobwebs:
+    public void makeStuckInBlock(BlockState state, Vec3 motionMultiplier) {
+        if (!state.is(Blocks.COBWEB)) {
+            super.makeStuckInBlock(state, motionMultiplier);
+        }
+    }
+
+    @Override
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(IS_ANGRY, false);
+        this.entityData.define(IS_SPOTTED, false);
+        this.entityData.define(IS_GLITCHING, false);
     }
 
     @Nullable

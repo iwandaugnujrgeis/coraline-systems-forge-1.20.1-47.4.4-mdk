@@ -6,6 +6,7 @@
   "client": [
     "AbstractSoundInstanceAccessor",
     "ClientPacketListenerMixin",
+    "GiantMobRendererMixin",
     "HelperAnimationMixin",
     "OptionsMixin",
     "SoundEngineMixin"

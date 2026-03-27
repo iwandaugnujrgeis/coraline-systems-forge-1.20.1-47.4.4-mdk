@@ -1,9 +1,16 @@
 {
 	"block.coraline_systems.torch": "Torch",
+
 	"coraline_systems.sound.subtitle.helper_buzz": "Buzz",
 	"coraline_systems.sound.subtitle.helper_idle": "Ominous presence?",
 	"coraline_systems.sound.subtitle.helper_hurt": "Helper asks",
 	"coraline_systems.sound.subtitle.helper_death": "Helper error",
 	"entity.coraline_systems.helper": "Helper",
-	"item.coraline_systems.helper_spawn_egg": "Helper Spawn Egg"
+	"item.coraline_systems.helper_spawn_egg": "Helper Spawn Egg",
+
+	"coraline_systems.sound.subtitle.monster_idle": "Familiar presence...",
+	"coraline_systems.sound.subtitle.monster_hurt": "Monster weeps",
+	"coraline_systems.sound.subtitle.monster_death": "Monster vanished",
+	"entity.coraline_systems.monster": "Monster",
+	"item.coraline_systems.monster_spawn_egg": "Monster Spawn Egg"
 }

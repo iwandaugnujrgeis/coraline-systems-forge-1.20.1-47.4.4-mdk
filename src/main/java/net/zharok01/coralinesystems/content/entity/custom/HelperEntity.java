@@ -1,11 +1,13 @@
 package net.zharok01.coralinesystems.content.entity.custom;
 
+import com.github.alexthe666.alexsmobs.client.particle.AMParticleRegistry;
 import net.mehvahdjukaar.supplementaries.common.entities.ThrowableBrickEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -81,6 +83,12 @@ public class HelperEntity extends Monster implements RangedAttackMob {
                     this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
                             CoralineSounds.STATIC_BUZZ.get(), this.getSoundSource(), 1.0F, 1.0F);
                 }
+
+                if (this.level() instanceof ServerLevel serverLevel) {
+                    serverLevel.sendParticles(AMParticleRegistry.STATIC_SPARK.get(),
+                            this.getX(), this.getY() + 1.0D, this.getZ(),
+                            10, 0.2, 0.5, 0.2, 0.02);
+                }
             }
 
             if (this.isGlitching() && this.tickCount % 10 == 0) {
@@ -95,8 +103,8 @@ public class HelperEntity extends Monster implements RangedAttackMob {
                 }
             }
 
-            // NEW: 10-second (200 ticks) fallback check
-            if (this.tickCount % 200 == 0 && this.isJamming()) {
+            // NEW: 10-second (200 ticks) fallback check for latecomers
+            if (this.tickCount % 200 == 0) { // Removed the isJamming() lock!
                 boolean foundPlaying = false;
                 BlockPos pos = this.blockPosition();
 
@@ -108,7 +116,16 @@ public class HelperEntity extends Monster implements RangedAttackMob {
                         }
                     }
                 }
-                if (!foundPlaying) {
+
+                if (foundPlaying) {
+                    // If they wandered in late, they missed the Mixin's exact duration broadcast.
+                    // So, we give them 220 ticks (11 seconds) of dancing.
+                    // This ensures they keep jamming safely until the next 10-second check!
+                    if (this.dancingDuration < 220) {
+                        this.setDancingDuration(220);
+                    }
+                } else {
+                    // No music found? Stop dancing.
                     this.setDancingDuration(0);
                 }
             }
@@ -278,6 +295,12 @@ public class HelperEntity extends Monster implements RangedAttackMob {
 
             this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
                     CoralineSounds.STATIC_BUZZ.get(), this.getSoundSource(), 1.0F, 1.0F);
+
+            if (this.level() instanceof ServerLevel serverLevel) {
+                serverLevel.sendParticles(AMParticleRegistry.STATIC_SPARK.get(),
+                        this.getX(), this.getY() + 1.0D, this.getZ(),
+                        10, 0.2, 0.5, 0.2, 0.02);
+            }
         }
 
         return super.hurt(source, amount);
@@ -288,7 +311,6 @@ public class HelperEntity extends Monster implements RangedAttackMob {
         if (!state.is(Blocks.COBWEB)) {
             super.makeStuckInBlock(state, motionMultiplier);
         }
-
     }
 
     @Override
