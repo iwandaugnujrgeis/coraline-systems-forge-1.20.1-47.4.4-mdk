@@ -3,24 +3,19 @@
     "category": "neutral",
     "sounds": [
       {
-        "name": "coraline_systems:static_buzz1",
-        "pitch": 1.0
+        "name": "coraline_systems:static_buzz1"
       },
       {
-        "name": "coraline_systems:static_buzz2",
-        "pitch": 1.0
+        "name": "coraline_systems:static_buzz2"
       },
       {
-        "name": "coraline_systems:static_buzz3",
-        "pitch": 1.0
+        "name": "coraline_systems:static_buzz3"
       },
       {
-        "name": "coraline_systems:static_buzz4",
-        "pitch": 1.0
+        "name": "coraline_systems:static_buzz4"
       },
       {
-        "name": "coraline_systems:static_buzz5",
-        "pitch": 1.0
+        "name": "coraline_systems:static_buzz5"
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.helper_buzz"
@@ -63,18 +58,15 @@
     "sounds": [
       {
         "name": "coraline_systems:entity/helper/exhale3",
-        "volume": 0.9,
-        "weight": 5
+        "volume": 0.9
       },
       {
         "name": "coraline_systems:entity/helper/exhale2",
-        "volume": 0.9,
-        "weight": 5
+        "volume": 0.9
       },
       {
         "name": "coraline_systems:entity/helper/exhale1",
-        "volume": 0.9,
-        "weight": 5
+        "volume": 0.9
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.helper_hurt"
@@ -116,7 +108,7 @@
     "category": "neutral",
     "sounds": [
       {
-        "name": "coraline_systems:static_buzz1"
+        "name": "coraline_systems:entity/monster/hurt1"
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.monster_death"
@@ -125,7 +117,7 @@
     "category": "neutral",
     "sounds": [
       {
-        "name": "coraline_systems:static_buzz1"
+        "name": "coraline_systems:entity/monster/hurt1"
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.monster_hurt"
