@@ -25,7 +25,7 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.zharok01.coralinesystems.content.sound.CoralineSounds;
+import net.zharok01.coralinesystems.registry.CoralineSounds;
 import net.zharok01.coralinesystems.registry.CoralineUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -74,8 +74,8 @@ public class MonsterEntity extends Monster {
             if (player != null && !player.getAbilities().instabuild && !player.isSpectator()) {
 
                 // Triggered if the player gets too close while the Monster is still invisible:
-                if (!this.isSpotted() && this.distanceToSqr(player) < 12.25D) {
-                    if (this.random.nextFloat() < 0.25F) { //25% chance to attack, instead of teleporting away!
+                if (!this.isSpotted() && this.distanceToSqr(player) < 36.0D) {
+                    if (this.random.nextFloat() < 0.15F) { //15% chance to attack, instead of teleporting away!
                         this.setSpotted(true);
                         this.setGlitching(true);
                         this.glitchTimer = 100;
