@@ -1,7 +1,7 @@
 package net.zharok01.coralinesystems.registry;
 
-import com.github.alexthe666.alexsmobs.entity.AMEntityRegistry;
 import net.minecraft.core.Direction;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.StandingAndWallBlockItem;
 import net.minecraftforge.common.ForgeSpawnEggItem;
@@ -24,6 +24,9 @@ public class CoralineItems {
 		new Item.Properties(),
 		Direction.DOWN
 	));
+
+	public static final RegistryObject<Item> STATIC_BLOCK_ITEM = REGISTRY.register("static_block",
+			() -> new BlockItem(CoralineBlocks.STATIC_BLOCK.get(), new Item.Properties()));
 
 	public static final RegistryObject<Item> HELPER_SPAWN_EGG = register("helper_spawn_egg",
 			() -> new ForgeSpawnEggItem(IsotopicEntities.HELPER, 0x322136, 0x1fe770, new Item.Properties()));

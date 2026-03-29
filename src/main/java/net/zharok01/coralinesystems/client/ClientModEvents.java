@@ -7,6 +7,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.zharok01.coralinesystems.CoralineSystems;
 import net.zharok01.coralinesystems.client.helper.HelperRenderer;
 import net.zharok01.coralinesystems.client.monster.MonsterRenderer;
+import net.zharok01.coralinesystems.client.render.StaticBlockRenderer;
+import net.zharok01.coralinesystems.registry.CoralineBlockEntities;
 import net.zharok01.coralinesystems.registry.IsotopicEntities;
 
 @Mod.EventBusSubscriber(modid = CoralineSystems.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -18,5 +20,7 @@ public class ClientModEvents {
         // In the tutorial, he uses "RhinoRenderer::new", so we follow that pattern
         event.registerEntityRenderer(IsotopicEntities.HELPER.get(), HelperRenderer::new);
         event.registerEntityRenderer(IsotopicEntities.MONSTER.get(), MonsterRenderer::new);
+
+        event.registerBlockEntityRenderer(CoralineBlockEntities.STATIC_BLOCK_ENTITY.get(), StaticBlockRenderer::new);
     }
 }

@@ -16,19 +16,28 @@ import net.minecraftforge.registries.RegistryObject;
 import net.zharok01.coralinesystems.CoralineSystems;
 import net.zharok01.coralinesystems.content.block.LimitedTorchBlock;
 import net.zharok01.coralinesystems.content.block.LimitedWallTorchBlock;
+import net.zharok01.coralinesystems.content.block.StaticBlock;
 
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 public class CoralineBlocks {
 
+	public static final DeferredRegister<Block> REGISTRY =
+			DeferredRegister.create(ForgeRegistries.BLOCKS, CoralineSystems.MOD_ID);
+
 	public static void registerRenderLayers() {
 		ItemBlockRenderTypes.setRenderLayer(WALL_TORCH.get(), RenderType.cutout());
 		ItemBlockRenderTypes.setRenderLayer(TORCH.get(), RenderType.cutout());
+		ItemBlockRenderTypes.setRenderLayer(STATIC_BLOCK.get(), RenderType.translucent());
 	}
 
-	public static final DeferredRegister<Block> REGISTRY =
-		DeferredRegister.create(ForgeRegistries.BLOCKS, CoralineSystems.MOD_ID);
+	public static final RegistryObject<Block> STATIC_BLOCK = registerWithoutItem("static_block",
+			() -> new StaticBlock(BlockBehaviour.Properties.of()
+					.strength(2.0f)
+					.sound(SoundType.GLASS)
+					.noOcclusion())
+	);
 
 	public static final RegistryObject<Block> TORCH = registerWithoutItem("torch",
 		() -> new LimitedTorchBlock(BlockBehaviour.Properties.of().noCollission().instabreak().sound(SoundType.WOOD).pushReaction(PushReaction.DESTROY), ParticleTypes.FLAME)
