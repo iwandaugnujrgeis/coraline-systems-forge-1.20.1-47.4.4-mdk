@@ -16,12 +16,12 @@ public class IsotopicEntities {
 
     public static final RegistryObject<EntityType<HelperEntity>> HELPER =
             ENTITY_TYPES.register("helper", () -> EntityType.Builder.of(HelperEntity::new, MobCategory.MONSTER)
-                    .sized(0.6F, 1.8F) // Standard human size
+                    .sized(0.6F, 1.8F)
                     .build("helper"));
 
     public static final RegistryObject<EntityType<MonsterEntity>> MONSTER =
             ENTITY_TYPES.register("monster", () -> EntityType.Builder.of(MonsterEntity::new, MobCategory.MONSTER)
-                    .sized(0.6F, 1.8F) // Classic humanoid hitboxes
+                    .sized(0.6F, 1.8F)
                     .build("monster"));
 
     public static void register(IEventBus eventBus) {

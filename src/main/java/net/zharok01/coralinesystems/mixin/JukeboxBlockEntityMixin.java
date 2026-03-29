@@ -33,7 +33,7 @@ public abstract class JukeboxBlockEntityMixin {
             if (stack.getItem() instanceof RecordItem record) {
                 BlockPos pos = jukebox.getBlockPos();
 
-                // Find Helpers within 16 blocks (same as your fallback radius)
+                //Find Helpers within 16 blocks:
                 List<HelperEntity> helpers = level.getEntitiesOfClass(
                         HelperEntity.class,
                         new AABB(pos).inflate(16.0D)
@@ -60,7 +60,7 @@ public abstract class JukeboxBlockEntityMixin {
             );
 
             for (HelperEntity helper : helpers) {
-                // If the jukebox is broken or stops, stop dancing immediately
+                //If the Jukebox is broken or stops, stop dancing immediately!
                 helper.setDancingDuration(0);
             }
         }

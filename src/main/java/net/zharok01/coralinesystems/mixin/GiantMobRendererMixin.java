@@ -20,7 +20,6 @@ public class GiantMobRendererMixin {
         // Use modulo to get a number between 0 and 2 (for 3 total skins)
         int skinId = (int) (Math.abs(uuidPart) % 3);
 
-        // Matches the dynamic "Helper" style!
         // Files should be named: giant_1.png, giant_2.png, giant_3.png
         cir.setReturnValue(new ResourceLocation(CoralineSystems.MOD_ID,
                 "textures/entity/giant/giant_" + (skinId + 1) + ".png"));

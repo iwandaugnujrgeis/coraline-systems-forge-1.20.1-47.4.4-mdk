@@ -25,7 +25,7 @@ public abstract class HelperAnimationMixin {
     private void coraline$applyCrazyJamming(LivingEntity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
         if (entity instanceof HelperEntity helper && helper.isJamming()) {
 
-            // 1. RANDOM HEAD ROTATION (The "Twitch")
+            //Random head ("twitching") rotation:
             float headJitterX = Mth.sin(ageInTicks * 0.8F) * 0.15F;
             float headJitterY = Mth.cos(ageInTicks * 0.7F) * 0.2F;
 
@@ -36,15 +36,15 @@ public abstract class HelperAnimationMixin {
             this.head.xRot += headJitterX;
             this.head.yRot += headJitterY;
 
-            // 2. CRAZY ARM SWING
+            //Increase arm swing:
             float crazySwing = limbSwing * 0.6F;
             this.rightArm.xRot = Mth.cos(crazySwing + (float)Math.PI) * 2.5F * limbSwingAmount;
             this.leftArm.xRot = Mth.cos(crazySwing) * 2.5F * limbSwingAmount;
 
         } else if (entity instanceof HelperEntity) {
-            // --- NEW RESET LOGIC ---
-            // If it's a Helper but they are NOT jamming, reset the tilt.
-            // This prevents the "permanent broken neck" look after the music stops.
+
+            //If it's a Helper, but they are NOT jamming, reset the tilt.
+            //This prevents the "permanent broken neck" look after the music stops.
             this.head.zRot = 0.0F;
         }
     }

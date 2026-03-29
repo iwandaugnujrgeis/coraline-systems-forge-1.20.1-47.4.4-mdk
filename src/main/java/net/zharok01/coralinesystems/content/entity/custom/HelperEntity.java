@@ -40,7 +40,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.zharok01.coralinesystems.content.entity.ai.HelperBreakBlockGoal;
 import net.zharok01.coralinesystems.content.entity.ai.HelperPlaceBlockGoal;
-import net.zharok01.coralinesystems.content.sound.CoralineSounds;
+import net.zharok01.coralinesystems.registry.CoralineSounds;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -8,10 +8,8 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.level.Level;
 
 public class CoralineUtils {
-    /**
-     * Teleports an entity without the vanilla purple particles,
-     * spawning digital "Static" sparks instead.
-     */
+
+    //Teleportation with Alex's Mobs' static particles!
     public static boolean randomTeleportStatic(LivingEntity entity, double x, double y, double z, boolean showParticles) {
         double oldX = entity.getX();
         double oldY = entity.getY();
