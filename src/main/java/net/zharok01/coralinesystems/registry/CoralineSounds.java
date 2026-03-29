@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.content.sound;
+package net.zharok01.coralinesystems.registry;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
