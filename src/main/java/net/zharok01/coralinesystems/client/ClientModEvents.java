@@ -4,6 +4,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.zharok01.coralinesystems.CoralineSystems;
 import net.zharok01.coralinesystems.client.helper.HelperRenderer;
 import net.zharok01.coralinesystems.client.monster.MonsterRenderer;
@@ -22,5 +23,10 @@ public class ClientModEvents {
         event.registerEntityRenderer(IsotopicEntities.MONSTER.get(), MonsterRenderer::new);
 
         event.registerBlockEntityRenderer(CoralineBlockEntities.STATIC_BLOCK_ENTITY.get(), StaticBlockRenderer::new);
+    }
+
+    @SubscribeEvent
+    public void clientSetup(FMLClientSetupEvent event) {
+        ClientPortalEffect.init();
     }
 }

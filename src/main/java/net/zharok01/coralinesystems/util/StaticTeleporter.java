@@ -18,24 +18,16 @@ import java.util.UUID;
 
 public class StaticTeleporter {
 
-    private static final int FARLANDS_SHIFT = 1_000_000;
+    private static final double FARLANDS_EDGE = 12_550_821.0;
     private static final int SEARCH_RADIUS = 16;
 
     /**
      * Custom cooldown map keyed by entity UUID, measured in game ticks.
-     *
-     * WHY we don't use entity.setPortalCooldown() / entity.isOnPortalCooldown():
-     * Vanilla's portal cooldown system is built for CROSS-DIMENSION teleports. For same-dimension
-     * teleports like ours, calling entity.teleportTo() can clear or bypass that cooldown before
-     * the destination portal has a chance to check it — causing the instant round-trip bug where
-     * the player flickers back and forth between the two portals forever.
-     *
-     * Using our own map that is checked BEFORE teleportTo() is called sidesteps this entirely.
      */
     private static final Map<UUID, Long> teleportCooldowns = new HashMap<>();
 
     /** 300 ticks = 15 seconds. Long enough that the player clears the destination portal area. */
-    private static final long COOLDOWN_TICKS = 300L;
+    private static final long COOLDOWN_TICKS = 100L;
 
     public static void teleportToFarlands(Entity entity, ServerLevel level, BlockPos portalPos) {
         UUID id = entity.getUUID();
@@ -48,15 +40,54 @@ public class StaticTeleporter {
         // Log this teleport before doing anything else
         teleportCooldowns.put(id, currentTick);
 
-        // Secondary guard: vanilla cooldown as a belt-and-suspenders fallback
+        // Secondary guard: vanilla cooldown
         entity.setPortalCooldown();
 
-        // --- The Threshold Shift ---
-        // If the entity is on the "normal" side (X < 12_550_821), send them to the Farlands.
-        // If they're already in the Farlands (X >= 12,550,821), bring them back.
-        double destX = entity.getX() < 12_550_821 ? entity.getX() + FARLANDS_SHIFT : entity.getX() - FARLANDS_SHIFT;
-        double destZ = entity.getZ() < 12_550_821 ? entity.getZ() + FARLANDS_SHIFT : entity.getZ() - FARLANDS_SHIFT;
+        // --- The Threshold Shift (Directional) ---
+        double currentX = entity.getX();
+        double currentZ = entity.getZ();
         double destY = entity.getY();
+
+        double destX = currentX;
+        double destZ = currentZ;
+
+        // Get the direction the entity is currently looking
+        Direction facing = entity.getDirection();
+
+        // Check if they are already in the Farlands (on either axis)
+        boolean inFarlandsX = Math.abs(currentX) >= FARLANDS_EDGE;
+        boolean inFarlandsZ = Math.abs(currentZ) >= FARLANDS_EDGE;
+
+        if (inFarlandsX || inFarlandsZ) {
+            // If they are IN the Farlands, bring them back towards 0,0
+            // We subtract the distance they traveled along their current axis
+            if (facing.getAxis() == Direction.Axis.X) {
+                destX = currentX > 0 ? currentX - FARLANDS_EDGE : currentX + FARLANDS_EDGE;
+            } else if (facing.getAxis() == Direction.Axis.Z) {
+                destZ = currentZ > 0 ? currentZ - FARLANDS_EDGE : currentZ + FARLANDS_EDGE;
+            }
+        } else {
+            // If they are in the NORMAL world, send them TO the Farlands
+            // The distance added/subtracted depends on the direction they are facing
+            switch (facing) {
+                case EAST:  // Positive X
+                    destX = FARLANDS_EDGE;
+                    break;
+                case WEST:  // Negative X
+                    destX = -FARLANDS_EDGE;
+                    break;
+                case SOUTH: // Positive Z
+                    destZ = FARLANDS_EDGE;
+                    break;
+                case NORTH: // Negative Z
+                    destZ = -FARLANDS_EDGE;
+                    break;
+                default:
+                    // Fallback just in case (e.g., facing straight up/down)
+                    destX = FARLANDS_EDGE;
+                    break;
+            }
+        }
 
         BlockPos roughDest = new BlockPos((int) destX, (int) destY, (int) destZ);
 
@@ -82,7 +113,7 @@ public class StaticTeleporter {
 
         // --- Teleport ---
         double spawnX = finalDestPos.getX() + 0.5;
-        double spawnY = finalDestPos.getY();         // bottom of the portal — player stands on the obsidian floor
+        double spawnY = finalDestPos.getY();
         double spawnZ = finalDestPos.getZ() + 0.5;
 
         // Face away from the portal so you "walk out" of it naturally
@@ -104,7 +135,6 @@ public class StaticTeleporter {
                 for (int z = -SEARCH_RADIUS; z <= SEARCH_RADIUS; z++) {
                     BlockPos pos = center.offset(x, y, z);
                     if (level.getBlockState(pos).is(CoralineBlocks.STATIC_PORTAL_BLOCK.get())) {
-                        // Walk down to the bottom-most portal block in this column
                         int dropToBottom = getDistanceToBottom(level, pos);
                         return Optional.of(pos.below(dropToBottom));
                     }
@@ -122,10 +152,6 @@ public class StaticTeleporter {
         return drop;
     }
 
-    /**
-     * Generates a standard 2-wide × 3-tall portal with an obsidian frame.
-     * Also carves air on both faces of the portal interior so the player can't suffocate.
-     */
     private static void generateExitPortal(ServerLevel level, BlockPos pos, Direction.Axis axis) {
         BlockState portalState = CoralineBlocks.STATIC_PORTAL_BLOCK.get()
                 .defaultBlockState()
@@ -146,7 +172,6 @@ public class StaticTeleporter {
                 if (isInterior) {
                     level.setBlockAndUpdate(target, portalState);
 
-                    // Clear one block on each side of the portal so players don't get stuck
                     BlockPos front = target.relative(axis == Direction.Axis.X ? Direction.SOUTH : Direction.EAST);
                     BlockPos back  = target.relative(axis == Direction.Axis.X ? Direction.NORTH : Direction.WEST);
                     if (!level.getBlockState(front).is(Blocks.OBSIDIAN)) level.setBlockAndUpdate(front, air);
