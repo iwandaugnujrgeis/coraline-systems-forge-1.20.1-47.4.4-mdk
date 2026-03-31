@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "coraline_systems:block/static_portal_ns"
+    },
+    "axis=z": {
+      "model": "coraline_systems:block/static_portal_ew"
+    }
+  }
+}
