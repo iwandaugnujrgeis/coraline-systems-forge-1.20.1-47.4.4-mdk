@@ -14,6 +14,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.zharok01.coralinesystems.client.ClientPortalEffect;
 import net.zharok01.coralinesystems.registry.*;
 import org.slf4j.Logger;
 
@@ -41,9 +42,7 @@ public class CoralineSystems {
         bus.addListener(this::addCreative);
     }
 
-    private void commonSetup(final FMLCommonSetupEvent event) {
-
-    }
+    private void commonSetup(final FMLCommonSetupEvent event) {}
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
@@ -61,6 +60,7 @@ public class CoralineSystems {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
             CoralineBlocks.registerRenderLayers();
+            ClientPortalEffect.init();
         }
 
     }

@@ -19,6 +19,7 @@
     "InventoryMixin",
     "JerboaEffectMixin",
     "JukeboxBlockEntityMixin",
+    "NetherPortalCorruptionMixin",
     "RediscoveredEventsMixin",
     "RespawnAnchorFuelMixin",
     "ServerPlaceRecipeMixin",

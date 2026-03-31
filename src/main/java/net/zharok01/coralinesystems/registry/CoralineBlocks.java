@@ -17,6 +17,7 @@ import net.zharok01.coralinesystems.CoralineSystems;
 import net.zharok01.coralinesystems.content.block.LimitedTorchBlock;
 import net.zharok01.coralinesystems.content.block.LimitedWallTorchBlock;
 import net.zharok01.coralinesystems.content.block.StaticBlock;
+import net.zharok01.coralinesystems.content.block.StaticPortalBlock;
 
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -30,7 +31,17 @@ public class CoralineBlocks {
 		ItemBlockRenderTypes.setRenderLayer(WALL_TORCH.get(), RenderType.cutout());
 		ItemBlockRenderTypes.setRenderLayer(TORCH.get(), RenderType.cutout());
 		ItemBlockRenderTypes.setRenderLayer(STATIC_BLOCK.get(), RenderType.translucent());
+		ItemBlockRenderTypes.setRenderLayer(STATIC_PORTAL_BLOCK.get(), RenderType.translucent());
 	}
+
+	public static final RegistryObject<Block> STATIC_PORTAL_BLOCK = registerWithoutItem("static_portal_block",
+			() -> new StaticPortalBlock(BlockBehaviour.Properties.of()
+					.noCollission()
+					.noOcclusion()
+					.strength(-1.0F) // Unbreakable like bedrock/portals
+					.randomTicks()
+					.sound(SoundType.GLASS))
+	);
 
 	public static final RegistryObject<Block> STATIC_BLOCK = registerWithoutItem("static_block",
 			() -> new StaticBlock(BlockBehaviour.Properties.of()
