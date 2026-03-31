@@ -2,6 +2,7 @@ package net.zharok01.coralinesystems.mixin;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -12,6 +13,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.NetherPortalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.zharok01.coralinesystems.registry.CoralineBlocks;
+import net.zharok01.coralinesystems.util.StaticPortalLinkData;
+import net.zharok01.coralinesystems.util.StaticTeleporter;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -31,6 +34,7 @@ public class NetherPortalCorruptionMixin {
         if (!level.isClientSide() && entity instanceof ItemEntity itemEntity) {
             ItemStack stack = itemEntity.getItem();
 
+            // TODO: swap Items.POTATO for CoralineItems.STATIC.get() once your Static item is registered
             if (stack.is(Items.POTATO)) {
                 level.playSound(null, pos, SoundEvents.LIGHTNING_BOLT_IMPACT, SoundSource.BLOCKS, 2.0F, 0.2F);
                 itemEntity.discard();
@@ -40,6 +44,16 @@ public class NetherPortalCorruptionMixin {
         }
     }
 
+    /**
+     * Called when a Static portal block is broken (e.g. a player mines it or an explosion destroys it).
+     *
+     * We inject into NetherPortalBlock.onRemove — but StaticPortalBlock extends Block, not NetherPortalBlock.
+     * The cleaner approach is to override onRemove() directly in StaticPortalBlock.
+     * This Mixin handles the Nether portal side only (in case a conversion is reversed).
+     *
+     * For Static portal destruction cleanup, see StaticPortalBlock.onRemove().
+     */
+
     @Unique
     private void corruptPortal(Level level, BlockPos startPos, Direction.Axis axis) {
         Set<BlockPos> portalBlocks = new HashSet<>();
@@ -48,22 +62,21 @@ public class NetherPortalCorruptionMixin {
 
         queue.add(startPos);
 
-        // Phase 1: Only scan for Portal Blocks, ignore Obsidian completely
         while (!queue.isEmpty()) {
             BlockPos current = queue.poll();
             if (visited.contains(current)) continue;
             visited.add(current);
 
             BlockState currentState = level.getBlockState(current);
-
             if (currentState.getBlock() instanceof NetherPortalBlock) {
                 portalBlocks.add(current);
                 addNeighbors(queue, current);
             }
         }
 
-        // Phase 2: Replace only the portal fluid
-        BlockState staticPortal = CoralineBlocks.STATIC_PORTAL_BLOCK.get().defaultBlockState().setValue(NetherPortalBlock.AXIS, axis);
+        BlockState staticPortal = CoralineBlocks.STATIC_PORTAL_BLOCK.get()
+                .defaultBlockState()
+                .setValue(NetherPortalBlock.AXIS, axis);
         for (BlockPos p : portalBlocks) {
             level.setBlock(p, staticPortal, 2);
         }

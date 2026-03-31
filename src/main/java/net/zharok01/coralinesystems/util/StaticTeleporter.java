@@ -11,112 +11,142 @@ import net.minecraft.world.level.block.NetherPortalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.zharok01.coralinesystems.registry.CoralineBlocks;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public class StaticTeleporter {
 
+    // The coordinate where the Farlands begin
     private static final double FARLANDS_EDGE = 12_550_821.0;
+
+    // How far to scan when looking for an existing linked or unlinked exit portal
     private static final int SEARCH_RADIUS = 16;
 
-    /**
-     * Custom cooldown map keyed by entity UUID, measured in game ticks.
-     */
+    // Custom cooldown: 100 ticks (5 s). Prevents re-entry jitter right after landing.
     private static final Map<UUID, Long> teleportCooldowns = new HashMap<>();
-
-    /** 300 ticks = 15 seconds. Long enough that the player clears the destination portal area. */
     private static final long COOLDOWN_TICKS = 100L;
+
+    // -------------------------------------------------------------------------
+    // Entry point — called by StaticPortalBlock.entityInside after the countdown
+    // -------------------------------------------------------------------------
 
     public static void teleportToFarlands(Entity entity, ServerLevel level, BlockPos portalPos) {
         UUID id = entity.getUUID();
         long currentTick = level.getGameTime();
 
-        // Primary guard: our own cooldown map
-        Long lastTeleportTick = teleportCooldowns.get(id);
-        if (lastTeleportTick != null && currentTick - lastTeleportTick < COOLDOWN_TICKS) return;
-
-        // Log this teleport before doing anything else
+        // Cooldown guard — prevents instant re-fire right after landing
+        Long lastTeleport = teleportCooldowns.get(id);
+        if (lastTeleport != null && currentTick - lastTeleport < COOLDOWN_TICKS) return;
         teleportCooldowns.put(id, currentTick);
+        entity.setPortalCooldown(); // belt-and-suspenders vanilla guard
 
-        // Secondary guard: vanilla cooldown
-        entity.setPortalCooldown();
+        // ---------------------------------------------------------------
+        // Step 1 — Identify the full group of blocks this portal is made of
+        // ---------------------------------------------------------------
+        Set<BlockPos> entryGroup = findPortalGroup(level, portalPos);
 
-        // --- The Threshold Shift (Directional) ---
+        // ---------------------------------------------------------------
+        // Step 2 — Check the link registry
+        //
+        // If this portal already has a registered sister, send the entity
+        // straight there.  The portal cannot create NEW links anymore —
+        // it can only go back to its one paired destination.
+        // ---------------------------------------------------------------
+        StaticPortalLinkData linkData = StaticPortalLinkData.get(level);
+
+        // Retrieve the stored destination for this specific entry block.
+        // (All blocks in a linked group point to the same destination, so
+        // checking portalPos is sufficient once the group is linked.)
+        BlockPos linkedDest = linkData.getLinkedDestination(portalPos);
+
+        if (linkedDest != null) {
+            // Portal is already linked — teleport to the known sister portal.
+            doTeleport(entity, level, linkedDest);
+            return;
+        }
+
+        // ---------------------------------------------------------------
+        // Step 3 — Unlinked portal: calculate where to send the player
+        // ---------------------------------------------------------------
         double currentX = entity.getX();
         double currentZ = entity.getZ();
-        double destY = entity.getY();
+        double destY    = entity.getY();
+        double destX    = currentX;
+        double destZ    = currentZ;
 
-        double destX = currentX;
-        double destZ = currentZ;
-
-        // Get the direction the entity is currently looking
         Direction facing = entity.getDirection();
 
-        // Check if they are already in the Farlands (on either axis)
         boolean inFarlandsX = Math.abs(currentX) >= FARLANDS_EDGE;
         boolean inFarlandsZ = Math.abs(currentZ) >= FARLANDS_EDGE;
 
         if (inFarlandsX || inFarlandsZ) {
-            // If they are IN the Farlands, bring them back towards 0,0
-            // We subtract the distance they traveled along their current axis
+            // Already in the Farlands — return trip toward 0,0 along the same axis
             if (facing.getAxis() == Direction.Axis.X) {
                 destX = currentX > 0 ? currentX - FARLANDS_EDGE : currentX + FARLANDS_EDGE;
-            } else if (facing.getAxis() == Direction.Axis.Z) {
+            } else {
                 destZ = currentZ > 0 ? currentZ - FARLANDS_EDGE : currentZ + FARLANDS_EDGE;
             }
         } else {
-            // If they are in the NORMAL world, send them TO the Farlands
-            // The distance added/subtracted depends on the direction they are facing
+            // Normal world — send them to the Farlands edge in the direction they face
             switch (facing) {
-                case EAST:  // Positive X
-                    destX = FARLANDS_EDGE;
-                    break;
-                case WEST:  // Negative X
-                    destX = -FARLANDS_EDGE;
-                    break;
-                case SOUTH: // Positive Z
-                    destZ = FARLANDS_EDGE;
-                    break;
-                case NORTH: // Negative Z
-                    destZ = -FARLANDS_EDGE;
-                    break;
-                default:
-                    // Fallback just in case (e.g., facing straight up/down)
-                    destX = FARLANDS_EDGE;
-                    break;
+                case EAST  -> destX =  FARLANDS_EDGE;
+                case WEST  -> destX = -FARLANDS_EDGE;
+                case SOUTH -> destZ =  FARLANDS_EDGE;
+                case NORTH -> destZ = -FARLANDS_EDGE;
+                default    -> destX =  FARLANDS_EDGE;  // fallback (shouldn't normally happen)
             }
         }
 
         BlockPos roughDest = new BlockPos((int) destX, (int) destY, (int) destZ);
 
-        // --- Find or Build Exit Portal ---
-        Optional<BlockPos> existingPortal = findExistingPortal(level, roughDest);
+        // ---------------------------------------------------------------
+        // Step 4 — Find or build the exit portal
+        // ---------------------------------------------------------------
+        Direction.Axis axis = getPortalAxis(level, portalPos);
+        Optional<BlockPos> existingExit = findExistingUnlinkedPortal(level, roughDest, linkData);
 
-        BlockPos finalDestPos;
-        Direction.Axis axis;
+        BlockPos exitSpawnPos; // canonical spawn position inside the exit portal
+        Set<BlockPos> exitGroup;
 
-        if (existingPortal.isPresent()) {
-            finalDestPos = existingPortal.get();
-            BlockState existingState = level.getBlockState(finalDestPos);
-            axis = existingState.hasProperty(NetherPortalBlock.AXIS)
-                    ? existingState.getValue(NetherPortalBlock.AXIS)
-                    : Direction.Axis.X;
+        if (existingExit.isPresent()) {
+            // Re-use an existing unlinked Static portal nearby
+            exitSpawnPos = existingExit.get();
+            exitGroup    = findPortalGroup(level, exitSpawnPos);
         } else {
-            finalDestPos = roughDest;
-            axis = level.getBlockState(portalPos).hasProperty(NetherPortalBlock.AXIS)
-                    ? level.getBlockState(portalPos).getValue(NetherPortalBlock.AXIS)
-                    : Direction.Axis.X;
-            generateExitPortal(level, finalDestPos, axis);
+            // No portal there yet — build one
+            exitSpawnPos = roughDest;
+            generateExitPortal(level, exitSpawnPos, axis);
+            exitGroup = getGeneratedPortalInterior(exitSpawnPos, axis);
         }
 
-        // --- Teleport ---
-        double spawnX = finalDestPos.getX() + 0.5;
-        double spawnY = finalDestPos.getY();
-        double spawnZ = finalDestPos.getZ() + 0.5;
+        // ---------------------------------------------------------------
+        // Step 5 — Register the bidirectional link
+        //
+        // canonical spawn for entry side = centre-bottom of entry portal
+        // canonical spawn for exit  side = centre-bottom of exit  portal
+        // ---------------------------------------------------------------
+        BlockPos entrySpawnPos = getCanonicalSpawn(entryGroup);
 
-        // Face away from the portal so you "walk out" of it naturally
+        linkData.linkPortals(
+                entryGroup, entrySpawnPos,   // blocks in A  →  spawn inside A  (for return trips)
+                exitGroup,  exitSpawnPos     // blocks in B  →  spawn inside B  (for first trip)
+        );
+
+        // ---------------------------------------------------------------
+        // Step 6 — Teleport
+        // ---------------------------------------------------------------
+        doTeleport(entity, level, exitSpawnPos);
+    }
+
+    // -------------------------------------------------------------------------
+    // Teleport helper
+    // -------------------------------------------------------------------------
+
+    private static void doTeleport(Entity entity, ServerLevel level, BlockPos dest) {
+        double spawnX = dest.getX() + 0.5;
+        double spawnY = dest.getY();        // player stands on the obsidian floor below
+        double spawnZ = dest.getZ() + 0.5;
+
+        // Invert yaw so the player faces away from the portal on arrival
         float invertedYaw = entity.getYRot() + 180.0F;
 
         entity.teleportTo(spawnX, spawnY, spawnZ);
@@ -129,14 +159,80 @@ public class StaticTeleporter {
                 1.5F, 0.3F);
     }
 
-    private static Optional<BlockPos> findExistingPortal(ServerLevel level, BlockPos center) {
+    // -------------------------------------------------------------------------
+    // Portal group helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * BFS flood-fill to collect all connected Static portal blocks from a seed position.
+     * This is how we treat a multi-block portal as one logical unit.
+     */
+    public static Set<BlockPos> findPortalGroup(ServerLevel level, BlockPos seed) {
+        Set<BlockPos> group   = new HashSet<>();
+        Queue<BlockPos> queue = new LinkedList<>();
+        queue.add(seed);
+
+        while (!queue.isEmpty()) {
+            BlockPos cur = queue.poll();
+            if (group.contains(cur)) continue;
+            if (!level.getBlockState(cur).is(CoralineBlocks.STATIC_PORTAL_BLOCK.get())) continue;
+            group.add(cur.immutable());
+            queue.add(cur.above()); queue.add(cur.below());
+            queue.add(cur.north()); queue.add(cur.south());
+            queue.add(cur.east());  queue.add(cur.west());
+        }
+        return group;
+    }
+
+    /**
+     * From a set of portal block positions, find the one with the lowest Y
+     * (then lowest X, then lowest Z) to use as a stable canonical spawn point.
+     */
+    private static BlockPos getCanonicalSpawn(Set<BlockPos> group) {
+        return group.stream()
+                .min(Comparator.comparingInt((BlockPos p) -> p.getY())
+                        .thenComparingInt(p -> p.getX())
+                        .thenComparingInt(p -> p.getZ()))
+                .orElseThrow();
+    }
+
+    /**
+     * Returns the exact interior block positions that generateExitPortal() places.
+     * Used to register the exit portal group immediately after building it,
+     * without needing a BFS (since no tick has passed yet for level updates to settle).
+     */
+    private static Set<BlockPos> getGeneratedPortalInterior(BlockPos base, Direction.Axis axis) {
+        Set<BlockPos> blocks = new HashSet<>();
+        for (int lateral = 0; lateral <= 1; lateral++) {
+            for (int vertical = 0; vertical <= 2; vertical++) {
+                blocks.add(base.offset(
+                        axis == Direction.Axis.X ? lateral : 0,
+                        vertical,
+                        axis == Direction.Axis.Z ? lateral : 0
+                ).immutable());
+            }
+        }
+        return blocks;
+    }
+
+    // -------------------------------------------------------------------------
+    // Portal search and generation
+    // -------------------------------------------------------------------------
+
+    /**
+     * Scans near roughDest for an existing Static portal that is NOT yet linked.
+     * We skip linked portals so players can't accidentally "hijack" an existing wormhole.
+     */
+    private static Optional<BlockPos> findExistingUnlinkedPortal(ServerLevel level, BlockPos center, StaticPortalLinkData linkData) {
         for (int x = -SEARCH_RADIUS; x <= SEARCH_RADIUS; x++) {
             for (int y = -SEARCH_RADIUS; y <= SEARCH_RADIUS; y++) {
                 for (int z = -SEARCH_RADIUS; z <= SEARCH_RADIUS; z++) {
                     BlockPos pos = center.offset(x, y, z);
-                    if (level.getBlockState(pos).is(CoralineBlocks.STATIC_PORTAL_BLOCK.get())) {
-                        int dropToBottom = getDistanceToBottom(level, pos);
-                        return Optional.of(pos.below(dropToBottom));
+                    if (!level.getBlockState(pos).is(CoralineBlocks.STATIC_PORTAL_BLOCK.get())) continue;
+                    // Only re-use portals that haven't been claimed by a pair yet
+                    if (linkData.getLinkedDestination(pos) == null) {
+                        int drop = getDistanceToBottom(level, pos);
+                        return Optional.of(pos.below(drop));
                     }
                 }
             }
@@ -152,12 +248,22 @@ public class StaticTeleporter {
         return drop;
     }
 
+    private static Direction.Axis getPortalAxis(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (state.hasProperty(NetherPortalBlock.AXIS)) return state.getValue(NetherPortalBlock.AXIS);
+        return Direction.Axis.X;
+    }
+
+    /**
+     * Carves a standard 2-wide × 3-tall Static portal with an obsidian frame.
+     * Clears one block on each face of the interior to prevent suffocation.
+     */
     private static void generateExitPortal(ServerLevel level, BlockPos pos, Direction.Axis axis) {
         BlockState portalState = CoralineBlocks.STATIC_PORTAL_BLOCK.get()
                 .defaultBlockState()
                 .setValue(NetherPortalBlock.AXIS, axis);
         BlockState obsidian = Blocks.OBSIDIAN.defaultBlockState();
-        BlockState air     = Blocks.AIR.defaultBlockState();
+        BlockState air      = Blocks.AIR.defaultBlockState();
 
         for (int lateral = -1; lateral <= 2; lateral++) {
             for (int vertical = -1; vertical <= 3; vertical++) {
@@ -166,12 +272,11 @@ public class StaticTeleporter {
                         vertical,
                         axis == Direction.Axis.Z ? lateral : 0
                 );
+                boolean interior = (lateral == 0 || lateral == 1) && (vertical >= 0 && vertical <= 2);
 
-                boolean isInterior = (lateral == 0 || lateral == 1) && (vertical >= 0 && vertical <= 2);
-
-                if (isInterior) {
+                if (interior) {
                     level.setBlockAndUpdate(target, portalState);
-
+                    // Carve the two faces so the player can walk through
                     BlockPos front = target.relative(axis == Direction.Axis.X ? Direction.SOUTH : Direction.EAST);
                     BlockPos back  = target.relative(axis == Direction.Axis.X ? Direction.NORTH : Direction.WEST);
                     if (!level.getBlockState(front).is(Blocks.OBSIDIAN)) level.setBlockAndUpdate(front, air);

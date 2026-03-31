@@ -17,10 +17,13 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.zharok01.coralinesystems.registry.CoralineSounds;
+import net.zharok01.coralinesystems.util.StaticPortalLinkData;
 import net.zharok01.coralinesystems.util.StaticTeleporter;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public class StaticPortalBlock extends Block {
@@ -28,16 +31,11 @@ public class StaticPortalBlock extends Block {
     protected static final VoxelShape X_AXIS_AABB = Block.box(0.0D, 0.0D, 6.0D, 16.0D, 16.0D, 10.0D);
     protected static final VoxelShape Z_AXIS_AABB = Block.box(6.0D, 0.0D, 0.0D, 10.0D, 16.0D, 16.0D);
 
-    // The last game-tick we saw each entity standing in a static portal.
-    // If there's a gap of more than 1 tick, the entity left and the counter resets.
     private static final Map<UUID, Long> lastPortalTick = new HashMap<>();
-
-    // How many consecutive ticks each entity has stood in the portal.
     private static final Map<UUID, Integer> portalProgress = new HashMap<>();
 
     /**
-     * 100 ticks = 5 seconds at 20 TPS.
-     * This value is public so ClientPortalEffect can read it and match the overlay timing.
+     * 100 ticks = 5 seconds. Public so ClientPortalEffect can reference it.
      */
     public static final int PORTAL_TICKS_REQUIRED = 100;
 
@@ -52,9 +50,8 @@ public class StaticPortalBlock extends Block {
     }
 
     /**
-     * Portal blocks must be walk-through, exactly like vanilla nether portals.
-     * Without this override, getCollisionShape falls back to getShape(), making them solid walls
-     * that the player physically cannot walk into.
+     * Portal blocks must be walk-through, exactly like vanilla Nether portals.
+     * Without this override, the player physically cannot enter the portal.
      */
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
@@ -71,7 +68,7 @@ public class StaticPortalBlock extends Block {
         long currentTick = level.getGameTime();
         Long lastTick = lastPortalTick.get(id);
 
-        // A gap larger than 1 tick means the entity stepped out — fresh entry, reset the counter.
+        // Gap > 1 tick means the entity stepped out — reset the counter
         if (lastTick == null || currentTick - lastTick > 1L) {
             portalProgress.put(id, 0);
         }
@@ -80,30 +77,58 @@ public class StaticPortalBlock extends Block {
         int progress = portalProgress.getOrDefault(id, 0) + 1;
         portalProgress.put(id, progress);
 
-        // Every 10 ticks, intensify sound and particle feedback to signal the charge building up
+        // Progressive sound and particle feedback every 10 ticks
         if (progress % 10 == 0) {
             float intensity = progress / (float) PORTAL_TICKS_REQUIRED;
 
             level.playSound(null, pos,
-                    SoundEvents.LIGHTNING_BOLT_THUNDER,
+                    CoralineSounds.STATIC_BUZZ.get(),
                     SoundSource.BLOCKS,
-                    0.15F + intensity * 0.55F,   // volume grows from quiet to loud
-                    1.6F - intensity * 0.4F);     // pitch drops as the charge builds
+                    0.15F + intensity * 0.55F,
+                    1.6F  - intensity * 0.4F);
 
             serverLevel.sendParticles(
                     AMParticleRegistry.STATIC_SPARK.get(),
                     entity.getX(), entity.getY() + 1.0, entity.getZ(),
-                    (int) (5 + intensity * 20),   // more sparks the closer to teleport
+                    (int) (5 + intensity * 20),
                     0.3, 0.5, 0.3,
                     0.05 + intensity * 0.1);
         }
 
-        // Fully charged — clean up tracking and fire the teleport
         if (progress >= PORTAL_TICKS_REQUIRED) {
             lastPortalTick.remove(id);
             portalProgress.remove(id);
             StaticTeleporter.teleportToFarlands(entity, serverLevel, pos);
         }
+    }
+
+    /**
+     * When a Static portal block is broken, clean up its link registration
+     * so the sister portal doesn't remain permanently locked.
+     *
+     * We find the full connected group (before the block has been removed,
+     * so it's still in the level), unlink it, and also unlink any blocks
+     * that pointed BACK to this group from the sister side.
+     */
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
+            // The block at pos is still in the level at this moment, so BFS still works
+            Set<BlockPos> group = StaticTeleporter.findPortalGroup(serverLevel, pos);
+            if (!group.isEmpty()) {
+                StaticPortalLinkData linkData = StaticPortalLinkData.get(serverLevel);
+                // Find where this group pointed (the sister's spawn pos)
+                // and collect sister blocks to unlink them too
+                // (We pick any block in the group — they all share the same destination)
+                BlockPos sisterSpawn = linkData.getLinkedDestination(pos);
+                if (sisterSpawn != null) {
+                    Set<BlockPos> sisterGroup = StaticTeleporter.findPortalGroup(serverLevel, sisterSpawn);
+                    linkData.unlinkGroup(sisterGroup);
+                }
+                linkData.unlinkGroup(group);
+            }
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
     }
 
     @Override
