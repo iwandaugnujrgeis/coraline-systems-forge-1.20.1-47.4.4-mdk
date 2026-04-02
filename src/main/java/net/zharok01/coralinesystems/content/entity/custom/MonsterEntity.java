@@ -26,6 +26,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.zharok01.coralinesystems.registry.CoralineSounds;
+import net.zharok01.coralinesystems.registry.CoralineStats;
 import net.zharok01.coralinesystems.registry.CoralineUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -100,6 +101,8 @@ public class MonsterEntity extends Monster {
                     this.glitchTimer = 100; // 5 seconds
                     this.level().playSound(null, player.getX(), player.getY(), player.getZ(),
                             CoralineSounds.MONSTER_STARE.get(), this.getSoundSource(), 1.0F, 1.0F);
+
+                    player.awardStat(CoralineStats.MONSTER_SIGHTINGS.get());
                 }
 
                 if (this.isSpotted() && !this.isAngry() && this.getTarget() == null) {
