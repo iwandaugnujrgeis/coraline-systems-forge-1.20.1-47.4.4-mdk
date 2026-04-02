@@ -121,5 +121,17 @@
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.monster_hurt"
+  },
+  "static_portal_ambient": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:ambient/static_portal_ambient1"
+      },
+      {
+        "name": "coraline_systems:ambient/static_portal_ambient2"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.monster_hurt"
   }
 }

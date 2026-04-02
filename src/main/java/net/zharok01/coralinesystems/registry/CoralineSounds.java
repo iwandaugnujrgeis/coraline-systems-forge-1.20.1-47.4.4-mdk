@@ -24,6 +24,9 @@ public class CoralineSounds {
     public static final RegistryObject<SoundEvent> MONSTER_DEATH = createSoundEvent("monster_death");
     public static final RegistryObject<SoundEvent> MONSTER_HURT = createSoundEvent("monster_hurt");
 
+    public static final RegistryObject<SoundEvent> STATIC_PORTAL_AMBIENT = createSoundEvent("static_portal_ambient");
+    public static final RegistryObject<SoundEvent> STATIC_PORTAL_OPEN = createSoundEvent("static_portal_open");
+
     private static RegistryObject<SoundEvent> createSoundEvent(final String soundName) {
         return SOUND_EVENTS.register(soundName, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(CoralineSystems.MOD_ID, soundName)));
     }
