@@ -25,6 +25,9 @@ public class CoralineItems {
 		Direction.DOWN
 	));
 
+	public static final RegistryObject<Item> DIMENSIONAL_SHARD = REGISTRY.register("dimensional_shard",
+			() -> new Item(new Item.Properties()));
+
 	public static final RegistryObject<Item> STATIC_BLOCK_ITEM = REGISTRY.register("static_block",
 			() -> new BlockItem(CoralineBlocks.STATIC_BLOCK.get(), new Item.Properties()));
 
