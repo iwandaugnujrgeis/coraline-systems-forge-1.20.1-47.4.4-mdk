@@ -35,6 +35,7 @@ public class CoralineSystems {
         IsotopicEntities.register(bus);
         CoralineSounds.register(bus);
         CoralineBlockEntities.register(bus);
+        CoralineStats.register(bus);
 
         bus.addListener(this::commonSetup);
 
@@ -42,7 +43,12 @@ public class CoralineSystems {
         bus.addListener(this::addCreative);
     }
 
-    private void commonSetup(final FMLCommonSetupEvent event) {}
+    private void commonSetup(final FMLCommonSetupEvent event) {
+        event.enqueueWork(CoralineTriggers::init);
+        CoralineStats.STATS.getEntries().forEach(stat ->
+                net.minecraft.stats.Stats.CUSTOM.get(stat.get(), net.minecraft.stats.StatFormatter.DEFAULT)
+        );
+    }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
