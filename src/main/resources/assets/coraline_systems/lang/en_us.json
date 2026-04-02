@@ -1,5 +1,9 @@
 {
 	"block.coraline_systems.torch": "Torch",
+	"item.coraline_systems.dimensional_shard": "Dimensional Shard",
+
+	"stat.coraline_systems.portals_corrupted": "Portals Corrupted",
+	"stat.coraline_systems.monster_sightings": "Monster Sightings",
 
 	"coraline_systems.sound.subtitle.helper_buzz": "Buzz",
 	"coraline_systems.sound.subtitle.helper_idle": "Ominous presence?",
