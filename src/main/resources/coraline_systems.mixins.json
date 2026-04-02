@@ -16,6 +16,8 @@
   },
   "mixins": [
     "BreakDoorGoalMixin",
+    "GiantMixin",
+    "GiantStompMixin",
     "InventoryMixin",
     "JerboaEffectMixin",
     "JukeboxBlockEntityMixin",
@@ -24,6 +26,7 @@
     "RespawnAnchorFuelMixin",
     "ServerPlaceRecipeMixin",
     "ServerPlayerMixin",
+    "StatsMixin",
     "StrongholdFiveCrossingSpawnerMixin",
     "StrongholdPiecesMixin",
     "StrongholdRoomCrossingSpawnerMixin",
