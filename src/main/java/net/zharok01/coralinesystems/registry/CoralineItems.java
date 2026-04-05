@@ -1,6 +1,7 @@
 package net.zharok01.coralinesystems.registry;
 
 import net.minecraft.core.Direction;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.StandingAndWallBlockItem;
@@ -10,6 +11,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.zharok01.coralinesystems.CoralineSystems;
+import net.zharok01.coralinesystems.content.item.CobaltPants;
 
 import java.util.function.Supplier;
 
@@ -36,6 +38,10 @@ public class CoralineItems {
 
 	public static final RegistryObject<Item> MONSTER_SPAWN_EGG = register("monster_spawn_egg",
 			() -> new ForgeSpawnEggItem(IsotopicEntities.MONSTER, 0x1A1A1A, 0xE0E0FF, new Item.Properties()));
+
+	public static final RegistryObject<Item> COBALT_PANTS = REGISTRY.register("cobalt_pants",
+			() -> new ArmorItem(CobaltPants.COBALT, ArmorItem.Type.LEGGINGS,
+					new Item.Properties()));
 
 	private static <T extends Item> RegistryObject<T> register(String name, Supplier<T> supplier) {
 		return REGISTRY.register(name, supplier);
