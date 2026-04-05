@@ -11,10 +11,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.NetherPortalBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.zharok01.coralinesystems.registry.CoralineBlocks;
-import net.zharok01.coralinesystems.registry.CoralineItems;
-import net.zharok01.coralinesystems.registry.CoralineStats;
-import net.zharok01.coralinesystems.registry.CoralineTriggers;
+import net.zharok01.coralinesystems.registry.*;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -43,7 +40,7 @@ public class NetherPortalCorruptionMixin {
                     player.awardStat(CoralineStats.PORTALS_CORRUPTED.get());
                 }
 
-                level.playSound(null, pos, SoundEvents.LIGHTNING_BOLT_IMPACT, SoundSource.BLOCKS, 2.0F, 0.2F);
+                level.playSound(null, pos, CoralineSounds.STATIC_PORTAL_OPEN.get(), SoundSource.BLOCKS, 2.0F, 0.2F);
                 itemEntity.discard();
                 corruptPortal(level, pos, state.getValue(NetherPortalBlock.AXIS));
                 info.cancel();
