@@ -41,7 +41,7 @@ public abstract class GiantStompMixin {
             if (distance < 100.0D) {
                 giant.setDeltaMovement(giant.getDeltaMovement().add(0, 1.2D, 0));
                 this.coraline_systems$isJumping = true;
-                this.coraline_systems$stompCooldown = 200;
+                this.coraline_systems$stompCooldown = 160;
             }
         }
 
@@ -83,7 +83,7 @@ public abstract class GiantStompMixin {
 
             if (knockbackStrength > 0) {
                 entity.setDeltaMovement(entity.getDeltaMovement().add(dx * knockbackStrength, 0.9D, dz * knockbackStrength));
-                entity.hurt(giant.damageSources().mobAttack(giant), 10.0F);
+                entity.hurt(giant.damageSources().mobAttack(giant), 6.0F);
                 entity.hurtMarked = true;
             }
         }
