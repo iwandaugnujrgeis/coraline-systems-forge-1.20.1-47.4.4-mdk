@@ -122,6 +122,18 @@
     ],
     "subtitle": "coraline_systems.sound.subtitle.monster_hurt"
   },
+  "giant_stomp": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/giant/stomp1"
+      },
+      {
+        "name": "coraline_systems:entity/giant/stomp2"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.giant_stomp"
+  },
   "static_portal_ambient": {
     "category": "neutral",
     "sounds": [
@@ -132,6 +144,18 @@
         "name": "coraline_systems:ambient/static_portal_ambient2"
       }
     ],
-    "subtitle": "coraline_systems.sound.subtitle.monster_hurt"
+    "subtitle": "coraline_systems.sound.subtitle.static_portal_ambient"
+  },
+  "static_portal_open": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "alexsmobs:farseer_beam_0"
+      },
+      {
+        "name": "alexsmobs:farseer_beam_1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.static_portal_open"
   }
 }
