@@ -6,16 +6,19 @@
   "client": [
     "AbstractSoundInstanceAccessor",
     "ClientPacketListenerMixin",
+    "GiantKickAnimationMixin",
     "GiantMobRendererMixin",
     "HelperAnimationMixin",
     "OptionsMixin",
-    "SoundEngineMixin"
+    "SoundEngineMixin",
+    "SunrisePinkMixin"
   ],
   "injectors": {
     "defaultRequire": 1
   },
   "mixins": [
     "BreakDoorGoalMixin",
+    "BrickPyramidIslandMixin",
     "GiantMixin",
     "GiantStompMixin",
     "InventoryMixin",
