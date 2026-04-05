@@ -2,10 +2,8 @@ package net.zharok01.coralinesystems.mixin;
 
 import com.legacy.rediscovered.entity.pigman.PigmanEntity;
 import net.minecraft.world.entity.EntityType;
-//import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
-//import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -17,9 +15,11 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
 import java.util.Objects;
+
 //import java.util.UUID;
+//import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+//import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 
 @Mixin(Giant.class)
 public abstract class GiantMixin extends Monster {
@@ -33,7 +33,7 @@ public abstract class GiantMixin extends Monster {
 
         // --- Attributes ---
         Objects.requireNonNull(this.getAttribute(Attributes.MOVEMENT_SPEED))
-                .setBaseValue(0.2D);
+                .setBaseValue(0.25D);
 
         // Low damage — the kick is a shove, not a killing blow.
         // 4.0 = 2 hearts.
