@@ -1,9 +1,16 @@
 {
 	"block.coraline_systems.torch": "Torch",
 	"item.coraline_systems.dimensional_shard": "Dimensional Shard",
+	"item.coraline_systems.cobalt_pants": "Cobalt Pants",
+	"block.coraline_systems.container": "Container",
+
+	"coraline_systems.sound.subtitle.giant_stomp": "Giant stomps",
 
 	"stat.coraline_systems.portals_corrupted": "Portals Corrupted",
 	"stat.coraline_systems.monster_sightings": "Monster Sightings",
+
+	"coraline_systems.sound.subtitle.static_portal_open": "Static portal opens",
+	"coraline_systems.sound.subtitle.static_portal_ambient": "Static portal wobbles",
 
 	"coraline_systems.sound.subtitle.helper_buzz": "Buzz",
 	"coraline_systems.sound.subtitle.helper_idle": "Ominous presence?",
