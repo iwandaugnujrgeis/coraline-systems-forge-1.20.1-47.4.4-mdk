@@ -30,20 +30,14 @@ import java.util.Set;
 @Mixin(BrickPyramidIslandPoolElement.class)
 public abstract class BrickPyramidIslandMixin {
 
-    // Use aliases so we can call it by its readable name in our code,
-    // but Mixin knows to look for the SRG name in the compiled mod!
     @Shadow(remap = false, aliases = {"m_214015_"})
     public abstract BoundingBox getBoundingBox(StructureTemplateManager structureTemplateManager, BlockPos pos, Rotation rotation);
 
-    // 1. FLATTEN AND STRETCH THE BOUNDING BOX
-    // Target m_213577_ which is SRG for getSize
     @Inject(method = "m_213577_", at = @At("HEAD"), cancellable = true, remap = false)
     private void coraline$flattenSize(StructureTemplateManager structureTemplateManager, Rotation rotation, CallbackInfoReturnable<Vec3i> cir) {
-        cir.setReturnValue(new Vec3i(210, 30, 210));
+        cir.setReturnValue(new Vec3i(190, 24, 190));
     }
 
-    // 2. APPLY THE CHUNKY INDEV MATH
-    // Target m_213695_ which is SRG for place
     @Inject(method = "m_213695_", at = @At("HEAD"), cancellable = true, remap = false)
     private void coraline$indevPlacement(StructureTemplateManager structureTemplateManager, WorldGenLevel level, StructureManager structureManager, ChunkGenerator chunkGen, BlockPos pos, BlockPos structureOrigin, Rotation rotation, BoundingBox chunkBounds, RandomSource rand, boolean pKeepJigsaws, CallbackInfoReturnable<Boolean> cir) {
 
@@ -51,9 +45,8 @@ public abstract class BrickPyramidIslandMixin {
         BlockState topMaterial = Blocks.GRASS_BLOCK.defaultBlockState();
         BlockState soilMaterial = Blocks.DIRT.defaultBlockState();
 
-        // --- THE AESTHETIC TWEAKS ---
         float horizontalNoiseScale = 2.5F;
-        float verticalNoiseScale = 6F;
+        float verticalNoiseScale = 5F;
         int deltaDist = 18;
         float dicingAmount = 0.85F;
 
@@ -87,7 +80,12 @@ public abstract class BrickPyramidIslandMixin {
 
                     float n = noises[0] * (1 - dicingAmount) + noises[1] * dicingAmount;
 
-                    float yScaling = (y - bb.minY()) / (float) bb.getYSpan();
+                    //Terraced/jagged rounding at the bottom:
+                    float rawYScaling = (y - bb.minY()) / (float) bb.getYSpan();
+
+                    //Hard-step the scaling into 5 distinct horizontal layers to kill the "smooth bowl" look
+                    float yScaling = (float) Math.floor(rawYScaling * 5.0F) / 5.0F;
+
                     float scale;
                     if (yScaling < 0.8335)
                         scale = 1 - (float) Math.pow(1 - yScaling, 5);
