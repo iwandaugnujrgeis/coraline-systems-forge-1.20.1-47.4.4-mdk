@@ -68,6 +68,5 @@ public class CoralineSystems {
             CoralineBlocks.registerRenderLayers();
             ClientPortalEffect.init();
         }
-
     }
 }
