@@ -10,7 +10,7 @@ version = project.mod_version
 loom {
     silentMojangMappingsLicense()
     accessWidenerPath = file("src/main/resources/${project.mod_id}.accesswidener")
-    forge.mixinConfig "${project.mod_id}.mixins.json"
+    forge.mixinConfig "coraline_systems.mixins.json"
 }
 
 repositories {
@@ -44,7 +44,10 @@ dependencies {
     implementation("maven.modrinth:moonlight:1.20-2.16.28-forge")
 
     implementation("maven.modrinth:quark:1.20.1-4.0-462")
+
+    implementation("maven.modrinth:easel-does-it:1.0.8")
 }
+
 
 processResources {
     filesMatching('META-INF/mods.toml') {
