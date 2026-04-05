@@ -14,10 +14,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.zharok01.coralinesystems.CoralineSystems;
-import net.zharok01.coralinesystems.content.block.LimitedTorchBlock;
-import net.zharok01.coralinesystems.content.block.LimitedWallTorchBlock;
-import net.zharok01.coralinesystems.content.block.StaticBlock;
-import net.zharok01.coralinesystems.content.block.StaticPortalBlock;
+import net.zharok01.coralinesystems.content.block.*;
 
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -48,6 +45,14 @@ public class CoralineBlocks {
 					.strength(2.0f)
 					.sound(SoundType.GLASS)
 					.noOcclusion())
+	);
+
+	public static final RegistryObject<Block> CONTAINER_BLOCK = register("container",
+			() -> new ContainerBlock(BlockBehaviour.Properties.of()
+					.strength(1.5F, 6.0F) // Similar to stone so it doesn't break instantly
+					.sound(SoundType.STONE)
+					//.requiresCorrectToolForDrops()
+			)
 	);
 
 	public static final RegistryObject<Block> TORCH = registerWithoutItem("torch",
