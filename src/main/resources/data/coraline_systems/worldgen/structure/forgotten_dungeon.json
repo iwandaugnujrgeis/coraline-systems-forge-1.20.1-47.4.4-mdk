@@ -1,0 +1,7 @@
+{
+  "type": "coraline_systems:forgotten_dungeon",
+  "biomes": "#minecraft:is_overworld",
+  "step": "underground_structures",
+  "terrain_adaptation": "bury",
+  "spawn_overrides": {}
+}
