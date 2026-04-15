@@ -28,6 +28,11 @@ public class CoralineSounds {
     public static final RegistryObject<SoundEvent> STATIC_PORTAL_OPEN = createSoundEvent("static_portal_open");
 
     public static final RegistryObject<SoundEvent> GIANT_STOMP = createSoundEvent("giant_stomp");
+    public static final RegistryObject<SoundEvent> GIANT_AMBIENT = createSoundEvent("giant_ambient");
+    public static final RegistryObject<SoundEvent> GIANT_HURT = createSoundEvent("giant_hurt");
+    public static final RegistryObject<SoundEvent> GIANT_DEATH = createSoundEvent("giant_death");
+
+    public static final RegistryObject<SoundEvent> MINESHAFT_SPOOK = createSoundEvent("mineshaft_spook");
 
     private static RegistryObject<SoundEvent> createSoundEvent(final String soundName) {
         return SOUND_EVENTS.register(soundName, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(CoralineSystems.MOD_ID, soundName)));

@@ -2,12 +2,14 @@ package net.zharok01.coralinesystems.mixin;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.RecordItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.JukeboxBlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.zharok01.coralinesystems.content.entity.custom.HelperEntity;
+import net.zharok01.coralinesystems.registry.CoralineTriggers;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -41,6 +43,14 @@ public abstract class JukeboxBlockEntityMixin {
 
                 for (HelperEntity helper : helpers) {
                     helper.setDancingDuration(record.getLengthInTicks());
+                }
+
+                //Fire the Advancement once as long as at least one Helper started dancing!
+                if (!helpers.isEmpty() && level instanceof ServerLevel serverLevel) {
+                    serverLevel.getEntitiesOfClass(
+                            net.minecraft.server.level.ServerPlayer.class,
+                            new AABB(pos).inflate(16.0D)
+                    ).stream().findFirst().ifPresent(CoralineTriggers.HELPER_DANCING::trigger);
                 }
             }
         }

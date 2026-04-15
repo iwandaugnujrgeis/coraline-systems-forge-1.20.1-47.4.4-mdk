@@ -10,9 +10,7 @@ import net.zharok01.coralinesystems.content.block.StaticBlockEntity;
 
 public class StaticBlockRenderer implements BlockEntityRenderer<StaticBlockEntity> {
 
-    public StaticBlockRenderer(BlockEntityRendererProvider.Context context) {
-        // Constructor required by the interface
-    }
+    public StaticBlockRenderer(BlockEntityRendererProvider.Context context) {}
 
     @Override
     public void render(StaticBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {

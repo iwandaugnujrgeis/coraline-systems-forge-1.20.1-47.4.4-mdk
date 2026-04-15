@@ -50,5 +50,4 @@ public class CoralineItems {
 	public static void register(IEventBus bus) {
 		REGISTRY.register(bus);
 	}
-
 }

@@ -97,6 +97,26 @@ public abstract class BrickPyramidIslandMixin {
                     if (dist < threshold) {
                         positions.add(placePos);
                     }
+
+                    /*
+                    //Weird noise code:
+                    int smallDicing = 3;
+                    float dicedX = (x / smallDicing) * smallDicing;
+                    float dicedY = (y / smallDicing) * smallDicing;
+                    float dicedZ = (z / smallDicing) * smallDicing;
+
+                    // High-frequency noise creates chaotic values from -1.0 to 1.0
+                    float weirdNoise = SimplexNoise.noise(dicedX * 0.15F, dicedY * 0.15F, dicedZ * 0.15F);
+
+                    // Apply an offset to the distance calculation.
+                    // Positive weirdNoise eats into the island (creating holes).
+                    // Negative weirdNoise pushes blocks out into the air (creating floating bits).
+                    float messyOffset = weirdNoise * 10.0F; // 10 blocks of chaotic variance
+
+                    // Check the original distance + the messy offset against the threshold
+                    if (dist + messyOffset < threshold) {
+                        positions.add(placePos);
+                    }*/
                 }
             }
         }

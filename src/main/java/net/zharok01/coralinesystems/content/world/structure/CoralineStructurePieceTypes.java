@@ -5,13 +5,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
 import net.zharok01.coralinesystems.CoralineSystems;
 
-/**
- * Registers all Forgotten Dungeon piece types into the vanilla
- * BuiltInRegistries.STRUCTURE_PIECE registry.
- *
- * Call CoralineStructurePieceTypes.register() from your mod's CommonSetup
- * (or directly in the mod constructor before world loading begins).
- */
 public class CoralineStructurePieceTypes {
 
     public static StructurePieceType FORGOTTEN_START_ROOM;
@@ -26,7 +19,7 @@ public class CoralineStructurePieceTypes {
     public static StructurePieceType FORGOTTEN_TREASURE_ROOM;
     public static StructurePieceType FORGOTTEN_PRISON_BLOCK;
     public static StructurePieceType FORGOTTEN_STAIRCASE_DOWN;
-    public static StructurePieceType FORGOTTEN_STAIRCASE_UP;
+    //public static StructurePieceType FORGOTTEN_STAIRCASE_UP;
 
     public static void register() {
         FORGOTTEN_START_ROOM     = reg("forgotten_start_room",     ForgottenPieces.StartRoom::new);
@@ -41,7 +34,7 @@ public class CoralineStructurePieceTypes {
         FORGOTTEN_TREASURE_ROOM  = reg("forgotten_treasure_room",  ForgottenPieces.TreasureRoom::new);
         FORGOTTEN_PRISON_BLOCK   = reg("forgotten_prison_block",   ForgottenPieces.PrisonBlock::new);
         FORGOTTEN_STAIRCASE_DOWN = reg("forgotten_staircase_down", ForgottenPieces.StaircaseDown::new);
-        FORGOTTEN_STAIRCASE_UP   = reg("forgotten_staircase_up",   ForgottenPieces.StaircaseUp::new);
+        //FORGOTTEN_STAIRCASE_UP   = reg("forgotten_staircase_up",   ForgottenPieces.StaircaseUp::new);
     }
 
     private static StructurePieceType reg(String id, StructurePieceType.ContextlessType type) {

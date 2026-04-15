@@ -17,6 +17,7 @@ import net.zharok01.coralinesystems.CoralineSystems;
 import net.zharok01.coralinesystems.content.block.ContainerBlockEntity;
 import net.zharok01.coralinesystems.registry.CoralineBlocks;
 import net.zharok01.coralinesystems.registry.CoralineItems;
+import net.zharok01.coralinesystems.registry.CoralineTriggers;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -86,6 +87,7 @@ public class ContainerEvents {
             }
 
             containerEntity.setOwnerName(player.getGameProfile().getName());
+            CoralineTriggers.COBALT_PANTS.trigger(player);
 
             // --- ANIMATION & SOUND EFFECTS ---
             if (level instanceof ServerLevel serverLevel) {

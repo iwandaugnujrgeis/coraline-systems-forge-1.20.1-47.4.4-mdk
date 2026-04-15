@@ -157,5 +157,50 @@
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.static_portal_open"
+  },
+  "mineshaft_spook": {
+    "category": "neutral",
+    "sounds": [
+      "ambient/cave/cave1",
+      "ambient/cave/cave10",
+      "ambient/cave/cave11",
+      "ambient/cave/cave16",
+      "ambient/cave/cave17",
+      "ambient/cave/cave18"
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.mineshaft_spook"
+  },
+  "giant_ambient": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/giant/say1"
+      },
+      {
+        "name": "coraline_systems:entity/giant/say2"
+      },
+      {
+        "name": "coraline_systems:entity/giant/say3"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.giant_ambient"
+  },
+  "giant_death": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/giant/say1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.giant_death"
+  },
+  "giant_hurt": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/giant/say1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.giant_hurt"
   }
 }

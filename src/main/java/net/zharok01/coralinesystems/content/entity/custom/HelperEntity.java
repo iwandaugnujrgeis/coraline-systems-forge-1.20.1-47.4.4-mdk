@@ -402,8 +402,8 @@ public class HelperEntity extends Monster implements RangedAttackMob {
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData, @Nullable CompoundTag tag) {
         spawnData = super.finalizeSpawn(level, difficulty, reason, spawnData, tag);
 
-        // Only pick a random skin if there isn't one saved in the NBT already
         if (tag == null || !tag.contains("SkinId")) {
+            //Change this "nextInt(_)" to a desired number of skin variants:
             this.setSkinId(level.getRandom().nextInt(7));
         }
 

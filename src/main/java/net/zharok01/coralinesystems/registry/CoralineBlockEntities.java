@@ -12,7 +12,6 @@ public class CoralineBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, CoralineSystems.MOD_ID);
 
-    // Registering the Static Block Entity
     public static final RegistryObject<BlockEntityType<StaticBlockEntity>> STATIC_BLOCK_ENTITY =
             BLOCK_ENTITIES.register("static_block_entity", () ->
                     BlockEntityType.Builder.of(StaticBlockEntity::new,
