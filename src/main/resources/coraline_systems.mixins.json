@@ -9,6 +9,7 @@
     "GiantKickAnimationMixin",
     "GiantMobRendererMixin",
     "HelperAnimationMixin",
+    "MinecartSpawnerSoundMixin",
     "OptionsMixin",
     "SoundEngineMixin",
     "SunrisePinkMixin"
@@ -19,6 +20,9 @@
   "mixins": [
     "BreakDoorGoalMixin",
     "BrickPyramidIslandMixin",
+    "CandleCakeBlockMixin",
+    "CaveGrowthsFeatureMixin",
+    "DrownedEquipmentMixin",
     "GiantMixin",
     "GiantStompMixin",
     "InventoryMixin",
@@ -28,6 +32,7 @@
     "PlayerMineshaftMixin",
     "RediscoveredEventsMixin",
     "RespawnAnchorFuelMixin",
+    "RubyEyeItemMixin",
     "ServerPlaceRecipeMixin",
     "ServerPlayerMixin",
     "ShovelItemMixin",
@@ -36,6 +41,15 @@
     "StrongholdPiecesMixin",
     "StrongholdRoomCrossingSpawnerMixin",
     "StructurePieceMixin",
-    "ZombieMixin"
+    "WeatheringCopperItemMixin",
+    "ZombieMixin",
+    "accessors.CandleCakeBlockAccessor",
+    "alexsmobs.EntityBaldEagleMixin",
+    "alexsmobs.EntityCapuchinMonkeyMixin",
+    "alexsmobs.EntityCrowMixin",
+    "alexsmobs.EntityGrizzlyBearMixin",
+    "alexsmobs.EntityMudskipperMixin",
+    "alexsmobs.EntityRaccoonMixin",
+    "alexsmobs.EntitySugarGliderMixin"
   ]
 }
