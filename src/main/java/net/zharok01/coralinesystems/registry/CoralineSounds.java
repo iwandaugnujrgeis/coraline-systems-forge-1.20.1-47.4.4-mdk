@@ -12,17 +12,18 @@ public class CoralineSounds {
     public static final DeferredRegister<SoundEvent> SOUND_EVENTS =
             DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, CoralineSystems.MOD_ID);
 
-    //Helper:
     public static final RegistryObject<SoundEvent> STATIC_BUZZ = createSoundEvent("static_buzz");
     public static final RegistryObject<SoundEvent> HELPER_HURT = createSoundEvent("helper_hurt");
     public static final RegistryObject<SoundEvent> HELPER_IDLE = createSoundEvent("helper_idle");
     public static final RegistryObject<SoundEvent> HELPER_DEATH = createSoundEvent("helper_death");
 
-    //Monster:
     public static final RegistryObject<SoundEvent> MONSTER_STARE = createSoundEvent("monster_stare");
     public static final RegistryObject<SoundEvent> MONSTER_IDLE = createSoundEvent("monster_idle");
     public static final RegistryObject<SoundEvent> MONSTER_DEATH = createSoundEvent("monster_death");
     public static final RegistryObject<SoundEvent> MONSTER_HURT = createSoundEvent("monster_hurt");
+    public static final RegistryObject<SoundEvent> MONSTER_TELEPORT = createSoundEvent("monster_teleport");
+    public static final RegistryObject<SoundEvent> MONSTER_VANISH = createSoundEvent("monster_vanish");
+    public static final RegistryObject<SoundEvent> MONSTER_SCREAM = createSoundEvent("monster_scream");
 
     public static final RegistryObject<SoundEvent> STATIC_PORTAL_AMBIENT = createSoundEvent("static_portal_ambient");
     public static final RegistryObject<SoundEvent> STATIC_PORTAL_OPEN = createSoundEvent("static_portal_open");
@@ -31,6 +32,9 @@ public class CoralineSounds {
     public static final RegistryObject<SoundEvent> GIANT_AMBIENT = createSoundEvent("giant_ambient");
     public static final RegistryObject<SoundEvent> GIANT_HURT = createSoundEvent("giant_hurt");
     public static final RegistryObject<SoundEvent> GIANT_DEATH = createSoundEvent("giant_death");
+
+    public static final RegistryObject<SoundEvent> VIBRATION_SENSOR_PING = createSoundEvent("vibration_sensor_ping");
+    public static final RegistryObject<SoundEvent> DETECTOR_ACTIVATED = createSoundEvent("detector_activated");
 
     public static final RegistryObject<SoundEvent> MINESHAFT_SPOOK = createSoundEvent("mineshaft_spook");
 

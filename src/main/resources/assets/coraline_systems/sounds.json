@@ -93,13 +93,32 @@
     "category": "neutral",
     "sounds": [
       {
-        "name": "coraline_systems:entity/monster/say1"
+        "name": "coraline_systems:entity/monster/say1",
+        "weight": 8
       },
       {
-        "name": "coraline_systems:entity/monster/say2"
+        "name": "coraline_systems:entity/monster/say2",
+        "weight": 7
       },
       {
-        "name": "coraline_systems:entity/monster/say3"
+        "name": "coraline_systems:entity/monster/say3",
+        "weight": 10
+      },
+      {
+        "name": "coraline_systems:entity/monster/say4",
+        "weight": 8
+      },
+      {
+        "name": "coraline_systems:entity/monster/say5",
+        "weight": 7
+      },
+      {
+        "name": "coraline_systems:entity/monster/say6",
+        "weight": 8
+      },
+      {
+        "name": "coraline_systems:entity/monster/say7",
+        "weight": 8
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.monster_idle"
@@ -113,6 +132,15 @@
     ],
     "subtitle": "coraline_systems.sound.subtitle.monster_death"
   },
+  "monster_vanish": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/monster/vanish1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.monster_vanish"
+  },
   "monster_hurt": {
     "category": "neutral",
     "sounds": [
@@ -121,6 +149,28 @@
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.monster_hurt"
+  },
+  "monster_scream": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "nostalgic_tweaks:cave",
+        "type": "event"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.monster_scream"
+  },
+  "monster_teleport": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/monster/eerie_teleport1"
+      },
+      {
+        "name": "coraline_systems:entity/monster/eerie_teleport2"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.monster_teleport"
   },
   "giant_stomp": {
     "category": "neutral",
@@ -202,5 +252,23 @@
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.giant_hurt"
+  },
+  "vibration_sensor_ping": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/giant/say1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.vibration_sensor_ping"
+  },
+  "detector_activated": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/giant/say1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.detector_activated"
   }
 }
