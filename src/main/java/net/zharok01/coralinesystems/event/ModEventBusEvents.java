@@ -1,5 +1,7 @@
 package net.zharok01.coralinesystems.event;
 
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
@@ -34,6 +36,18 @@ public class ModEventBusEvents {
                 SpawnPlacements.Type.ON_GROUND,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 MonsterEntity::checkMonsterSpawnRules,
+                SpawnPlacementRegisterEvent.Operation.REPLACE
+        );
+        event.register(
+                EntityType.CAMEL,
+                SpawnPlacements.Type.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                (entityType, level, spawnType, pos, random) -> {
+                    // Custom logic: Camel spawns if brightness > 8
+                    // and block below is in your custom tag
+                    boolean isBrightEnough = level.getRawBrightness(pos, 0) > 8;
+                    return level.getBlockState(pos.below()).is(BlockTags.SAND) && isBrightEnough;
+                },
                 SpawnPlacementRegisterEvent.Operation.REPLACE
         );
     }
