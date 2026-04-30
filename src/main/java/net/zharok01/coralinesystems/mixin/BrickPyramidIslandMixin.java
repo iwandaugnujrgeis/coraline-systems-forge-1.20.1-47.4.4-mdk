@@ -42,8 +42,8 @@ public abstract class BrickPyramidIslandMixin {
     private void coraline$indevPlacement(StructureTemplateManager structureTemplateManager, WorldGenLevel level, StructureManager structureManager, ChunkGenerator chunkGen, BlockPos pos, BlockPos structureOrigin, Rotation rotation, BoundingBox chunkBounds, RandomSource rand, boolean pKeepJigsaws, CallbackInfoReturnable<Boolean> cir) {
 
         BlockState baseMaterial = Blocks.STONE.defaultBlockState();
-        BlockState topMaterial = Blocks.GRASS_BLOCK.defaultBlockState();
-        BlockState soilMaterial = Blocks.DIRT.defaultBlockState();
+        BlockState topMaterial = Blocks.GRAVEL.defaultBlockState();
+        BlockState soilMaterial = Blocks.COARSE_DIRT.defaultBlockState();
 
         float horizontalNoiseScale = 2.5F;
         float verticalNoiseScale = 5F;
