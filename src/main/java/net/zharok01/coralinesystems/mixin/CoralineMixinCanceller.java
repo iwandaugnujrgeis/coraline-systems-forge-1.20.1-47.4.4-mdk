@@ -12,7 +12,9 @@ public class CoralineMixinCanceller implements MixinCanceller {
             case "com.ordana.spelunkery.mixins.MineshaftMixin",
                  "net.mehvahdjukaar.supplementaries.mixins.StrongholdRoomSconceMixin",
                  "net.mehvahdjukaar.supplementaries.mixins.StrongholdCrossingSconceMixin",
-                 "com.teamabnormals.caverns_and_chasms.core.mixin.CreeperMixin",
+                 "com.teamabnormals.caverns_and_chasms.core.mixin.entity.CreeperMixin",
+                 "com.teamabnormals.caverns_and_chasms.core.mixin.structure.MineshaftCorridorMixin",
+                 "com.teamabnormals.caverns_and_chasms.core.mixin.entity.MobMixin",
                  "com.faboslav.friendsandfoes.common.mixin.StrongholdGeneratorMixin" -> true;
             default -> false;
         };
