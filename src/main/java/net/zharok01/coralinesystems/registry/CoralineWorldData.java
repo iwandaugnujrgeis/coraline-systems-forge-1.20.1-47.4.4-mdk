@@ -21,7 +21,7 @@ import java.util.Map;
 public class CoralineWorldData extends SavedData {
 
     private static final String IDENTIFIER           = "coraline_mineshaft_data";
-    private static final int    PLAY_COUNT_THRESHOLD = 3;
+    private static final int    PLAY_COUNT_THRESHOLD = 1; //TODO: Changed it to 1 to test!
 
     /** Chunk coords → number of times the creak sound has played there. */
     private final Map<ChunkPos, Integer> chunkPlayCounts = new HashMap<>();
