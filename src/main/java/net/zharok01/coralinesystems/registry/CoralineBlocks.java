@@ -55,6 +55,10 @@ public class CoralineBlocks {
 			)
 	);
 
+	public static final RegistryObject<Block> VIBRATION_SENSOR = register("vibration_sensor",
+			() -> new VibrationSensorBlock(BlockBehaviour.Properties.of()
+					.strength(1.5F).sound(SoundType.STONE).noOcclusion()));
+
 	public static final RegistryObject<Block> TORCH = registerWithoutItem("torch",
 		() -> new LimitedTorchBlock(BlockBehaviour.Properties.of().noCollission().instabreak().sound(SoundType.WOOD).pushReaction(PushReaction.DESTROY), ParticleTypes.FLAME)
 	);
