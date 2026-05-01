@@ -38,6 +38,8 @@ public class CoralineSounds {
 
     public static final RegistryObject<SoundEvent> MINESHAFT_SPOOK = createSoundEvent("mineshaft_spook");
 
+    public static final RegistryObject<SoundEvent> SPECIAL_SCORE = createSoundEvent("special_score");
+
     private static RegistryObject<SoundEvent> createSoundEvent(final String soundName) {
         return SOUND_EVENTS.register(soundName, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(CoralineSystems.MOD_ID, soundName)));
     }

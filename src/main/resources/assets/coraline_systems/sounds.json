@@ -270,5 +270,14 @@
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.detector_activated"
+  },
+  "special_score": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:special_score"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.special_score"
   }
 }
