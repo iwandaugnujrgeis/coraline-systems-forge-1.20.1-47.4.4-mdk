@@ -63,19 +63,4 @@ public class CoralineFogEvents {
         RenderSystem.setShaderFogStart(newStart);
     }
 
-    /**
-     * Blend the fog colour toward a cool blue-grey during morning.
-     *
-     * Same LOW priority — runs after FLGN's NORMAL-priority colour computation,
-     * so we're blending on top of whatever biome-tinted colour FLGN produced.
-     */
-    @SubscribeEvent(priority = EventPriority.LOW)
-    public static void onRenderFogColor(ViewportEvent.ComputeFogColor event) {
-        float intensity = MorningFogManager.getIntensity((float) event.getPartialTick());
-        if (intensity <= 0.001F) return;
-
-        event.setRed(  Mth.lerp(intensity, event.getRed(),   MorningFogManager.TINT_R));
-        event.setGreen(Mth.lerp(intensity, event.getGreen(), MorningFogManager.TINT_G));
-        event.setBlue( Mth.lerp(intensity, event.getBlue(),  MorningFogManager.TINT_B));
-    }
 }

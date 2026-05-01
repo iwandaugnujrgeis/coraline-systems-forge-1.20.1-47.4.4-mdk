@@ -23,16 +23,8 @@ public class MorningFogManager {
      * 0.35 = the fog wall is at 35 % of render distance at full morning fog.
      * Raise toward 1.0 for lighter haze, lower toward 0.1 for thick mist.
      */
-    public static final float MORNING_FOG_END   = 0.35F;
+    public static final float MORNING_FOG_END   = 0.45F;
     public static final float MORNING_FOG_START = 0.05F;
-
-    /**
-     * Fog color tint at peak: a cool blue-grey matching real morning mist.
-     * Components are in 0..1. Blended against the biome fog color by intensity.
-     */
-    public static final float TINT_R = 0.65F;
-    public static final float TINT_G = 0.73F;
-    public static final float TINT_B = 0.85F;
 
     /** Lerp speed toward the target intensity — slow build / slow burn-off. */
     private static final float LERP_SPEED = 0.008F;
@@ -81,9 +73,9 @@ public class MorningFogManager {
         if (raw < 1500L) {
             return 1.0F;
         }
-        // Morning burn-off (1500 → 6500)
-        if (raw < 6500L) {
-            return 1.0F - (raw - 1500L) / 5000.0F;
+        // Morning burn-off (1500 → 1600)
+        if (raw < 1600L) {
+            return 1.0F - (raw - 1500L) / 100.0F;
         }
         // Rest of day / night
         return 0.0F;
