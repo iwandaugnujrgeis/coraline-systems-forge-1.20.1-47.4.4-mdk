@@ -13,7 +13,7 @@ public class ClientScoreEvents {
 
     @SubscribeEvent
     public static void onRenderGui(RenderGuiOverlayEvent.Post event) {
-        // Draw the custom overlay whenever the HOTBAR is rendering[cite: 7]
+        // Draw the custom overlay whenever the HOTBAR is rendering
         if (event.getOverlay() == VanillaGuiOverlay.HOTBAR.type()) {
             ScoreOverlay.render(event.getGuiGraphics(), event.getPartialTick());
         }
