@@ -47,6 +47,7 @@
     "alexsmobs.EntityBaldEagleMixin",
     "alexsmobs.EntityCapuchinMonkeyMixin",
     "alexsmobs.EntityCrowMixin",
+    "alexsmobs.EntityFarseerMixin",
     "alexsmobs.EntityGrizzlyBearMixin",
     "alexsmobs.EntityMudskipperMixin",
     "alexsmobs.EntityRaccoonMixin",

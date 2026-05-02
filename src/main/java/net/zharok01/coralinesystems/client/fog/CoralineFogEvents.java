@@ -16,7 +16,7 @@ public class CoralineFogEvents {
 
     /**
      * Tick the morning fog intensity interpolator once per client game tick.
-     * ClientTickEvent fires only when the game is not paused, matching FLGN's
+     * ClientTickEvent fires only when the game is not paused, matching Fog Looks Good Now's
      * GameRenderer.tick() injection which has the same property.
      */
     @SubscribeEvent
@@ -47,15 +47,15 @@ public class CoralineFogEvents {
 
         float renderDistance = event.getRenderer().getRenderDistance();
 
-        // Read the values FLGN already wrote so we compose on top of them
+        // Read the values already in place, so we compose on top of them
         float currentStart = RenderSystem.getShaderFogStart();
         float currentEnd   = RenderSystem.getShaderFogEnd();
 
         float morningEnd   = renderDistance * MorningFogManager.MORNING_FOG_END;
         float morningStart = renderDistance * MorningFogManager.MORNING_FOG_START;
 
-        // Only tighten — never push the fog further out than FLGN set it.
-        // This prevents morning fog from making a dense-biome fog even sparser.
+        // Only tighten: never push the fog further out than Fog Looks Good Now set it
+        // This prevents morning fog from making a dense-biome fog even sparser
         float newEnd   = Math.min(currentEnd,   Mth.lerp(intensity, currentEnd,   morningEnd));
         float newStart = Math.min(currentStart, Mth.lerp(intensity, currentStart, morningStart));
 
