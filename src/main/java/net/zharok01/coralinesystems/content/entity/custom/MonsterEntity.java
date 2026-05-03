@@ -1,7 +1,6 @@
 package net.zharok01.coralinesystems.content.entity.custom;
 
 import com.legacy.rediscovered.entity.pigman.PigmanEntity;
-import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -9,8 +8,6 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.util.RandomSource;
-import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -23,7 +20,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -47,14 +43,24 @@ public class MonsterEntity extends Monster {
     private static final EntityDataAccessor<Integer> FADE_TICKS_REMAINING =
             SynchedEntityData.defineId(MonsterEntity.class, EntityDataSerializers.INT);
 
-    public int glitchTimer    = 0;
-    private int attackCooldown = 0;
-    private int fadeTicks      = 0;
+    public int glitchTimer     = 0;
+    private int attackCooldown  = 0;
+    private int fadeTicks       = 0;
+    // Throttles getNearestPlayer — only re-scans once every PLAYER_SEARCH_INTERVAL ticks
+    private int playerSearchTimer = 0;
+    @Nullable private Player nearestPlayer = null;
 
-    public static final int FADE_DURATION_TICKS    = 20;
-    private static final int ATTACK_COOLDOWN_TICKS = 40;
-    private static final float HIT_FLEE_CHANCE     = 0.9F;
-    private static final float HURT_FLEE_CHANCE    = 0.9F;
+    public static final int FADE_DURATION_TICKS      = 20;
+    private static final int ATTACK_COOLDOWN_TICKS   = 40;
+    private static final int PLAYER_SEARCH_INTERVAL  = 10;
+    private static final float HIT_FLEE_CHANCE       = 0.9F;
+    private static final float HURT_FLEE_CHANCE      = 0.9F;
+    private static final float MAYBE_FLEE_CHANCE        = 0.15F;
+    /** Squared distance at which plate armor scares an idle Monster (9 blocks). */
+    /** Ticks the Monster has been watching a plate-armored player before fleeing. */
+    private int plateSpookTimer = -1; // -1 = not active
+    /** Delay in ticks before the Monster fades out after seeing plate armor (1 second). */
+    private static final int PLATE_SPOOK_DELAY = 20;
 
     // -------------------------------------------------------------------------
     // Plate armor repellent
@@ -207,18 +213,51 @@ public class MonsterEntity extends Monster {
                 this.setTarget(null);
             }
 
-            Player player = this.level().getNearestPlayer(this, 64.0D); //TODO: Change this to lower values?
+            // Throttle getNearestPlayer — it's a spatial search, not free.
+            // Re-scan every PLAYER_SEARCH_INTERVAL ticks; use cached result otherwise.
+            if (playerSearchTimer <= 0) {
+                nearestPlayer = this.level().getNearestPlayer(this, 64.0D);
+                playerSearchTimer = PLAYER_SEARCH_INTERVAL;
+            } else {
+                playerSearchTimer--;
+            }
+            Player player = nearestPlayer;
             if (player != null && !player.getAbilities().instabuild && !player.isSpectator()) {
 
                 // ── Plate armor repellent ─────────────────────────────────────
-                // Checked BEFORE any trigger — if the nearest player is wearing
-                // plate armor, the Monster flees regardless of current state.
-                // This also handles the case where a targeted player equips plate
-                // armor mid-encounter, since it is evaluated every tick.
-                if (isWearingPlateArmor(player)) {
+                // If already active (spotted/angry), flee immediately — no delay.
+                // Otherwise: start a PLATE_SPOOK_DELAY-tick timer the moment the
+                // Monster has line-of-sight to a plate-armored player. This gives
+                // the player a brief window to see the Monster watching them before
+                // it fades out with the full fade animation.
+                // Timer resets if LOS breaks or armor is removed during the window.
+                boolean wearingPlate = isWearingPlateArmor(player);
+                if (wearingPlate && (this.isSpotted() || this.isAngry())) {
+                    // Already engaged — flee without delay
                     screamAndFlee();
                     CoralineTriggers.SCARE_MONSTER.trigger((ServerPlayer) player);
-                    return; // skip all other processing this tick
+                    return;
+                } else if (wearingPlate && this.hasLineOfSight(player)) {
+                    if (plateSpookTimer < 0) {
+                        // LOS just established — start the countdown
+                        plateSpookTimer = PLATE_SPOOK_DELAY;
+                    } else if (plateSpookTimer == 0) {
+                        // Timer expired — fade out permanently
+                        plateSpookTimer = -1;
+                        this.entityData.set(IS_FADING, true);
+                        this.fadeTicks = FADE_DURATION_TICKS;
+                        this.entityData.set(FADE_TICKS_REMAINING, this.fadeTicks);
+                        this.getNavigation().stop();
+                        this.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+                        super.setTarget(null);
+                        CoralineTriggers.SCARE_MONSTER.trigger((ServerPlayer) player);
+                        return;
+                    } else {
+                        plateSpookTimer--;
+                    }
+                } else {
+                    // LOS broken or armor removed — reset
+                    plateSpookTimer = -1;
                 }
 
                 // Proximity trigger while still unspotted
@@ -237,9 +276,11 @@ public class MonsterEntity extends Monster {
                     }
                 }
 
-                // Sighting trigger
-                boolean looking = this.isLookingAtMe(player);
-                if (looking && !this.isSpotted()) {
+                // Sighting trigger — hasLineOfSight is a raycast; only run when
+                // not yet spotted since post-spotting the check is irrelevant.
+                // Skip entirely when the player is wearing plate armor — the
+                // plate scare fires instead, and stacking both sounds is jarring.
+                if (!this.isSpotted() && !wearingPlate && this.isLookingAtMe(player)) {
                     this.setSpotted(true);
                     this.setGlitching(true);
                     this.glitchTimer = 100;
@@ -248,7 +289,7 @@ public class MonsterEntity extends Monster {
                     player.awardStat(CoralineStats.MONSTER_SIGHTINGS.get());
                 }
 
-                if (this.isSpotted() && !this.isAngry() && this.getTarget() == null) {
+                if (this.isSpotted() && !this.isAngry() && currentTarget == null) {
                     this.setAngry(true);
                     this.setTarget(player);
                 }
@@ -277,7 +318,7 @@ public class MonsterEntity extends Monster {
         if (player.isSpectator() || player.getAbilities().instabuild) return false;
         if (!player.hasLineOfSight(this)) return false;
 
-        Vec3 vec3  = player.getViewVector(1.0F).normalize();
+        Vec3 vec3  = player.getViewVector(1.0F); // already normalized by vanilla
         Vec3 vec31 = new Vec3(
                 this.getX() - player.getX(),
                 this.getEyeY() - player.getEyeY(),
@@ -355,7 +396,7 @@ public class MonsterEntity extends Monster {
     }
 
     private void maybeFlee() {
-        if (!this.level().isClientSide && this.random.nextFloat() < 0.15F) {
+        if (!this.level().isClientSide && this.random.nextFloat() < MAYBE_FLEE_CHANCE) {
             this.entityData.set(IS_FADING, true);
             this.fadeTicks = FADE_DURATION_TICKS;
             this.entityData.set(FADE_TICKS_REMAINING, this.fadeTicks);
@@ -429,7 +470,7 @@ public class MonsterEntity extends Monster {
         private final MonsterEntity monster;
         private int teleportTime = 0;
         private static final int RE_APPROACH_TICKS = 20;
-        private static final double LOST_DISTANCE_SQ = 96.0D;
+        private static final double LOST_DISTANCE_SQ = 9216.0D; // 96 blocks squared
 
         public MonsterGlitchAttackGoal(MonsterEntity monster) {
             this.monster = monster;
@@ -449,6 +490,7 @@ public class MonsterEntity extends Monster {
         @Override
         public boolean canContinueToUse() {
             LivingEntity target = monster.getTarget();
+            if (target == null || !monster.isAngry() || monster.isGlitching()) return false;
             if (target instanceof Player p) {
                 if (p.getAbilities().instabuild || p.isSpectator()) {
                     monster.setTarget(null);
@@ -456,11 +498,9 @@ public class MonsterEntity extends Monster {
                 }
                 // Target equipped plate armor mid-chase — aiStep will call screamAndFlee
                 // on the next tick; we just stop the goal now so the chase ends cleanly.
-                if (isWearingPlateArmor(p)) {
-                    return false;
-                }
+                if (isWearingPlateArmor(p)) return false;
             }
-            return canUse();
+            return true;
         }
 
         @Override
@@ -523,17 +563,5 @@ public class MonsterEntity extends Monster {
         this.entityData.define(FADE_TICKS_REMAINING, 0);
     }
 
-    @Nullable
-    @Override
-    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty,
-                                        MobSpawnType reason, @Nullable SpawnGroupData spawnData,
-                                        @Nullable CompoundTag tag) {
-        return super.finalizeSpawn(level, difficulty, reason, spawnData, tag);
-    }
 
-    public static boolean checkMonsterSpawnRules(EntityType<? extends Monster> type,
-                                                 ServerLevelAccessor level, MobSpawnType spawnType,
-                                                 BlockPos pos, RandomSource random) {
-        return Monster.checkMonsterSpawnRules(type, level, spawnType, pos, random);
-    }
 }
