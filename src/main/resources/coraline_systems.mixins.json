@@ -9,7 +9,6 @@
     "GiantKickAnimationMixin",
     "GiantMobRendererMixin",
     "HelperAnimationMixin",
-    "MinecartSpawnerSoundMixin",
     "OptionsMixin",
     "SoundEngineMixin",
     "SunrisePinkMixin"
@@ -29,6 +28,7 @@
     "JerboaEffectMixin",
     "JukeboxBlockEntityMixin",
     "NetherPortalCorruptionMixin",
+    "PigmanTradesMixin",
     "PlayerMineshaftMixin",
     "RediscoveredEventsMixin",
     "RespawnAnchorFuelMixin",
@@ -43,6 +43,7 @@
     "StructurePieceMixin",
     "WeatheringCopperItemMixin",
     "ZombieMixin",
+    "ZombiePigmanConversionMixin",
     "accessors.CandleCakeBlockAccessor",
     "alexsmobs.EntityBaldEagleMixin",
     "alexsmobs.EntityCapuchinMonkeyMixin",
