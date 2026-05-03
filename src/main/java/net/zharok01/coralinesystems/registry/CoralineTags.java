@@ -10,4 +10,7 @@ public class CoralineTags {
     // This defines the location: data/coraline_systems/tags/blocks/helper_mineable.json
     public static final TagKey<Block> HELPER_MINEABLE = TagKey.create(Registries.BLOCK,
             new ResourceLocation(CoralineSystems.MOD_ID, "helper_mineable"));
+
+    public static final TagKey<Block> FRAGILE = TagKey.create(Registries.BLOCK,
+            new ResourceLocation(CoralineSystems.MOD_ID, "fragile"));
 }
