@@ -36,7 +36,6 @@ public class CoralineSystems {
         CoralineSounds.register(bus);
         CoralineBlockEntities.register(bus);
         CoralineStats.register(bus);
-        CoralineStructureTypes.register(bus);
 
         bus.addListener(this::commonSetup);
 
@@ -46,7 +45,6 @@ public class CoralineSystems {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(CoralineTriggers::init);
-        net.zharok01.coralinesystems.content.world.structure.CoralineStructurePieceTypes.register();
 
         CoralineStats.STATS.getEntries().forEach(stat ->
                 net.minecraft.stats.Stats.CUSTOM.get(stat.get(), net.minecraft.stats.StatFormatter.DEFAULT)
