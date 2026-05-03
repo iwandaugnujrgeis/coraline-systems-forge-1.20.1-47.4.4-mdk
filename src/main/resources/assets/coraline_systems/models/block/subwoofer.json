@@ -1,0 +1,12 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "coraline_systems:block/subwoofer",
+    "up": "coraline_systems:block/subwoofer",
+    "north": "coraline_systems:block/subwoofer_front",
+    "east": "coraline_systems:block/subwoofer",
+    "south": "coraline_systems:block/subwoofer",
+    "west": "coraline_systems:block/subwoofer",
+    "particle": "coraline_systems:block/subwoofer"
+  }
+}

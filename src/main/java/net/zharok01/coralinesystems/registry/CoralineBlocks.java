@@ -27,7 +27,6 @@ public class CoralineBlocks {
 	public static void registerRenderLayers() {
 		ItemBlockRenderTypes.setRenderLayer(WALL_TORCH.get(), RenderType.cutout());
 		ItemBlockRenderTypes.setRenderLayer(TORCH.get(), RenderType.cutout());
-		ItemBlockRenderTypes.setRenderLayer(STATIC_BLOCK.get(), RenderType.translucent());
 		ItemBlockRenderTypes.setRenderLayer(STATIC_PORTAL_BLOCK.get(), RenderType.translucent());
 	}
 
@@ -40,11 +39,11 @@ public class CoralineBlocks {
 					.sound(SoundType.GLASS))
 	);
 
-	public static final RegistryObject<Block> STATIC_BLOCK = registerWithoutItem("static_block",
-			() -> new StaticBlock(BlockBehaviour.Properties.of()
-					.strength(2.0f)
-					.sound(SoundType.GLASS)
-					.noOcclusion())
+	public static final RegistryObject<Block> SUBWOOFER = register("subwoofer",
+			() -> new SubwooferBlock(BlockBehaviour.Properties.of()
+					.strength(3.5F, 6.0F)
+					.sound(SoundType.STONE)
+					.requiresCorrectToolForDrops())
 	);
 
 	public static final RegistryObject<Block> CONTAINER_BLOCK = register("container",
