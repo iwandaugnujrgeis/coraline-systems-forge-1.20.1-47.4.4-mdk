@@ -33,9 +33,9 @@ public class ZiplineHandler {
 
     public static final Map<UUID, ZiplineData> ZIPLINING_PLAYERS = new HashMap<>();
 
-    private static final double MIN_MOMENTUM = 0.04;
+    private static final double MIN_MOMENTUM = 0.01;
     private static final double FRICTION = 0.97;
-    private static final double LAUNCH_MULTIPLIER = 4.0;
+    private static final double LAUNCH_MULTIPLIER = 2.0;
 
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
