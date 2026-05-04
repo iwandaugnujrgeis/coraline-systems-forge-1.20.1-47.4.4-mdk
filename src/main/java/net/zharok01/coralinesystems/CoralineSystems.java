@@ -15,6 +15,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.zharok01.coralinesystems.client.ClientPortalEffect;
+import net.zharok01.coralinesystems.network.CoralinePacketHandler;
 import net.zharok01.coralinesystems.registry.*;
 import org.slf4j.Logger;
 
@@ -45,6 +46,7 @@ public class CoralineSystems {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(CoralineTriggers::init);
+        CoralinePacketHandler.register();
 
         CoralineStats.STATS.getEntries().forEach(stat ->
                 net.minecraft.stats.Stats.CUSTOM.get(stat.get(), net.minecraft.stats.StatFormatter.DEFAULT)
