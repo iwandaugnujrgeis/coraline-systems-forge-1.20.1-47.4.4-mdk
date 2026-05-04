@@ -12,6 +12,7 @@ public class CoralineTriggers {
     public static final AMAdvancementTrigger HELPER_DANCING = new AMAdvancementTrigger(new ResourceLocation(CoralineSystems.MOD_ID, "helper_dancing"));
     public static final AMAdvancementTrigger MINESHAFT_DISCOVERED = new AMAdvancementTrigger(new ResourceLocation(CoralineSystems.MOD_ID, "mineshaft_discovered"));
     public static final AMAdvancementTrigger SCARE_MONSTER = new AMAdvancementTrigger(new ResourceLocation(CoralineSystems.MOD_ID, "scare_monster"));
+    public static final AMAdvancementTrigger ZIPLINE = new AMAdvancementTrigger(new ResourceLocation(CoralineSystems.MOD_ID, "zipline"));
 
     public static void init() {
         CriteriaTriggers.register(CORRUPT_PORTAL);
@@ -19,5 +20,6 @@ public class CoralineTriggers {
         CriteriaTriggers.register(HELPER_DANCING);
         CriteriaTriggers.register(MINESHAFT_DISCOVERED);
         CriteriaTriggers.register(SCARE_MONSTER);
+        CriteriaTriggers.register(ZIPLINE);
     }
 }
