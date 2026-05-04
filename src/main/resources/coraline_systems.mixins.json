@@ -9,6 +9,7 @@
     "GiantKickAnimationMixin",
     "GiantMobRendererMixin",
     "HelperAnimationMixin",
+    "HumanoidModelMixin",
     "OptionsMixin",
     "SoundEngineMixin",
     "SunrisePinkMixin"

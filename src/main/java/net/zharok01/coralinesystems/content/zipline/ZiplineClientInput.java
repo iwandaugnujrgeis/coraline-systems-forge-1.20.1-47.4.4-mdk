@@ -1,6 +1,7 @@
 package net.zharok01.coralinesystems.content.zipline;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -14,14 +15,20 @@ public class ZiplineClientInput {
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
-        // FIX: only fire at phase END — ClientTickEvent fires twice per tick
-        // (START and END), so without this guard packets are sent twice as often.
         if (event.phase != TickEvent.Phase.END) return;
 
         boolean isPressed = Minecraft.getInstance().options.keyUse.isDown();
         if (isPressed != lastState) {
             CoralinePacketHandler.sendToServer(new ZiplineInputPacket(isPressed));
             lastState = isPressed;
+
+            // Immediately stop ziplining on the client side for a snappy drop!
+            if (!isPressed) {
+                Player player = Minecraft.getInstance().player;
+                if (player != null) {
+                    ZiplineHandler.stopZiplining(player);
+                }
+            }
         }
     }
 }

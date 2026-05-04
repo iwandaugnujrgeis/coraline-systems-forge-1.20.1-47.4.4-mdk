@@ -13,22 +13,25 @@ public class ZiplineEvents {
 
     @SubscribeEvent
     public static void onRightClickRope(PlayerInteractEvent.RightClickBlock event) {
-        // FIX: PlayerInteractEvent fires on both sides — only start ziplining on the server.
-        // The client-side fire has no ZIPLINING_PLAYERS map entry and would desync.
-        if (event.getLevel().isClientSide()) return;
-
         Player player = event.getEntity();
         BlockState state = event.getLevel().getBlockState(event.getPos());
 
         if (!(state.getBlock() instanceof RopeBlock)) return;
         if (!player.getMainHandItem().is(ItemTags.PICKAXES)) return;
 
-        // Only grab the rope if the player jumped into it with horizontal momentum —
-        // standing still and right-clicking should not trigger the zipline.
+        // Prevent attaching while standing still on the ground
         if (player.onGround()) return;
-        if (player.getDeltaMovement().horizontalDistance() < 0.1) return;
 
-        ZiplineHandler.startZiplining(player, player.getDeltaMovement());
-        event.setCanceled(true); // prevent the pickaxe from interacting with the rope block
+        // If they are already ziplining, ignore further clicks
+        if (ZiplineHandler.ZIPLINING_PLAYERS.containsKey(player.getUUID())) return;
+
+        // Trigger on BOTH client and server for instant feedback!
+        ZiplineHandler.startZiplining(player, player.getDeltaMovement(), event.getPos());
+
+        if (event.getLevel().isClientSide()) {
+            net.minecraft.client.Minecraft.getInstance().getSoundManager().play(new ZiplineSoundInstance(player));
+        }
+
+        event.setCanceled(true);
     }
 }
