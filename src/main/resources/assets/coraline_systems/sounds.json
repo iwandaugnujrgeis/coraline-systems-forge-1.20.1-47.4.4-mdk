@@ -296,5 +296,30 @@
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.subwoofer_boom"
+  },
+  "brume_ambient": {
+    "category": "neutral",
+    "sounds": [
+      "mob/husk/idle1",
+      "mob/husk/idle2",
+      "mob/husk/idle3"
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.brume_ambient"
+  },
+  "brume_death": {
+    "category": "neutral",
+    "sounds": [
+      "mob/husk/death1",
+      "mob/husk/death2"
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.brume_death"
+  },
+  "brume_hurt": {
+    "category": "neutral",
+    "sounds": [
+      "mob/husk/hurt1",
+      "mob/husk/hurt2"
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.brume_hurt"
   }
 }

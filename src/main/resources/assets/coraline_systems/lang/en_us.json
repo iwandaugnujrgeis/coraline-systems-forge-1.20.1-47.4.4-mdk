@@ -6,6 +6,11 @@
 	"block.coraline_systems.subwoofer": "Subwoofer",
 	"block.coraline_systems.vibration_sensor": "Motion Sensor",
 
+	"entity.coraline_systems.brume": "Brume",
+	"coraline_systems.sound.subtitle.brume_ambient": "Brume breathes",
+	"coraline_systems.sound.subtitle.brume_death": "Brume dies",
+	"coraline_systems.sound.subtitle.brume_hurt": "Brume hurt",
+
 	"coraline_systems.sound.subtitle.mineshaft_spook": "Long-forgotten rattle...",
 
 	"coraline_systems.sound.subtitle.giant_stomp": "Giant stomps",

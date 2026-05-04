@@ -33,6 +33,10 @@ public class CoralineSounds {
     public static final RegistryObject<SoundEvent> GIANT_HURT = createSoundEvent("giant_hurt");
     public static final RegistryObject<SoundEvent> GIANT_DEATH = createSoundEvent("giant_death");
 
+    public static final RegistryObject<SoundEvent> BRUME_AMBIENT = createSoundEvent("brume_ambient");
+    public static final RegistryObject<SoundEvent> BRUME_HURT = createSoundEvent("brume_hurt");
+    public static final RegistryObject<SoundEvent> BRUME_DEATH = createSoundEvent("brume_death");
+
     public static final RegistryObject<SoundEvent> VIBRATION_SENSOR_PING = createSoundEvent("vibration_sensor_ping");
     public static final RegistryObject<SoundEvent> DETECTOR_ACTIVATED = createSoundEvent("detector_activated");
 
