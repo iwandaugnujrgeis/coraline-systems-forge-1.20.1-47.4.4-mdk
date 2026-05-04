@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.client.helper;
+package net.zharok01.coralinesystems.client.entity.helper;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -10,7 +10,7 @@ import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.zharok01.coralinesystems.CoralineSystems;
-import net.zharok01.coralinesystems.content.entity.custom.HelperEntity;
+import net.zharok01.coralinesystems.content.entity.HelperEntity;
 import org.jetbrains.annotations.NotNull;
 
 public class HelperStaticLayer extends RenderLayer<HelperEntity, PlayerModel<HelperEntity>> {

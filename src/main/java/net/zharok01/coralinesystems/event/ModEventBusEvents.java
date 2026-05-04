@@ -9,15 +9,17 @@ import net.minecraftforge.event.entity.SpawnPlacementRegisterEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.zharok01.coralinesystems.CoralineSystems;
-import net.zharok01.coralinesystems.content.entity.custom.MonsterEntity;
+import net.zharok01.coralinesystems.content.entity.BrumeEntity;
+import net.zharok01.coralinesystems.content.entity.MonsterEntity;
 import net.zharok01.coralinesystems.registry.IsotopicEntities;
-import net.zharok01.coralinesystems.content.entity.custom.HelperEntity;
+import net.zharok01.coralinesystems.content.entity.HelperEntity;
 
 @Mod.EventBusSubscriber(modid = CoralineSystems.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModEventBusEvents {
 
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event) {
+        event.put(IsotopicEntities.BRUME.get(), BrumeEntity.createAttributes().build());
         event.put(IsotopicEntities.HELPER.get(), HelperEntity.createAttributes().build());
         event.put(IsotopicEntities.MONSTER.get(), MonsterEntity.createAttributes().build());
     }
@@ -36,6 +38,13 @@ public class ModEventBusEvents {
                 SpawnPlacements.Type.ON_GROUND,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 MonsterEntity::checkMonsterSpawnRules,
+                SpawnPlacementRegisterEvent.Operation.REPLACE
+        );
+        event.register(
+                IsotopicEntities.BRUME.get(),
+                SpawnPlacements.Type.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                BrumeEntity::checkBrumeSpawnRules,
                 SpawnPlacementRegisterEvent.Operation.REPLACE
         );
         event.register(

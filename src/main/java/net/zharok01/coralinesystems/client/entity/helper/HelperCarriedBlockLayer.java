@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.client.helper;
+package net.zharok01.coralinesystems.client.entity.helper;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -12,7 +12,7 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemDisplayContext; // NEW IMPORT
 import net.minecraft.world.level.block.state.BlockState;
-import net.zharok01.coralinesystems.content.entity.custom.HelperEntity;
+import net.zharok01.coralinesystems.content.entity.HelperEntity;
 
 public class HelperCarriedBlockLayer extends RenderLayer<HelperEntity, PlayerModel<HelperEntity>> {
     private final ItemRenderer itemRenderer;

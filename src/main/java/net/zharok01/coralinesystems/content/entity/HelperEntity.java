@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.content.entity.custom;
+package net.zharok01.coralinesystems.content.entity;
 
 import com.github.alexthe666.alexsmobs.client.particle.AMParticleRegistry;
 import net.mehvahdjukaar.supplementaries.common.entities.ThrowableBrickEntity;

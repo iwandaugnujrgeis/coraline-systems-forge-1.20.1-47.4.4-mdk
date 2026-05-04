@@ -1,7 +1,6 @@
-package net.zharok01.coralinesystems.content.entity.custom;
+package net.zharok01.coralinesystems.content.entity;
 
 import com.legacy.rediscovered.entity.pigman.PigmanEntity;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;

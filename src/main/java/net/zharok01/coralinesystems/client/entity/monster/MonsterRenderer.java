@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.client.monster;
+package net.zharok01.coralinesystems.client.entity.monster;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -10,7 +10,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.zharok01.coralinesystems.CoralineSystems;
-import net.zharok01.coralinesystems.content.entity.custom.MonsterEntity;
+import net.zharok01.coralinesystems.content.entity.MonsterEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
