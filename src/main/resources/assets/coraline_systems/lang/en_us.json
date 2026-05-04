@@ -3,6 +3,8 @@
 	"item.coraline_systems.dimensional_shard": "Dimensional Shard",
 	"item.coraline_systems.cobalt_pants": "Cobalt Pants",
 	"block.coraline_systems.container": "Container",
+	"block.coraline_systems.subwoofer": "Subwoofer",
+	"block.coraline_systems.vibration_sensor": "Motion Sensor",
 
 	"coraline_systems.sound.subtitle.mineshaft_spook": "Long-forgotten rattle...",
 
@@ -33,5 +35,10 @@
 	"coraline_systems.sound.subtitle.monster_stare": "Monster is unhappy...",
 	"coraline_systems.sound.subtitle.monster_teleport": "Monster teleports",
 	"coraline_systems.sound.subtitle.monster_vanish": "Monster vanishes",
-	"coraline_systems.sound.subtitle.monster_scream": "Monster screams"
+	"coraline_systems.sound.subtitle.monster_scream": "Monster screams",
+
+	"coraline_systems.sound.subtitle.subwoofer_boom": "Subwoofer woofs",
+	"coraline_systems.sound.subtitle.special_score": "Score dings!",
+	"coraline_systems.sound.subtitle.detector_activated": "Sensor hums",
+	"coraline_systems.sound.subtitle.vibration_sensor_ping": "Sensor pings"
 }

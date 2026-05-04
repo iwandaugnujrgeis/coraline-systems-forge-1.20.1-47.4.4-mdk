@@ -1,6 +1,16 @@
 {
   "replace": false,
   "values": [
-    "minecraft:glass"
+    "#minecraft:flower_pots",
+    "minecraft:redstone_wire",
+    "supplementaries:gunpowder",
+    "minecraft:tripwire",
+    "alexsmobs:banana_peel",
+    "#minecraft:crops",
+    "supplementaries:rope",
+    "spelunkery:rope_ladder",
+    "#minecraft:flowers",
+    "#minecraft:saplings",
+    "#minecraft:replaceable_by_trees"
     ]
 }

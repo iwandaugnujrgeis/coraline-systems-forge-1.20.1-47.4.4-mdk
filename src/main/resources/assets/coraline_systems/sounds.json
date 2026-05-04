@@ -154,8 +154,7 @@
     "category": "neutral",
     "sounds": [
       {
-        "name": "nostalgic_tweaks:cave",
-        "type": "event"
+        "name": "coraline_systems:entity/monster/vanish1"
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.monster_scream"
@@ -279,5 +278,23 @@
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.special_score"
+  },
+  "subwoofer_boom": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:subwoofer_boom",
+        "pitch": 1.0
+      },
+      {
+        "name": "coraline_systems:subwoofer_boom",
+        "pitch": 0.9
+      },
+      {
+        "name": "coraline_systems:subwoofer_boom",
+        "pitch": 0.8
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.subwoofer_boom"
   }
 }

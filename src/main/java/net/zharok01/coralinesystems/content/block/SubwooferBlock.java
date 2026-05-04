@@ -4,7 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
@@ -23,6 +22,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.zharok01.coralinesystems.registry.CoralineSounds;
 import net.zharok01.coralinesystems.registry.CoralineTags;
 
 import javax.annotation.Nullable;
@@ -106,28 +106,44 @@ public class SubwooferBlock extends Block {
                                 Block block, BlockPos fromPos, boolean isMoving) {
         if (level.isClientSide()) return;
 
-        boolean powered = level.hasNeighborSignal(pos);
+        boolean isPowered = level.hasNeighborSignal(pos);
         boolean wasPowered = state.getValue(POWERED);
 
-        // Rising edge only — don't re-fire while POWERED is still lingering
-        if (powered && !wasPowered) {
+        if (isPowered && !wasPowered) {
+            // Rising edge: Redstone turned ON. Fire the subwoofer!
             int signal = level.getBestNeighborSignal(pos);
             fire(state, level, pos, signal);
 
-            // Set POWERED=true; schedule a tick to clear it after POWERED_TICKS
+            // Set state to powered and schedule the cooldown
             level.setBlock(pos, state.setValue(POWERED, true), Block.UPDATE_ALL);
             level.scheduleTick(pos, this, POWERED_TICKS);
+
+        } else if (!isPowered && wasPowered) {
+            // Falling edge: Redstone just turned OFF!
+            ServerLevel serverLevel = (ServerLevel) level;
+
+            // Only reset to unpowered if our 20-tick cooldown has already finished.
+            // If the cooldown tick is still pending, we do nothing and let the tick() method handle the reset later.
+            if (!serverLevel.getBlockTicks().hasScheduledTick(pos, this)) {
+                level.setBlock(pos, state.setValue(POWERED, false), Block.UPDATE_ALL);
+            }
         }
     }
 
     @Override
     public void tick(BlockState state, ServerLevel level, BlockPos pos,
                      net.minecraft.util.RandomSource random) {
-        // Clear the lingering POWERED state after the cooldown expires
-        if (state.getValue(POWERED) && !level.hasNeighborSignal(pos)) {
+        // The 20-tick scheduled cooldown has finished.
+        // Check if the redstone signal is ALREADY off. If so, we can reset safely.
+        // If the redstone is still ON (like a lever), neighborChanged will catch it later when it's flicked off.
+        if (!level.hasNeighborSignal(pos)) {
             level.setBlock(pos, state.setValue(POWERED, false), Block.UPDATE_ALL);
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Blast logic
+    // ─────────────────────────────────────────────────────────────────────────
 
     // ─────────────────────────────────────────────────────────────────────────
     // Blast logic
@@ -141,6 +157,10 @@ public class SubwooferBlock extends Block {
 
         // Push multiplier: scales 0.2 → 1.0 with signal
         double pushStrength = 0.2 + (signal / 15.0) * 0.8;
+
+        // Breaking budget: how many fragile blocks the blast can punch through.
+        // Scales from 1 at signal 1 to range/2 at signal 15.
+        int breakBudget = Math.max(1, (int) Math.round(range * (signal / 15.0) * 0.5));
 
         List<UUID> affected = new ArrayList<>();
 
@@ -156,8 +176,13 @@ public class SubwooferBlock extends Block {
             BlockState scan = level.getBlockState(scanPos);
             if (!scan.isAir() && IS_FRAGILE.test(scan)) {
                 level.destroyBlock(scanPos, true);
-                // Blast is partially absorbed — stop after breaking a block
-                break;
+                breakBudget--;
+
+                if (breakBudget <= 0) {
+                    break; // Budget exhausted — blast absorbed
+                }
+
+                continue; // Budget remaining — blast continues to the next block
             }
 
             // --- Push entities ---
@@ -207,8 +232,8 @@ public class SubwooferBlock extends Block {
         if (level instanceof ServerLevel serverLevel) {
             // Boom at the face of the block
             serverLevel.playSound(null, pos,
-                    SoundEvents.WARDEN_SONIC_BOOM, SoundSource.BLOCKS,
-                    0.25F, 1.4F);
+                    CoralineSounds.SUBWOOFER_BOOM.get(), SoundSource.BLOCKS,
+                    1.0F, 1.0F);
 
             // Trail of sonic boom particles along the blast path
             for (int i = 1; i <= Math.min(range, 8); i++) {
