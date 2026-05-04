@@ -34,8 +34,14 @@ public class ZiplineHandler {
     public static final Map<UUID, ZiplineData> ZIPLINING_PLAYERS = new HashMap<>();
 
     private static final double MIN_MOMENTUM = 0.01;
-    private static final double FRICTION = 0.97;
+    // REMOVED: private static final double FRICTION = 0.97;
     private static final double LAUNCH_MULTIPLIER = 2.0;
+
+    // CHANGED: Added speed cap — set just below a Minecart on powered rails (0.4 blocks/tick),
+    // so rail travel remains a meaningfully faster option. Also closes the spam-click
+    // exploit: even if the player re-grabs the rope while carrying full speed,
+    // startZiplining() clamps the launch target here before it can be multiplied further.
+    private static final double MAX_SPEED = 0.35;
 
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
@@ -84,15 +90,19 @@ public class ZiplineHandler {
             return;
         }
 
-        // 3. Momentum Acceleration & Decay
+        // 3. Momentum Acceleration (no friction — player slides at constant speed once up to target)
         Vec3 momentum = data.momentum;
 
-        // The magic happens here: smoothly accelerate towards the target momentum.
+        // Smoothly accelerate towards the target momentum.
         // Tweak the 0.15 value (0.0 to 1.0) to control how quickly they reach max speed!
         momentum = momentum.lerp(data.targetMomentum, 0.15);
 
-        // Keep your existing friction so they eventually slow down
-        momentum = momentum.multiply(FRICTION, 1.0, FRICTION);
+        // REMOVED: momentum = momentum.multiply(FRICTION, 1.0, FRICTION);
+
+        // CHANGED: Enforce the hard speed cap every tick so no edge case can push past it.
+        if (momentum.horizontalDistance() > MAX_SPEED) {
+            momentum = momentum.scale(MAX_SPEED / momentum.horizontalDistance());
+        }
 
         if (momentum.horizontalDistance() < MIN_MOMENTUM) {
             momentum = Vec3.ZERO; // Hang in place
@@ -122,13 +132,22 @@ public class ZiplineHandler {
     public static void startZiplining(Player player, Vec3 initialMomentum, BlockPos anchorPos) {
         Vec3 flatInitial = new Vec3(initialMomentum.x, 0.0, initialMomentum.z);
 
-        // FIX: If the player is barely moving, give them a baseline speed (e.g., 0.1)
-        // in the direction they are looking so they don't get stuck instantly!
+        // If the player is barely moving, give them a baseline speed in the direction
+        // they are looking so they don't get stuck instantly.
         if (flatInitial.horizontalDistance() < 0.1) {
             flatInitial = Vec3.directionFromRotation(0, player.getYRot()).scale(0.1);
         }
 
         Vec3 target = flatInitial.scale(LAUNCH_MULTIPLIER);
+
+        // CHANGED: Clamp the launch target to MAX_SPEED.
+        // This is the key fix for the spam-click exploit: even if the player releases
+        // and immediately re-grabs the rope while carrying full speed, the LAUNCH_MULTIPLIER
+        // cannot compound the velocity beyond this ceiling.
+        if (target.horizontalDistance() > MAX_SPEED) {
+            target = target.scale(MAX_SPEED / target.horizontalDistance());
+        }
+
         ZIPLINING_PLAYERS.put(player.getUUID(), new ZiplineData(flatInitial, target, anchorPos));
     }
 
