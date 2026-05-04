@@ -7,8 +7,9 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.zharok01.coralinesystems.CoralineSystems;
-import net.zharok01.coralinesystems.content.entity.custom.HelperEntity;
-import net.zharok01.coralinesystems.content.entity.custom.MonsterEntity;
+import net.zharok01.coralinesystems.content.entity.BrumeEntity;
+import net.zharok01.coralinesystems.content.entity.HelperEntity;
+import net.zharok01.coralinesystems.content.entity.MonsterEntity;
 
 public class IsotopicEntities {
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
@@ -23,6 +24,11 @@ public class IsotopicEntities {
             ENTITY_TYPES.register("monster", () -> EntityType.Builder.of(MonsterEntity::new, MobCategory.MONSTER)
                     .sized(0.6F, 1.8F)
                     .build("monster"));
+
+    public static final RegistryObject<EntityType<BrumeEntity>> BRUME =
+            ENTITY_TYPES.register("brume", () -> EntityType.Builder.of(BrumeEntity::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.8F)
+                    .build("brume"));
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);
