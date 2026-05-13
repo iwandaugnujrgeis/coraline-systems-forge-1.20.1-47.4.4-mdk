@@ -15,6 +15,7 @@ public class CoralineMixinCanceller implements MixinCanceller {
                  "com.teamabnormals.caverns_and_chasms.core.mixin.entity.CreeperMixin",
                  "com.teamabnormals.caverns_and_chasms.core.mixin.structure.MineshaftCorridorMixin",
                  "com.teamabnormals.caverns_and_chasms.core.mixin.entity.MobMixin",
+                 "com.teamabnormals.caverns_and_chasms.core.mixin.entity.WitherSkeletonMixin",
                  "com.faboslav.friendsandfoes.common.mixin.StrongholdGeneratorMixin" -> true;
             default -> false;
         };
