@@ -321,5 +321,15 @@
       "mob/husk/hurt2"
     ],
     "subtitle": "coraline_systems.sound.subtitle.brume_hurt"
+  },
+  "pig_eat": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "subtle_effects:entity.cow.eat",
+        "type": "event"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.pig_eat"
   }
 }

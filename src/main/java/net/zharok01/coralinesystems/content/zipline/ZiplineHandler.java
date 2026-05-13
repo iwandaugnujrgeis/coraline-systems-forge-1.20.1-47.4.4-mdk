@@ -2,6 +2,7 @@ package net.zharok01.coralinesystems.content.zipline;
 
 import net.mehvahdjukaar.supplementaries.common.block.blocks.RopeBlock;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -9,6 +10,8 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.zharok01.coralinesystems.registry.CoralineTags;
+import net.zharok01.coralinesystems.registry.CoralineTriggers;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,6 +25,7 @@ public class ZiplineHandler {
         public Vec3 momentum;
         public Vec3 targetMomentum;
         public BlockPos anchor;
+        public boolean isNew = true; // ADD THIS
 
         public ZiplineData(Vec3 momentum, Vec3 targetMomentum, BlockPos anchor) {
             this.momentum = momentum;
@@ -53,7 +57,19 @@ public class ZiplineHandler {
 
         // 1. Client & Server Input Checks
         if (!player.level().isClientSide()) {
-            if (!ZiplineStateCapability.isPressed(player) || !player.getMainHandItem().is(ItemTags.PICKAXES)) {
+
+            // Fire the advancement on the very first server tick of a new zipline session.
+            // We do it here rather than in startZiplining() because in single-player the
+            // client-side event populates the shared map first, so the server-side event
+            // never reaches startZiplining() at all.
+            if (data.isNew) {
+                data.isNew = false;
+                if (player instanceof ServerPlayer serverPlayer) {
+                    CoralineTriggers.ZIPLINE.trigger(serverPlayer);
+                }
+            }
+
+            if (!ZiplineStateCapability.isPressed(player) || !player.getMainHandItem().is(CoralineTags.ZIPLINEABLE)) {
                 stopZiplining(player);
                 return;
             }
@@ -64,7 +80,7 @@ public class ZiplineHandler {
             player.yya = 0.0F;
             player.setSprinting(false);
 
-            if (!player.getMainHandItem().is(ItemTags.PICKAXES)) {
+            if (!player.getMainHandItem().is(CoralineTags.ZIPLINEABLE)) {
                 stopZiplining(player);
                 return;
             }

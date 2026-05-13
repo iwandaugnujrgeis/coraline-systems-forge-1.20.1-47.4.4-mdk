@@ -24,6 +24,8 @@ public class ZiplineSoundInstance extends AbstractTickableSoundInstance {
         this.slideTicks = 0;
     }
 
+    private static final int GRACE_TICKS = 10;
+
     @Override
     public void tick() {
         this.x = this.player.getX();
@@ -49,8 +51,12 @@ public class ZiplineSoundInstance extends AbstractTickableSoundInstance {
             this.pitch = newPitch;
             this.volume = Mth.clamp(this.slideTicks * 0.07f, 0.0f, 1.0f);
         } else {
-            // If they are moving too slow, stop the sound
-            this.forceStop();
+            this.slideTicks++; // CHANGED: still increment during grace period
+            // CHANGED: only kill the sound after the grace period has elapsed,
+            // giving the lerp time to bring momentum up to audible speed
+            if (this.slideTicks > GRACE_TICKS) {
+                this.forceStop();
+            }
         }
     }
 

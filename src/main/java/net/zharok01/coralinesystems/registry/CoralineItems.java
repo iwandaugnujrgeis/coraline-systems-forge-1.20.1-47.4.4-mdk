@@ -36,6 +36,9 @@ public class CoralineItems {
 	public static final RegistryObject<Item> MONSTER_SPAWN_EGG = register("monster_spawn_egg",
 			() -> new ForgeSpawnEggItem(IsotopicEntities.MONSTER, 0x1A1A1A, 0xE0E0FF, new Item.Properties()));
 
+	public static final RegistryObject<Item> BRUME_SPAWN_EGG = register("brume_spawn_egg",
+			() -> new ForgeSpawnEggItem(IsotopicEntities.BRUME, 0x108E9C, 0xDEF7F7, new Item.Properties()));
+
 	public static final RegistryObject<Item> COBALT_PANTS = REGISTRY.register("cobalt_pants",
 			() -> new ArmorItem(CobaltPants.COBALT, ArmorItem.Type.LEGGINGS,
 					new Item.Properties()));

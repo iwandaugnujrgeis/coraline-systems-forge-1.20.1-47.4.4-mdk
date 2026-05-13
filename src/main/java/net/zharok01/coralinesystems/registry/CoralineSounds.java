@@ -46,6 +46,9 @@ public class CoralineSounds {
 
     public static final RegistryObject<SoundEvent> SUBWOOFER_BOOM = createSoundEvent("subwoofer_boom");
 
+    public static final RegistryObject<SoundEvent> PIG_EAT = createSoundEvent("pig_eat");
+
+
     private static RegistryObject<SoundEvent> createSoundEvent(final String soundName) {
         return SOUND_EVENTS.register(soundName, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(CoralineSystems.MOD_ID, soundName)));
     }

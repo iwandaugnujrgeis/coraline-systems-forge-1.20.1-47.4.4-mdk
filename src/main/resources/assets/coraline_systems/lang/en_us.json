@@ -10,6 +10,7 @@
 	"coraline_systems.sound.subtitle.brume_ambient": "Brume breathes",
 	"coraline_systems.sound.subtitle.brume_death": "Brume dies",
 	"coraline_systems.sound.subtitle.brume_hurt": "Brume hurt",
+	"item.coraline_systems.brume_spawn_egg": "Brume Spawn Egg",
 
 	"coraline_systems.sound.subtitle.mineshaft_spook": "Long-forgotten rattle...",
 
@@ -45,5 +46,7 @@
 	"coraline_systems.sound.subtitle.subwoofer_boom": "Subwoofer woofs",
 	"coraline_systems.sound.subtitle.special_score": "Score dings!",
 	"coraline_systems.sound.subtitle.detector_activated": "Sensor hums",
-	"coraline_systems.sound.subtitle.vibration_sensor_ping": "Sensor pings"
+	"coraline_systems.sound.subtitle.vibration_sensor_ping": "Sensor pings",
+
+	"coraline_systems.sound.subtitle.pig_eat": "Pig chomps"
 }
