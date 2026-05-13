@@ -103,29 +103,29 @@ public class HelperEntity extends Monster implements RangedAttackMob {
                 }
             }
 
-            // NEW: 10-second (200 ticks) fallback check for latecomers
-            if (this.tickCount % 200 == 0) { // Removed the isJamming() lock!
+            // Latecomer / drift-correction check — fires every 200 ticks (10 seconds).
+            // FIX: replaced BlockPos.betweenClosed (9 800 allocations + getBlockEntity each)
+            // with a targeted scan of only block-entity positions in the chunk that are
+            // actually jukeboxes. getBlockEntities() returns the already-loaded cache;
+            // no allocation storm, no deserialisation cost.
+            if (this.tickCount % 200 == 0) {
                 boolean foundPlaying = false;
-                BlockPos pos = this.blockPosition();
-
-                for (BlockPos nearby : BlockPos.betweenClosed(pos.offset(-16, -4, -16), pos.offset(16, 4, 16))) {
-                    if (this.level().getBlockEntity(nearby) instanceof net.minecraft.world.level.block.entity.JukeboxBlockEntity jukebox) {
-                        if (jukebox.isRecordPlaying()) {
-                            foundPlaying = true;
-                            break;
-                        }
+                net.minecraft.world.level.chunk.LevelChunk chunk =
+                        this.level().getChunkAt(this.blockPosition());
+                for (net.minecraft.world.level.block.entity.BlockEntity be : chunk.getBlockEntities().values()) {
+                    if (be instanceof net.minecraft.world.level.block.entity.JukeboxBlockEntity jukebox
+                            && jukebox.isRecordPlaying()
+                            && be.getBlockPos().closerThan(this.blockPosition(), 32)) {
+                        foundPlaying = true;
+                        break;
                     }
                 }
 
                 if (foundPlaying) {
-                    // If they wandered in late, they missed the Mixin's exact duration broadcast.
-                    // So, we give them 220 ticks (11 seconds) of dancing.
-                    // This ensures they keep jamming safely until the next 10-second check!
                     if (this.dancingDuration < 220) {
                         this.setDancingDuration(220);
                     }
                 } else {
-                    // No music found? Stop dancing.
                     this.setDancingDuration(0);
                 }
             }
@@ -144,16 +144,18 @@ public class HelperEntity extends Monster implements RangedAttackMob {
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putInt("SkinId", this.getSkinId());
-        tag.putBoolean("IsGlitching", this.isGlitching());
+        tag.putInt("DancingDuration", this.dancingDuration);
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
-        if (tag.contains("SkinId", 99)) { // 99 is the ID for all Number types in NBT
+        if (tag.contains("SkinId", 99)) {
             this.setSkinId(tag.getInt("SkinId"));
         }
-        this.setGlitching(tag.getBoolean("IsGlitching"));
+        if (tag.contains("DancingDuration", 99)) {
+            this.setDancingDuration(tag.getInt("DancingDuration"));
+        }
     }
 
     static class HelperTakeBlockGoal extends Goal {
@@ -165,7 +167,7 @@ public class HelperEntity extends Monster implements RangedAttackMob {
 
         @Override
         public boolean canUse() {
-            if (!this.helper.isJamming() || this.helper.getCarriedBlock() != null) {
+            if (!this.helper.isJamming() || !this.helper.getCarriedBlock().isAir()) {
                 return false;
             } else if (!this.helper.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
                 return false;
@@ -293,8 +295,11 @@ public class HelperEntity extends Monster implements RangedAttackMob {
         if (!this.level().isClientSide) {
             this.setGlitching(true);
 
-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                    CoralineSounds.STATIC_BUZZ.get(), this.getSoundSource(), 1.0F, 1.0F);
+            // FIX: guard matches the same check used in tick() — prevents crash if unregistered
+            if (CoralineSounds.STATIC_BUZZ.isPresent()) {
+                this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                        CoralineSounds.STATIC_BUZZ.get(), this.getSoundSource(), 1.0F, 1.0F);
+            }
 
             if (this.level() instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(AMParticleRegistry.STATIC_SPARK.get(),
@@ -329,7 +334,7 @@ public class HelperEntity extends Monster implements RangedAttackMob {
                 if (HelperEntity.this.isJamming()) return false;
                 if (!super.canUse()) return false;
                 return HelperEntity.this.getTarget() != null &&
-                        //Trigger melee if distance <= 32 (8 blocks?):
+                        // distanceToSqr <= 32.0 → sqrt(32) ≈ 5.6 blocks actual distance
                         HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) <= 32.0D;
             }
 
@@ -404,7 +409,7 @@ public class HelperEntity extends Monster implements RangedAttackMob {
 
         if (tag == null || !tag.contains("SkinId")) {
             //Change this "nextInt(_)" to a desired number of skin variants:
-            this.setSkinId(level.getRandom().nextInt(7));
+            this.setSkinId(level.getRandom().nextInt(6));
         }
 
         return spawnData;
