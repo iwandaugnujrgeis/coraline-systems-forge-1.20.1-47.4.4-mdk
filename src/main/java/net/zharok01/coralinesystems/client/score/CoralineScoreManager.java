@@ -1,7 +1,10 @@
 package net.zharok01.coralinesystems.client.score;
 
-import net.zharok01.coralinesystems.client.gui.ScoreOverlay;
+import net.zharok01.coralinesystems.network.CoralinePacketHandler;
+import net.zharok01.coralinesystems.network.ScoreThresholdPacket;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.network.PacketDistributor;
 
 public class CoralineScoreManager {
     public static final int REWARD_BLOCK_ACTIVITY = 1;
@@ -15,7 +18,10 @@ public class CoralineScoreManager {
 
             // Check if we crossed a 1000-point threshold (e.g., 999 -> 1000)
             if (newScore / 1000 > oldScore / 1000) {
-                ScoreOverlay.trigger(newScore);
+                // IMPORTANT: Only send the packet if we are on the Server
+                if (!player.level().isClientSide() && player instanceof ServerPlayer serverPlayer) {
+                    CoralinePacketHandler.sendToClient(new ScoreThresholdPacket(newScore), serverPlayer);
+                }
             }
         }
     }
