@@ -6,13 +6,13 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "galosphere:silver_nugget",
-          "weight": 20
+          "name": "kubejs:green_apple",
+          "weight": 5
         },
         {
           "type": "minecraft:item",
-          "name": "minecraft:coal",
-          "weight": 5
+          "name": "galosphere:silver_nugget",
+          "weight": 1
         }
       ]
     }
