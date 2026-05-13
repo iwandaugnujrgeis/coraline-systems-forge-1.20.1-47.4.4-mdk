@@ -123,15 +123,15 @@ public class PigmanTradesMixin {
         // Level 1: Novice
         PigmanTrades.TECHNICIAN_OFFERS.put(1, new VillagerTrades.ItemListing[]{
                 new PigmanTrades.Trade.Builder().firstItem(Items.REDSTONE, 32).result(RediscoveredItems.ruby, 1).priceMultiplier(0.05F * 8).build(),
-                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 2).secondItem(Items.IRON_INGOT, 4).result(RediscoveredBlocks.spikes, 8).build(),
+                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 2).secondItem(Items.IRON_INGOT, 4).result(RediscoveredBlocks.spikes, 16).build(),
                 new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 12).result(CCBlocks.STORAGE_DUCT.get(), 6).priceMultiplier(0.05F * 4).build()
         });
 
         // Level 2: Apprentice
         PigmanTrades.TECHNICIAN_OFFERS.put(2, new VillagerTrades.ItemListing[]{
                 new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 2).result(EtceteraItems.DICE.get(), 1).priceMultiplier(0.05F * 8).build(),
-                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 4).result(ModRegistry.COG_BLOCK.get(), 8).build(),
-                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 10).result(Blocks.PISTON, 8).build(),
+                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 10).result(ModRegistry.COG_BLOCK.get(), 32).build(),
+                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 10).result(Blocks.PISTON, 16).build(),
                 new PigmanTrades.Trade.Builder().firstItem(Items.IRON_INGOT, 4).result(RediscoveredItems.ruby, 1).build()
         });
 
@@ -142,7 +142,7 @@ public class PigmanTradesMixin {
 
         // Level 4: Expert
         PigmanTrades.TECHNICIAN_OFFERS.put(4, new VillagerTrades.ItemListing[]{
-                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 1).secondItem(Items.REDSTONE, 2).result(Blocks.DISPENSER, 2).build(),
+                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 1).secondItem(Items.REDSTONE, 2).result(Blocks.DISPENSER, 6).build(),
                 new PigmanTrades.Trade.Builder().firstItem(Items.GLOWSTONE_DUST, 24).result(RediscoveredItems.ruby, 1).priceMultiplier(0.05F * 6).build()
         });
 
@@ -159,7 +159,7 @@ public class PigmanTradesMixin {
 
         // Level 1: Novice
         PigmanTrades.TAILOR_OFFERS.put(1, new VillagerTrades.ItemListing[]{
-                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 3).result(Blocks.WHITE_WOOL, 16).build(),
+                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 6).result(Blocks.WHITE_WOOL, 32).build(),
                 new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 2).result(RediscoveredBlocks.cyan_rose, 6).build(),
                 new PigmanTrades.Trade.Builder().firstItem(Items.STRING, 12).result(RediscoveredItems.ruby, 1).build(),
                 new PigmanTrades.Trade.Builder().firstItem(EtceteraItems.COTTON_FLOWER.get(), 16).result(RediscoveredItems.ruby, 3).build(),
@@ -170,14 +170,14 @@ public class PigmanTradesMixin {
         PigmanTrades.TAILOR_OFFERS.put(2, new VillagerTrades.ItemListing[]{
                 new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 1).secondItem(Blocks.WHITE_WOOL, 8).result(Items.STRING, 8 * 4).build(),
                 new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 2).result(Items.SHEARS.getDefaultInstance()).build(),
-                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 1).secondItem(Blocks.WHITE_WOOL, 8).result(RediscoveredBlocks.spring_green_wool, 8).build(),
-                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 1).secondItem(Blocks.WHITE_WOOL, 8).result(RediscoveredBlocks.bright_green_wool, 8).build()
+                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 8).result(RediscoveredBlocks.spring_green_wool, 48).build(),
+                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 8).result(RediscoveredBlocks.bright_green_wool, 48).build()
         });
 
         // Level 3: Journeyman
         PigmanTrades.TAILOR_OFFERS.put(3, new VillagerTrades.ItemListing[]{
-                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 1).secondItem(Blocks.WHITE_WOOL, 8).result(RediscoveredBlocks.lavender_wool, 8).build(),
-                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 1).secondItem(Blocks.WHITE_WOOL, 8).result(RediscoveredBlocks.rose_wool, 8).build(),
+                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 8).result(RediscoveredBlocks.lavender_wool, 48).build(),
+                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 8).result(RediscoveredBlocks.rose_wool, 48).build(),
                 new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 7).result(RediscoveredItems.studded_boots, 1).priceMultiplier(0.05F * 3).build(),
                 new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 10).result(RediscoveredItems.studded_leggings, 1).priceMultiplier(0.05F * 3).build()
         });
@@ -211,14 +211,14 @@ public class PigmanTradesMixin {
 
         // Level 2: Apprentice
         PigmanTrades.DOCTOR_OFFERS.put(2, new VillagerTrades.ItemListing[]{
-                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 10).result(Items.GHAST_TEAR, 8).build(),
+                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 12).result(Items.GHAST_TEAR, 6).build(),
                 new PigmanTrades.Trade.Builder().firstItem(Items.SPIDER_EYE, 8).result(RediscoveredItems.ruby, 3).priceMultiplier(0.05F * 2).build(),
-                new PigmanTrades.Trade.Builder().firstItem(Items.GOLD_INGOT, 3).result(RediscoveredItems.ruby, 1).priceMultiplier(0.05F * 2).build()
+                new PigmanTrades.Trade.Builder().firstItem(Items.GOLD_INGOT, 8).result(RediscoveredItems.ruby, 3).priceMultiplier(0.05F * 2).build()
         });
 
         // Level 3: Journeyman
         PigmanTrades.DOCTOR_OFFERS.put(3, new VillagerTrades.ItemListing[]{
-                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 3).secondItem(Items.GUNPOWDER, 1).result(PotionUtils.setPotion(Items.SPLASH_POTION.getDefaultInstance(), Potions.STRONG_HEALING)).maxUses(16).build(),
+                new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 3).secondItem(Items.GUNPOWDER, 1).result(PotionUtils.setPotion(Items.SPLASH_POTION.getDefaultInstance(), Potions.LUCK)).maxUses(16).build(),
                 new PigmanTrades.Trade.Builder().firstItem(RediscoveredItems.ruby, 12).result(Items.DRAGON_BREATH, 1).priceMultiplier(0.05F * 2).build()
         });
 
