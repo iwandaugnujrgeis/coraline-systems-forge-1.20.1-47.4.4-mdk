@@ -29,9 +29,11 @@ public abstract class HelperAnimationMixin {
             float headJitterX = Mth.sin(ageInTicks * 0.8F) * 0.15F;
             float headJitterY = Mth.cos(ageInTicks * 0.7F) * 0.2F;
 
+            /*
             if (helper.getRandom().nextFloat() < 0.05F) {
                 this.head.zRot = (helper.getRandom().nextFloat() - 0.5F) * 0.4F;
             }
+            */
 
             this.head.xRot += headJitterX;
             this.head.yRot += headJitterY;
@@ -40,6 +42,8 @@ public abstract class HelperAnimationMixin {
             float crazySwing = limbSwing * 0.6F;
             this.rightArm.xRot = Mth.cos(crazySwing + (float)Math.PI) * 2.5F * limbSwingAmount;
             this.leftArm.xRot = Mth.cos(crazySwing) * 2.5F * limbSwingAmount;
+            this.rightArm.zRot = Mth.cos(crazySwing + (float)Math.PI) * 2.5F * limbSwingAmount;
+            this.leftArm.zRot = Mth.cos(crazySwing) * 2.5F * limbSwingAmount;
 
         } else if (entity instanceof HelperEntity) {
 
