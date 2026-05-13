@@ -1,12 +1,12 @@
 {
   "parent": "block/cube",
   "textures": {
-    "down": "coraline_systems:block/subwoofer",
-    "up": "coraline_systems:block/subwoofer",
+    "down": "coraline_systems:block/subwoofer_cap",
+    "up": "coraline_systems:block/subwoofer_cap",
     "north": "coraline_systems:block/subwoofer_front",
-    "east": "coraline_systems:block/subwoofer",
-    "south": "coraline_systems:block/subwoofer",
-    "west": "coraline_systems:block/subwoofer",
-    "particle": "coraline_systems:block/subwoofer"
+    "east": "coraline_systems:block/subwoofer_side",
+    "south": "coraline_systems:block/subwoofer_side",
+    "west": "coraline_systems:block/subwoofer_side",
+    "particle": "coraline_systems:block/subwoofer_cap"
   }
 }
