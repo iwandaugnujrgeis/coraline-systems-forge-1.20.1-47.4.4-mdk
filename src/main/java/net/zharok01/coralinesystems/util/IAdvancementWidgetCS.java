@@ -38,4 +38,27 @@ public interface IAdvancementWidgetCS {
      */
     @Nullable
     AdvancementProgress getProgress();
+
+    /**
+     * Stores the cardinal direction this widget's subtree travels in.
+     * Set by the layout pass in {@code MixinAdvancementTab} and consumed by
+     * {@code drawConnectivity} in {@code MixinAdvancementWidget} to determine
+     * which parent edge to use as the line-routing junction point.
+     *
+     * <p>Values follow the {@code DIRS} array order used in MixinAdvancementTab:
+     * <ul>
+     *   <li>-1 = root (no parent, no line drawn)</li>
+     *   <li> 0 = Right</li>
+     *   <li> 1 = Down</li>
+     *   <li> 2 = Left</li>
+     *   <li> 3 = Up</li>
+     * </ul>
+     */
+    void setArrivalDir(int dir);
+
+    /**
+     * Returns the direction stored by {@link #setArrivalDir(int)}.
+     * Defaults to {@code -1} (root / unknown) until the layout pass has run.
+     */
+    int getArrivalDir();
 }
