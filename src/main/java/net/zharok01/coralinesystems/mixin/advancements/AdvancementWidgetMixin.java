@@ -21,7 +21,7 @@ import java.util.List;
 
 @Mixin(AdvancementWidget.class)
 @Implements(@Interface(iface = IAdvancementWidgetCS.class, prefix = "cs$"))
-public abstract class MixinAdvancementWidget {
+public abstract class AdvancementWidgetMixin {
 
     @Mutable @Final @Shadow private int x;
     @Mutable @Final @Shadow private int y;

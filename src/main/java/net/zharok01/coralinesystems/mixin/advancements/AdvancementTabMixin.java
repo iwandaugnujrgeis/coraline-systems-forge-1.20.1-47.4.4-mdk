@@ -14,14 +14,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.*;
 
 @Mixin(net.minecraft.client.gui.screens.advancements.AdvancementTab.class)
-public abstract class MixinAdvancementTab {
+public abstract class AdvancementTabMixin {
 
     // Pixel distance between adjacent grid cells.
-    // 40 px is compact enough that nearby advancements are easy to scan without
-    // dragging, yet wide enough for the 17-px junction offset to clear the frame
-    // edge (frame right edge is 16 px from the widget centre — EDGE+1 = 17 px).
-    @Unique private static final int CS_SLOT_W = 40;
-    @Unique private static final int CS_SLOT_H = 40;
+    // 36 px: compact enough to keep large trees visible without excessive dragging,
+    // while still leaving 19 px of horizontal run between the junction and each
+    // child centre (child centre is 36 px from parent centre; junction is 17 px
+    // from parent centre → 36 − 17 = 19 px of visible branch line per sibling).
+    @Unique private static final int CS_SLOT_W = 36;
+    @Unique private static final int CS_SLOT_H = 36;
 
     // Cardinal directions: Right=0, Down=1, Left=2, Up=3.
     // The index matches the arrivalDir value stored on each widget and read

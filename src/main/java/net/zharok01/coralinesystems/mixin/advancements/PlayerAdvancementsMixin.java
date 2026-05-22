@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.Set;
 
 @Mixin(PlayerAdvancements.class)
-public abstract class MixinPlayerAdvancements {
+public abstract class PlayerAdvancementsMixin {
 
     @Final @Shadow private Set<Advancement> visible;
 
