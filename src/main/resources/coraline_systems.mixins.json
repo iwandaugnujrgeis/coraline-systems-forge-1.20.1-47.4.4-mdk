@@ -16,7 +16,9 @@
     "LecternRendererMixin",
     "OptionsMixin",
     "SoundEngineMixin",
-    "SunrisePinkMixin"
+    "SunrisePinkMixin",
+    "advancements.AdvancementTabMixin",
+    "advancements.AdvancementWidgetMixin"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -32,8 +34,10 @@
     "CandleCakeBlockMixin",
     "CaveGrowthsFeatureMixin",
     "CowMixin",
+    "CraftingTableRecipeManagerMixin",
     "DrownedEquipmentMixin",
     "EaselBlockMixin",
+    "FurnaceRecipeManagerMixin",
     "GiantMixin",
     "GiantStompMixin",
     "InventoryMixin",
@@ -52,6 +56,8 @@
     "ServerPlayerMixin",
     "ShovelItemMixin",
     "SleepCheckMixin",
+    "SoapClearRecipeMixin",
+    "SpecialRecipeDisplaysMixin",
     "StatsMixin",
     "StructurePieceMixin",
     "WeatheringCopperItemMixin",
@@ -59,6 +65,7 @@
     "ZombieMixin",
     "ZombiePigmanConversionMixin",
     "accessors.CandleCakeBlockAccessor",
+    "advancements.PlayerAdvancementsMixin",
     "alexsmobs.EntityBaldEagleMixin",
     "alexsmobs.EntityCapuchinMonkeyMixin",
     "alexsmobs.EntityCrowMixin",

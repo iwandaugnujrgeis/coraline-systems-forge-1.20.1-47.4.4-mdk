@@ -37,6 +37,7 @@ public class CoralineSystems {
         CoralineSounds.register(bus);
         CoralineBlockEntities.register(bus);
         CoralineStats.register(bus);
+        CoralineSerializers.register(bus);
 
         bus.addListener(this::commonSetup);
 

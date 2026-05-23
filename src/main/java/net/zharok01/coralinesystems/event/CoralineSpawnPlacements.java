@@ -1,6 +1,5 @@
-package net.zharok01.coralinesystems.events;
+package net.zharok01.coralinesystems.event;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;

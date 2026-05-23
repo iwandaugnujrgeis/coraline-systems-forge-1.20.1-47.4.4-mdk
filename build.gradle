@@ -49,6 +49,7 @@ dependencies {
     implementation("maven.modrinth:galosphere:1.20.1-1.4.1")
     implementation("maven.modrinth:fancymenu:3.8.1-1.20.1-forge")
     implementation("maven.modrinth:autumnity:5.0.2")
+    implementation("maven.modrinth:crafttweaker:14.0.60")
 }
 
 
