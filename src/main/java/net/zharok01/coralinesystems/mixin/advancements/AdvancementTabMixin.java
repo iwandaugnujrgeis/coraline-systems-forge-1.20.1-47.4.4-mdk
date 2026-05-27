@@ -18,142 +18,205 @@ import java.util.*;
 @Mixin(net.minecraft.client.gui.screens.advancements.AdvancementTab.class)
 public abstract class AdvancementTabMixin {
 
-    // Pixel distance between adjacent grid cells.
-    // 36 px: compact enough to keep large trees visible without excessive
-    // dragging, while leaving 19 px of visible branch line per sibling
-    // (child centre is 36 px from parent centre; junction is 17 px from
-    // parent centre → 36 − 17 = 19 px of run per sibling).
-    @Unique private static final int CS_SLOT_W = 36;
-    @Unique private static final int CS_SLOT_H = 36;
+    @Unique
+    private static final int CS_SLOT_W = 32;
 
-    // Cardinal directions used by the BFS collision resolver.
-    // Right=0, Down=1, Left=2, Up=3 — matches the arrivalDir values.
-    //@Unique private static final int[][] CS_DIRS = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
+    @Unique
+    private static final int CS_SLOT_H = 28;
 
-    @Shadow @Final private AdvancementWidget root;
-    @Final @Shadow private Map<Advancement, AdvancementWidget> widgets;
-    @Shadow private int minX;
-    @Shadow private int maxX;
-    @Shadow private int minY;
-    @Shadow private int maxY;
-
-    // ──────────────────────────────────────────────────────────────────────────
-    // 4-pass connectivity rendering  (green lines always on top of dark ones)
-    // ──────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Replaces the vanilla shadow-pass {@code drawConnectivity} call inside
-     * {@code drawContents} with two ordered passes:
-     * <ol>
-     *   <li>Dark shadow lines — drawn first, sit below everything.</li>
-     *   <li>Green shadow lines — drawn second, always rendered on top.</li>
-     * </ol>
+    /*
+     * Direction constants:
+     * 0 = right
+     * 2 = left
      */
+    @Unique
+    private static final int CS_DIR_RIGHT = 0;
+
+    @Unique
+    private static final int CS_DIR_LEFT = 2;
+
+    @Shadow
+    @Final
+    private AdvancementWidget root;
+
+    @Shadow
+    @Final
+    private Map<Advancement, AdvancementWidget> widgets;
+
+    @Shadow
+    private int minX;
+
+    @Shadow
+    private int maxX;
+
+    @Shadow
+    private int minY;
+
+    @Shadow
+    private int maxY;
+
+    // -------------------------------------------------------------------------
+    // Connectivity rendering
+    // -------------------------------------------------------------------------
+
     @Redirect(
             method = "drawContents",
-            at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/screens/advancements/AdvancementWidget;"
-                            + "drawConnectivity(Lnet/minecraft/client/gui/GuiGraphics;IIZ)V",
-                    ordinal = 0))
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/gui/screens/advancements/AdvancementWidget;" +
+                            "drawConnectivity(Lnet/minecraft/client/gui/GuiGraphics;IIZ)V",
+                    ordinal = 0
+            )
+    )
     private void cs$redirectShadowConnectivity(
-            AdvancementWidget root, GuiGraphics g, int x, int y, boolean shadow) {
+            AdvancementWidget root,
+            GuiGraphics graphics,
+            int x,
+            int y,
+            boolean shadow
+    ) {
+
         IAdvancementWidgetCS api = (IAdvancementWidgetCS) root;
-        api.drawConnectivityCS(g, x, y, true, false); // dark shadows first
-        api.drawConnectivityCS(g, x, y, true, true);  // green shadows on top
+
+        api.drawConnectivityCS(graphics, x, y, true, false);
+        api.drawConnectivityCS(graphics, x, y, true, true);
     }
 
-    /**
-     * Replaces the vanilla colour-pass {@code drawConnectivity} call inside
-     * {@code drawContents} with two ordered passes:
-     * <ol>
-     *   <li>Dark colour lines — drawn first, sit below.</li>
-     *   <li>Green colour lines — drawn second, always rendered on top.</li>
-     * </ol>
-     */
     @Redirect(
             method = "drawContents",
-            at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/screens/advancements/AdvancementWidget;"
-                            + "drawConnectivity(Lnet/minecraft/client/gui/GuiGraphics;IIZ)V",
-                    ordinal = 1))
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/gui/screens/advancements/AdvancementWidget;" +
+                            "drawConnectivity(Lnet/minecraft/client/gui/GuiGraphics;IIZ)V",
+                    ordinal = 1
+            )
+    )
     private void cs$redirectColorConnectivity(
-            AdvancementWidget root, GuiGraphics g, int x, int y, boolean shadow) {
+            AdvancementWidget root,
+            GuiGraphics graphics,
+            int x,
+            int y,
+            boolean shadow
+    ) {
+
         IAdvancementWidgetCS api = (IAdvancementWidgetCS) root;
-        api.drawConnectivityCS(g, x, y, false, false); // dark lines first
-        api.drawConnectivityCS(g, x, y, false, true);  // green lines on top
+
+        api.drawConnectivityCS(graphics, x, y, false, false);
+        api.drawConnectivityCS(graphics, x, y, false, true);
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // Layout hooks
-    // ──────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
+    // Relayout hooks
+    // -------------------------------------------------------------------------
 
     @Inject(
-            method = "<init>(Lnet/minecraft/client/Minecraft;"
-                    + "Lnet/minecraft/client/gui/screens/advancements/AdvancementsScreen;"
-                    + "Lnet/minecraft/client/gui/screens/advancements/AdvancementTabType;"
-                    + "ILnet/minecraft/advancements/Advancement;"
-                    + "Lnet/minecraft/advancements/DisplayInfo;)V",
-            at = @At("TAIL"))
-    private void cs$onInit(CallbackInfo ci) {
+            method = "<init>(Lnet/minecraft/client/Minecraft;" +
+                    "Lnet/minecraft/client/gui/screens/advancements/AdvancementsScreen;" +
+                    "Lnet/minecraft/client/gui/screens/advancements/AdvancementTabType;" +
+                    "ILnet/minecraft/advancements/Advancement;" +
+                    "Lnet/minecraft/advancements/DisplayInfo;)V",
+            at = @At("TAIL")
+    )
+    private void cs$afterInit(CallbackInfo ci) {
         cs$relayout();
     }
 
-    @Inject(method = "addAdvancement", at = @At("TAIL"))
-    private void cs$onAddAdvancement(Advancement advancement, CallbackInfo ci) {
-        if (advancement.getDisplay() != null) {
-            cs$relayout();
-        }
+    @Inject(method = "addWidget", at = @At("TAIL"))
+    private void cs$afterAddWidget(
+            AdvancementWidget widget,
+            Advancement advancement,
+            CallbackInfo ci
+    ) {
+        cs$relayout();
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // Layout — two-pass subtree-isolated omnidirectional placement
-    // ──────────────────────────────────────────────────────────────────────────
+    // -------------------------------------------------------------------------
+    // Compact layered layout
+    // -------------------------------------------------------------------------
 
     @Unique
     private void cs$relayout() {
-        if (this.root == null) return;
 
-        // Pass 1: leaf counts
-        Map<AdvancementWidget, Integer> leafCounts = new HashMap<>();
-        cs$computeLeafCounts(this.root, leafCounts);
+        if (this.root == null) {
+            return;
+        }
 
-        // Pass 2: placement
+        Map<AdvancementWidget, Integer> subtreeWeights = new HashMap<>();
+        cs$computeWeights(this.root, subtreeWeights);
+
         Map<AdvancementWidget, int[]> positions = new HashMap<>();
+
+        /*
+         * Occupancy:
+         * key   = grid X
+         * value = occupied Y rows
+         */
+        Map<Integer, Set<Integer>> occupied = new HashMap<>();
+
         positions.put(this.root, new int[]{0, 0});
+        occupied.computeIfAbsent(0, k -> new HashSet<>()).add(0);
+
         ((IAdvancementWidgetCS) this.root).setArrivalDir(-1);
 
-        // Split root children into right and left groups.
-        // Sort descending by size so the largest branch goes right.
         List<AdvancementWidget> rootChildren =
                 new ArrayList<>(((IAdvancementWidgetCS) this.root).getChildren());
+
         rootChildren.sort((a, b) ->
-                leafCounts.getOrDefault(b, 1) - leafCounts.getOrDefault(a, 1));
+                subtreeWeights.getOrDefault(b, 1)
+                        - subtreeWeights.getOrDefault(a, 1));
 
-        List<AdvancementWidget> rightGroup = new ArrayList<>();
-        List<AdvancementWidget> leftGroup  = new ArrayList<>();
+        List<AdvancementWidget> right = new ArrayList<>();
+        List<AdvancementWidget> left = new ArrayList<>();
+
         for (int i = 0; i < rootChildren.size(); i++) {
-            (i % 2 == 0 ? rightGroup : leftGroup).add(rootChildren.get(i));
+            (i % 2 == 0 ? right : left).add(rootChildren.get(i));
         }
 
-        int rightPerp = 0;
-        for (AdvancementWidget child : rightGroup) {
-            int leaves = leafCounts.getOrDefault(child, 1);
-            cs$placeSubtree(child, 1, rightPerp, rightPerp + leaves,
-                    0, positions, leafCounts);
-            rightPerp += leaves;
+        int rightBias = -1;
+
+        for (AdvancementWidget child : right) {
+
+            cs$layoutBranch(
+                    child,
+                    1,
+                    rightBias,
+                    CS_DIR_RIGHT,
+                    positions,
+                    occupied,
+                    subtreeWeights
+            );
+
+            rightBias++;
         }
 
-        int leftPerp = 0;
-        for (AdvancementWidget child : leftGroup) {
-            int leaves = leafCounts.getOrDefault(child, 1);
-            cs$placeSubtree(child, 1, leftPerp, leftPerp + leaves,
-                    2, positions, leafCounts);
-            leftPerp += leaves;
+        int leftBias = 1;
+
+        for (AdvancementWidget child : left) {
+
+            cs$layoutBranch(
+                    child,
+                    -1,
+                    leftBias,
+                    CS_DIR_LEFT,
+                    positions,
+                    occupied,
+                    subtreeWeights
+            );
+
+            leftBias++;
         }
 
-        // Normalise: shift so minimum grid coords are (0, 0).
-        int minGridX = positions.values().stream().mapToInt(p -> p[0]).min().orElse(0);
-        int minGridY = positions.values().stream().mapToInt(p -> p[1]).min().orElse(0);
+        int minGridX = positions.values()
+                .stream()
+                .mapToInt(v -> v[0])
+                .min()
+                .orElse(0);
+
+        int minGridY = positions.values()
+                .stream()
+                .mapToInt(v -> v[1])
+                .min()
+                .orElse(0);
 
         this.minX = Integer.MAX_VALUE;
         this.minY = Integer.MAX_VALUE;
@@ -161,70 +224,143 @@ public abstract class AdvancementTabMixin {
         this.maxY = Integer.MIN_VALUE;
 
         for (Map.Entry<AdvancementWidget, int[]> entry : positions.entrySet()) {
+
+            int gridX = entry.getValue()[0] - minGridX;
+            int gridY = entry.getValue()[1] - minGridY;
+
+            int px = gridX * CS_SLOT_W;
+            int py = gridY * CS_SLOT_H;
+
             IAdvancementWidgetCS api = (IAdvancementWidgetCS) entry.getKey();
-            int px = (entry.getValue()[0] - minGridX) * CS_SLOT_W;
-            int py = (entry.getValue()[1] - minGridY) * CS_SLOT_H;
 
             api.setX(px);
             api.setY(py);
 
             this.minX = Math.min(this.minX, px);
             this.maxX = Math.max(this.maxX, px + 28);
+
             this.minY = Math.min(this.minY, py);
             this.maxY = Math.max(this.maxY, py + 27);
         }
     }
 
     @Unique
-    private void cs$placeSubtree(
+    private void cs$layoutBranch(
             AdvancementWidget node,
-            int depth,
-            int perpMin, int perpMax,
-            int dir,
+            int x,
+            int preferredY,
+            int direction,
             Map<AdvancementWidget, int[]> positions,
-            Map<AdvancementWidget, Integer> leafCounts) {
+            Map<Integer, Set<Integer>> occupied,
+            Map<AdvancementWidget, Integer> subtreeWeights
+    ) {
 
-        ((IAdvancementWidgetCS) node).setArrivalDir(dir);
+        int y = cs$findNearestFreeY(x, preferredY, occupied);
 
-        int perpCenter = (perpMin + perpMax) / 2;
-        // Right (0): x = +depth,  Left (2): x = -depth
-        positions.put(node, new int[]{dir == 0 ? depth : -depth, perpCenter});
+        occupied.computeIfAbsent(x, k -> new HashSet<>()).add(y);
 
-        List<AdvancementWidget> children = ((IAdvancementWidgetCS) node).getChildren();
-        int currentPerp = perpMin;
+        positions.put(node, new int[]{x, y});
+
+        ((IAdvancementWidgetCS) node).setArrivalDir(direction);
+
+        List<AdvancementWidget> children =
+                new ArrayList<>(((IAdvancementWidgetCS) node).getChildren());
+
+        children.sort((a, b) ->
+                subtreeWeights.getOrDefault(b, 1)
+                        - subtreeWeights.getOrDefault(a, 1));
+
+        int nextX = direction == CS_DIR_RIGHT ? x + 1 : x - 1;
+
+        int offset = 0;
+
         for (AdvancementWidget child : children) {
-            int childLeaves = leafCounts.getOrDefault(child, 1);
-            cs$placeSubtree(child, depth + 1,
-                    currentPerp, currentPerp + childLeaves,
-                    dir, positions, leafCounts);
-            currentPerp += childLeaves;
+
+            int preferredChildY;
+
+            if ((offset & 1) == 0) {
+                preferredChildY = y + ((offset + 1) / 2);
+            } else {
+                preferredChildY = y - ((offset + 1) / 2);
+            }
+
+            cs$layoutBranch(
+                    child,
+                    nextX,
+                    preferredChildY,
+                    direction,
+                    positions,
+                    occupied,
+                    subtreeWeights
+            );
+
+            offset++;
         }
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // Leaf-count computation (DFS, cached)
-    // ──────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Recursively computes and caches the leaf count for every node.
-     * Leaf count = number of leaf descendants, or 1 for a childless node.
-     * This determines how many perpendicular grid slots the subtree needs so
-     * that no two sibling subtrees can ever share a cell.
+    /*
+     * Finds the nearest free vertical slot.
+     *
+     * Search order:
+     * preferred
+     * +1
+     * -1
+     * +2
+     * -2
+     * ...
      */
     @Unique
-    private static int cs$computeLeafCounts(
-            AdvancementWidget node,
-            Map<AdvancementWidget, Integer> cache) {
+    private int cs$findNearestFreeY(
+            int x,
+            int preferredY,
+            Map<Integer, Set<Integer>> occupied
+    ) {
 
-        List<AdvancementWidget> children = ((IAdvancementWidgetCS) node).getChildren();
-        if (children.isEmpty()) {
-            cache.put(node, 1);
-            return 1;
+        Set<Integer> used = occupied.computeIfAbsent(x, k -> new HashSet<>());
+
+        if (!used.contains(preferredY)) {
+            return preferredY;
         }
-        int sum = 0;
-        for (AdvancementWidget child : children)
-            sum += cs$computeLeafCounts(child, cache);
-        cache.put(node, sum);
-        return sum;
+
+        for (int radius = 1; radius < 2048; radius++) {
+
+            int down = preferredY + radius;
+
+            if (!used.contains(down)) {
+                return down;
+            }
+
+            int up = preferredY - radius;
+
+            if (!used.contains(up)) {
+                return up;
+            }
+        }
+
+        return preferredY;
+    }
+
+    /*
+     * Weight = total descendants + self.
+     *
+     * Larger subtrees are packed first to reduce fragmentation.
+     */
+    @Unique
+    private static int cs$computeWeights(
+            AdvancementWidget node,
+            Map<AdvancementWidget, Integer> cache
+    ) {
+
+        int weight = 1;
+
+        for (AdvancementWidget child :
+                ((IAdvancementWidgetCS) node).getChildren()) {
+
+            weight += cs$computeWeights(child, cache);
+        }
+
+        cache.put(node, weight);
+
+        return weight;
     }
 }
