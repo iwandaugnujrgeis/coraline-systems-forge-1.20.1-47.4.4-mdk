@@ -38,25 +38,26 @@ public abstract class AdvancementWidgetMixin {
     @Shadow @Nullable private AdvancementWidget parent;
     @Shadow @Nullable private AdvancementProgress progress;
 
-    // The cardinal direction this widget's subtree travels in, set during layout.
-    // -1 = root/unknown, 0 = Right, 1 = Down, 2 = Left, 3 = Up.
+    // The cardinal direction this widget's subtree travels in, set by layout.
+    // −1 = root/unknown, 0 = Right, 1 = Down, 2 = Left, 3 = Up.
     @Unique private int cs_arrivedDir = -1;
 
     @Unique private static final ResourceLocation WIDGETS_LOCATION =
             new ResourceLocation("textures/gui/advancements/widgets.png");
 
-    // Frame tint: 20 % brightness preserves the frame's shape (rounded corners
-    // remain transparent) while making it clearly dark.
+    // Frame tint: 20 % brightness preserves rounded-corner transparency while
+    // making locked advancements clearly dark.
     @Unique private static final float CS_FRAME_DIM = 0.20f;
 
-    // Line colours — green for completed-parent links, dark for locked links.
+    // Exactly two line colours: green for completed-parent edges, dark for all
+    // others. No white / vanilla fallback — the UI uses only these two.
     @Unique private static final int CS_GREEN_LINE   = 0xFF55FF55;
     @Unique private static final int CS_GREEN_SHADOW = 0xFF004000;
     @Unique private static final int CS_DARK_LINE    = 0xFF404040;
     @Unique private static final int CS_DARK_SHADOW  = 0xFF101010;
 
     // ──────────────────────────────────────────────────────────────────────────
-    // IAdvancementWidgetCS (Mixin strips "cs$" prefix)
+    // IAdvancementWidgetCS  (Mixin strips the "cs$" prefix automatically)
     // ──────────────────────────────────────────────────────────────────────────
 
     public void cs$setX(int x)                      { this.x = x; }
@@ -68,15 +69,18 @@ public abstract class AdvancementWidgetMixin {
     public int  cs$getArrivalDir()                  { return this.cs_arrivedDir; }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // Helper
+    // Helpers
     // ──────────────────────────────────────────────────────────────────────────
 
     /**
-     * True when this advancement should appear "locked":
-     * – Completed advancements are never locked.
-     * – Hidden-flag advancements (json "hidden":true) that haven't been done are.
-     * – Any advancement whose direct parent hasn't been completed yet is locked
-     *   (the player is more than one step away).
+     * Returns {@code true} when this advancement should appear "locked":
+     * <ul>
+     * <li>Completed advancements are never locked.</li>
+     * <li>Advancements flagged {@code "hidden": true} in JSON are always
+     * locked until completed.</li>
+     * <li>Any advancement whose direct parent has not yet been completed is
+     * locked (the player is at least two steps away).</li>
+     * </ul>
      */
     @Unique
     private boolean theCoralineSystems$isObscured() {
@@ -89,9 +93,109 @@ public abstract class AdvancementWidgetMixin {
                 AdvancementProgress pp = ((IAdvancementWidgetCS) pw).getProgress();
                 return pp == null || !pp.isDone();
             }
-            return true;
+            return true; // parent widget missing → treat as locked
         }
-        return false;
+        return false; // root advancement is never locked
+    }
+
+    /**
+     * Returns {@code true} when the edge from {@link #parent} to {@code this}
+     * should be drawn in green — i.e. the parent has been completed and this
+     * child is itself visible (not obscured).
+     */
+    @Unique
+    private boolean theCoralineSystems$isGreenEdge() {
+        assert this.parent != null;
+        AdvancementProgress pp = ((IAdvancementWidgetCS) this.parent).getProgress();
+        return pp != null && pp.isDone() && !this.theCoralineSystems$isObscured();
+    }
+
+    /**
+     * Returns the appropriate ARGB colour for an edge given the shadow/green
+     * flags.
+     */
+    @Unique
+    private static int theCoralineSystems$lineColor(boolean dropShadow, boolean green) {
+        if (green) return dropShadow ? CS_GREEN_SHADOW : CS_GREEN_LINE;
+        else       return dropShadow ? CS_DARK_SHADOW  : CS_DARK_LINE;
+    }
+
+    @Unique
+    private void theCoralineSystems$drawEdgeLines(GuiGraphics g, int ox, int oy,
+                                                  boolean dropShadow, int color) {
+        assert this.parent != null;
+
+        // Frame is blitted at (getX()+3, getY()), size 26x26.
+        // True X center = getX() + 3 + 13 = getX() + 16.
+        // True Y center = getY() + 13  (no Y inset).
+        int pX = ox + this.parent.getX() + 16;
+        int pY = oy + this.parent.getY() + 13;
+        int cX = ox + this.x + 16;
+        int cY = oy + this.y + 13;
+
+        // With CS_SLOT_W=36 and frame width=26 (+3 inset), the inter-slot gap is
+        // 10px wide on each side. Its centre sits exactly 18px from the frame
+        // centre in both directions, giving a symmetric 5px margin from each
+        // frame edge: (34-29)=5 right, (3-(-2))=5 left.
+        final int GAP = 18;
+
+        int jX = (this.cs_arrivedDir == 2) ? pX - GAP : pX + GAP;
+        int d  = dropShadow ? 1 : 0;
+
+        // Stub from parent centre → junction column → child centre.
+        g.hLine(pX + d, jX + d, pY + d, color);
+        g.vLine(jX + d, pY + d, cY + d, color);
+        g.hLine(jX + d, cX + d, cY + d, color);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // drawConnectivityCS()  —  filtered connectivity pass
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Draws connectivity lines for {@code this} widget and all its descendants,
+     * filtered to only the "green" or "dark" colour category.
+     *
+     * <p>Invoked four times per frame by {@code AdvancementTabMixin}:
+     * dark shadows → green shadows → dark lines → green lines.  This ordering
+     * guarantees that green lines and their shadows always appear on top of dark
+     * ones regardless of tree traversal order.
+     *
+     * @param dropShadow {@code true} for the shadow pass
+     * @param greenOnly  {@code true} → skip dark edges; {@code false} → skip green
+     */
+    public void cs$drawConnectivityCS(GuiGraphics guiGraphics, int x, int y,
+                                      boolean dropShadow, boolean greenOnly) {
+        if (this.parent != null) {
+            boolean green = this.theCoralineSystems$isGreenEdge();
+            if (green == greenOnly) {
+                this.theCoralineSystems$drawEdgeLines(guiGraphics, x, y, dropShadow, theCoralineSystems$lineColor(dropShadow, green));
+            }
+        }
+        for (AdvancementWidget child : this.children)
+            ((IAdvancementWidgetCS) child).drawConnectivityCS(guiGraphics, x, y, dropShadow, greenOnly);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // drawConnectivity()  —  vanilla entry point (kept for external callers)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * @author coralinesystems
+     * @reason Replaced vanilla's white/black two-tone lines with the two-colour
+     * scheme (green or dark only).  {@code AdvancementTabMixin} redirects
+     * both calls from {@code drawContents} to {@link #cs$drawConnectivityCS}
+     * instead, so this path is only hit by external callers.  Per-edge
+     * layering is not guaranteed here; use the redirected path for that.
+     */
+    @Overwrite
+    public void drawConnectivity(GuiGraphics guiGraphics, int x, int y, boolean dropShadow) {
+        if (this.parent != null) {
+            boolean green = this.theCoralineSystems$isGreenEdge();
+            this.theCoralineSystems$drawEdgeLines(guiGraphics, x, y, dropShadow, theCoralineSystems$lineColor(dropShadow, green));
+        }
+        for (AdvancementWidget child : this.children)
+            child.drawConnectivity(guiGraphics, x, y, dropShadow);
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -101,20 +205,20 @@ public abstract class AdvancementWidgetMixin {
     /**
      * @author coralinesystems
      * @reason Darkened frame + black-silhouette icon for locked advancements via
-     *         RenderSystem shader-colour tinting — no Z-elevated fill geometry,
-     *         so the tooltip pass is never occluded.
+     * RenderSystem shader-colour tinting — no Z-elevated fill geometry,
+     * so the tooltip pass is never occluded.
      */
     @Overwrite
     public void draw(GuiGraphics guiGraphics, int x, int y) {
-        boolean obscured = theCoralineSystems$isObscured();
+        boolean obscured = this.theCoralineSystems$isObscured();
 
         float pct = this.progress == null ? 0.0F : this.progress.getPercent();
         AdvancementWidgetType frameType = pct >= 1.0F
                 ? AdvancementWidgetType.OBTAINED : AdvancementWidgetType.UNOBTAINED;
 
         if (obscured) {
-            // Dark frame — texture alpha is preserved so the rounded corners
-            // stay transparent; only the opaque pixels are darkened.
+            // Darkened frame — texture alpha is preserved so rounded corners
+            // stay transparent; only opaque pixels are dimmed.
             RenderSystem.setShaderColor(CS_FRAME_DIM, CS_FRAME_DIM, CS_FRAME_DIM, 1.0f);
             guiGraphics.blit(WIDGETS_LOCATION,
                     x + this.x + 3, y + this.y,
@@ -122,8 +226,8 @@ public abstract class AdvancementWidgetMixin {
                     128 + frameType.getIndex() * 26, 26, 26);
             RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-            // Black-silhouette icon — zeroing RGB preserves the item sprite's
-            // alpha, so the result is an exact black cutout of the item's shape.
+            // Black-silhouette icon — zeroing RGB preserves the sprite's alpha,
+            // producing an exact black cutout of the item's shape.
             RenderSystem.setShaderColor(0.0f, 0.0f, 0.0f, 1.0f);
             guiGraphics.renderFakeItem(this.display.getIcon(),
                     x + this.x + 8, y + this.y + 5);
@@ -137,127 +241,8 @@ public abstract class AdvancementWidgetMixin {
                     x + this.x + 8, y + this.y + 5);
         }
 
-        for (AdvancementWidget child : this.children) child.draw(guiGraphics, x, y);
-    }
-
-    // ──────────────────────────────────────────────────────────────────────────
-    // drawConnectivity()
-    // ──────────────────────────────────────────────────────────────────────────
-
-    /**
-     * @author coralinesystems
-     * @reason Junction-based H-V-H (or V-H-V) bus routing that eliminates
-     *         ambiguous chain-like visuals for siblings.
-     *
-     * <h3>How the bus routing works</h3>
-     * Every child knows its travel direction ({@code arrivedDir}, stored during
-     * layout).  That direction determines which edge of the parent frame is used
-     * as the "junction" — a fixed pixel column (or row) shared by ALL siblings
-     * of the same parent.
-     *
-     * <p>Each sibling's connection is drawn as three segments:
-     * <ol>
-     *   <li>A short run from the parent centre to the junction.</li>
-     *   <li>A bus segment at the junction running perpendicular to the primary
-     *       axis from the parent's Y (or X) to the child's Y (or X).  Because
-     *       all siblings use the same junction position this segment is naturally
-     *       shared and merges into a single visible "bus line".</li>
-     *   <li>A run from the junction to the child centre.</li>
-     * </ol>
-     *
-     * <h3>Why the old routing caused chain-like visuals</h3>
-     * The previous approach inferred routing direction from the (dx, dy) vector.
-     * When a parent has many children spread perpendicular to the primary axis,
-     * the farther siblings have |dy| > |dx| and were mis-classified as
-     * "vertical-primary", which assigned them a different junction position than
-     * their closer siblings.  The resulting vertical segments happened to fall on
-     * the same column as the previous child, producing the Porkchop→Cookie→Flower
-     * chain illusion.  Storing the direction during layout and reading it back
-     * here fixes the classification for every sibling regardless of how far it
-     * sits from the parent.
-     */
-    @Overwrite
-    public void drawConnectivity(GuiGraphics guiGraphics, int x, int y, boolean dropShadow) {
-        if (this.parent != null) {
-            int pX = x + this.parent.getX() + 13;
-            int pY = y + this.parent.getY() + 13;
-            int cX = x + this.x + 13;
-            int cY = y + this.y + 13;
-
-            AdvancementProgress pp = ((IAdvancementWidgetCS) this.parent).getProgress();
-            boolean parentDone    = pp != null && pp.isDone();
-            boolean childObscured = theCoralineSystems$isObscured();
-
-            int color;
-            if (dropShadow) {
-                if      (parentDone && !childObscured) color = CS_GREEN_SHADOW;
-                else if (childObscured)                color = CS_DARK_SHADOW;
-                else                                   color = 0xFF000000;
-            } else {
-                if      (parentDone && !childObscured) color = CS_GREEN_LINE;
-                else if (childObscured)                color = CS_DARK_LINE;
-                else                                   color = 0xFFFFFFFF;
-            }
-
-            // Read the direction stored during layout (0=R, 1=D, 2=L, 3=U, -1=root).
-            // This tells us which parent edge to use as the shared junction so that
-            // all siblings — even those far in the perpendicular direction — always
-            // use the same junction column/row and share a visible bus segment.
-            int dir = ((IAdvancementWidgetCS)(Object)(AdvancementWidget)(Object)this).getArrivalDir();
-
-            // Junction offset from parent centre — just past the frame edge.
-            // Frame: blit at widget.x+3, width/height 26 → edge is 16 px from centre.
-            // We add 1 px extra clearance so the junction is never inside the frame.
-            // RIGHT (0) / LEFT (2) → junction on the horizontal axis (jX).
-            // DOWN  (1) / UP   (3) → junction on the vertical axis (jY).
-            final int EDGE = 17; // 16 px frame edge + 1 px clearance
-
-            int jX, jY;
-            boolean horizPrimary;
-            switch (dir) {
-                case 0:  jX = pX + EDGE; jY = pY; horizPrimary = true;  break; // RIGHT
-                case 2:  jX = pX - EDGE; jY = pY; horizPrimary = true;  break; // LEFT
-                case 1:  jX = pX; jY = pY + EDGE; horizPrimary = false; break; // DOWN
-                case 3:  jX = pX; jY = pY - EDGE; horizPrimary = false; break; // UP
-                default:
-                    // Root widget or unknown direction: fall back to a simple
-                    // straight line (hLine if same row, vLine if same column,
-                    // or H-then-V otherwise).
-                    jX = cX; jY = pY;
-                    horizPrimary = true;
-                    break;
-            }
-
-            if (!dropShadow) {
-                if (horizPrimary) {
-                    // seg1: parent centre → junction  (short horizontal)
-                    guiGraphics.hLine(pX, jX, pY, color);
-                    // seg2: bus at jX from parent Y to child Y  (shared by siblings)
-                    guiGraphics.vLine(jX, pY, cY, color);
-                    // seg3: junction → child centre  (individual branch)
-                    guiGraphics.hLine(jX, cX, cY, color);
-                } else {
-                    guiGraphics.vLine(pX, pY, jY, color);
-                    guiGraphics.hLine(pX, cX, jY, color);
-                    guiGraphics.vLine(cX, jY, cY, color);
-                }
-            } else {
-                // Shadow pass: offset all coordinates by (+1, +1).
-                if (horizPrimary) {
-                    guiGraphics.hLine(pX + 1, jX + 1, pY + 1, color);
-                    guiGraphics.vLine(jX + 1, pY + 1, cY + 1, color);
-                    guiGraphics.hLine(jX + 1, cX + 1, cY + 1, color);
-                } else {
-                    guiGraphics.vLine(pX + 1, pY + 1, jY + 1, color);
-                    guiGraphics.hLine(pX + 1, cX + 1, jY + 1, color);
-                    guiGraphics.vLine(cX + 1, jY + 1, cY + 1, color);
-                }
-            }
-        }
-
-        for (AdvancementWidget child : this.children) {
-            child.drawConnectivity(guiGraphics, x, y, dropShadow);
-        }
+        for (AdvancementWidget child : this.children)
+            child.draw(guiGraphics, x, y);
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -267,24 +252,23 @@ public abstract class AdvancementWidgetMixin {
     /**
      * @author coralinesystems
      * @reason Locked tooltip shows "???" title + description, black-silhouette
-     *         icon, and darkened frame.  Unlocked tooltip is a faithful vanilla
-     *         re-implementation.  No Z elevation anywhere — tinting via
-     *         RenderSystem shader colour is depth-neutral.
+     * icon, and darkened frame.  Unlocked tooltip faithfully reproduces
+     * vanilla (with the awt2 bug corrected — see below).
      *
-     *         flipUp fix: description Y is now relative to {@code boxY} so it
-     *         moves with the box when the tooltip flips above the frame.
+     * flipUp fix: description Y is now properly anchored based on the
+     * flip state, ensuring it stays inside the tooltip box.
      */
     @Overwrite
-    public void drawHover(GuiGraphics guiGraphics, int x, int y, float fade, int width, int height) {
-        if (theCoralineSystems$isObscured()) {
+    public void drawHover(GuiGraphics guiGraphics, int x, int y,
+                          float fade, int width, int height) {
+
+        if (this.theCoralineSystems$isObscured()) {
             // ── Locked tooltip ────────────────────────────────────────────────
             Component lockedTitle = Component.literal("???");
-            // PIN: to obfuscate the description too, replace Component.literal("???")
-            // on the description drawString below with an obfuscated component.
 
-            int textW  = this.minecraft.font.width(lockedTitle);
-            int boxW   = 29 + textW + 8;
-            int n      = 41; // 26 header + 9 desc line + 6 padding
+            int textW = this.minecraft.font.width(lockedTitle);
+            int boxW  = 29 + textW + 8;
+            int n     = 41; // 26 header + 9 desc line + 6 padding
 
             boolean flipLeft = width + x + this.x + boxW + 26 >= this.tab.getScreen().width;
             boolean flipUp   = 113 - y - this.y - 26 <= 6 + 9;
@@ -315,10 +299,10 @@ public abstract class AdvancementWidgetMixin {
             int titleX = flipLeft ? m + 5 : x + this.x + 32;
             guiGraphics.drawString(this.minecraft.font, lockedTitle, titleX, y + this.y + 9, -1, false);
 
-            // Description — shifts with the box when flipUp
+            // Description — properly anchored based on flipUp state
             int descY = flipUp ? boxY + 7 : l + 26;
             guiGraphics.drawString(this.minecraft.font,
-                    Component.literal("???"),  // ← PIN: swap to obfuscated component if needed
+                    Component.literal("???"),
                     m + 5, descY, 0xAAAAAA, false);
 
             // Icon — black silhouette
@@ -329,8 +313,8 @@ public abstract class AdvancementWidgetMixin {
             return;
         }
 
-        // ── Unlocked tooltip — vanilla re-implementation ──────────────────────
-        boolean bl = width + x + this.x + this.width + 26 >= this.tab.getScreen().width;
+        // ── Unlocked tooltip — vanilla re-implementation (awt2 bug corrected) ─
+        boolean bl  = width + x + this.x + this.width + 26 >= this.tab.getScreen().width;
         String  progressText = this.progress == null ? null : this.progress.getProgressText();
         int     progressW    = progressText == null ? 0 : this.minecraft.font.width(progressText);
         boolean bl2 = 113 - y - this.y - 26 <= 6 + this.description.size() * 9;
@@ -340,18 +324,23 @@ public abstract class AdvancementWidgetMixin {
         AdvancementWidgetType awt1, awt2, awt3;
         if (f >= 1.0F) {
             j = this.width / 2;
-            awt1 = awt2 = awt3 = AdvancementWidgetType.OBTAINED;
+            awt1 = AdvancementWidgetType.OBTAINED;
+            awt2 = AdvancementWidgetType.OBTAINED;
+            awt3 = AdvancementWidgetType.OBTAINED;
         } else if (j < 2) {
             j = this.width / 2;
-            awt1 = awt2 = awt3 = AdvancementWidgetType.UNOBTAINED;
+            awt1 = AdvancementWidgetType.UNOBTAINED;
+            awt2 = AdvancementWidgetType.UNOBTAINED;
+            awt3 = AdvancementWidgetType.UNOBTAINED;
         } else if (j > this.width - 2) {
             j = this.width / 2;
             awt1 = AdvancementWidgetType.OBTAINED;
-            awt2 = AdvancementWidgetType.UNOBTAINED;
+            awt2 = AdvancementWidgetType.OBTAINED;   // fixed: was incorrectly UNOBTAINED
             awt3 = AdvancementWidgetType.UNOBTAINED;
         } else {
             awt1 = AdvancementWidgetType.OBTAINED;
-            awt2 = awt3 = AdvancementWidgetType.UNOBTAINED;
+            awt2 = AdvancementWidgetType.UNOBTAINED;
+            awt3 = AdvancementWidgetType.UNOBTAINED;
         }
 
         int k = this.width - j;
@@ -402,7 +391,7 @@ public abstract class AdvancementWidgetMixin {
     /**
      * @author coralinesystems
      * @reason All visible (non-hidden) advancements are hoverable so the player
-     *         can read the "???" locked tooltip.
+     * can inspect the "???" locked tooltip.
      */
     @Overwrite
     public boolean isMouseOver(int x, int y, int mouseX, int mouseY) {
