@@ -17,6 +17,7 @@
     "OptionsMixin",
     "SoundEngineMixin",
     "SunrisePinkMixin",
+    "accessors.AdvancementWidgetAccessor",
     "advancements.AdvancementTabMixin",
     "advancements.AdvancementWidgetMixin"
   ],

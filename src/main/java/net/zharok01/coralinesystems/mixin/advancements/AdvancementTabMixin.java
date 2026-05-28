@@ -3,6 +3,9 @@ package net.zharok01.coralinesystems.mixin.advancements;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.advancements.AdvancementWidget;
+import net.zharok01.coralinesystems.client.advancements.GridPos;
+import net.zharok01.coralinesystems.client.advancements.LayoutCandidate;
+import net.zharok01.coralinesystems.mixin.accessors.AdvancementWidgetAccessor;
 import net.zharok01.coralinesystems.util.IAdvancementWidgetCS;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -19,41 +22,37 @@ import java.util.*;
 public abstract class AdvancementTabMixin {
 
     @Unique
-    private static final int CS_SLOT_W = 32;
+    private static final int CS_SLOT_W = 34;
 
     @Unique
-    private static final int CS_SLOT_H = 28;
+    private static final int CS_SLOT_H = 30;
+
+    @Unique
+    private static final int CS_WIDGET_SIZE = 28;
 
     /*
-     * Direction constants:
-     * 0 = right
-     * 2 = left
+     * Orthogonal directions:
+     *
+     * 0 = RIGHT
+     * 1 = DOWN
+     * 2 = LEFT
+     * 3 = UP
      */
-    @Unique
-    private static final int CS_DIR_RIGHT = 0;
+    @Unique private static final int theCoralineSystems$RIGHT = 0;
+    @Unique private static final int theCoralineSystems$DOWN = 1;
+    @Unique private static final int theCoralineSystems$LEFT = 2;
+    @Unique private static final int theCoralineSystems$UP = 3;
 
-    @Unique
-    private static final int CS_DIR_LEFT = 2;
-
-    @Shadow
-    @Final
+    @Shadow @Final
     private AdvancementWidget root;
 
-    @Shadow
-    @Final
+    @Shadow @Final
     private Map<Advancement, AdvancementWidget> widgets;
 
-    @Shadow
-    private int minX;
-
-    @Shadow
-    private int maxX;
-
-    @Shadow
-    private int minY;
-
-    @Shadow
-    private int maxY;
+    @Shadow private int minX;
+    @Shadow private int maxX;
+    @Shadow private int minY;
+    @Shadow private int maxY;
 
     // -------------------------------------------------------------------------
     // Connectivity rendering
@@ -69,14 +68,14 @@ public abstract class AdvancementTabMixin {
             )
     )
     private void cs$redirectShadowConnectivity(
-            AdvancementWidget root,
+            AdvancementWidget widget,
             GuiGraphics graphics,
             int x,
             int y,
             boolean shadow
     ) {
 
-        IAdvancementWidgetCS api = (IAdvancementWidgetCS) root;
+        IAdvancementWidgetCS api = (IAdvancementWidgetCS) widget;
 
         api.drawConnectivityCS(graphics, x, y, true, false);
         api.drawConnectivityCS(graphics, x, y, true, true);
@@ -92,14 +91,14 @@ public abstract class AdvancementTabMixin {
             )
     )
     private void cs$redirectColorConnectivity(
-            AdvancementWidget root,
+            AdvancementWidget widget,
             GuiGraphics graphics,
             int x,
             int y,
             boolean shadow
     ) {
 
-        IAdvancementWidgetCS api = (IAdvancementWidgetCS) root;
+        IAdvancementWidgetCS api = (IAdvancementWidgetCS) widget;
 
         api.drawConnectivityCS(graphics, x, y, false, false);
         api.drawConnectivityCS(graphics, x, y, false, true);
@@ -131,7 +130,7 @@ public abstract class AdvancementTabMixin {
     }
 
     // -------------------------------------------------------------------------
-    // Compact layered layout
+    // Omnidirectional procedural layout
     // -------------------------------------------------------------------------
 
     @Unique
@@ -144,124 +143,192 @@ public abstract class AdvancementTabMixin {
         Map<AdvancementWidget, Integer> subtreeWeights = new HashMap<>();
         cs$computeWeights(this.root, subtreeWeights);
 
-        Map<AdvancementWidget, int[]> positions = new HashMap<>();
+        Map<AdvancementWidget, GridPos> positions = new HashMap<>();
 
         /*
-         * Occupancy:
-         * key   = grid X
-         * value = occupied Y rows
+         * Occupied widget cells.
          */
-        Map<Integer, Set<Integer>> occupied = new HashMap<>();
+        Set<GridPos> occupied = new HashSet<>();
 
-        positions.put(this.root, new int[]{0, 0});
-        occupied.computeIfAbsent(0, k -> new HashSet<>()).add(0);
+        /*
+         * Reserved connector segments.
+         *
+         * Each line segment is stored as:
+         * x1,y1 -> x2,y2
+         */
+        Set<String> reservedEdges = new HashSet<>();
+
+        GridPos rootPos = new GridPos(0, 0);
+
+        positions.put(this.root, rootPos);
+        occupied.add(rootPos);
 
         ((IAdvancementWidgetCS) this.root).setArrivalDir(-1);
 
-        List<AdvancementWidget> rootChildren =
+        List<AdvancementWidget> children =
                 new ArrayList<>(((IAdvancementWidgetCS) this.root).getChildren());
 
-        rootChildren.sort((a, b) ->
+        children.sort((a, b) ->
                 subtreeWeights.getOrDefault(b, 1)
                         - subtreeWeights.getOrDefault(a, 1));
 
-        List<AdvancementWidget> right = new ArrayList<>();
-        List<AdvancementWidget> left = new ArrayList<>();
+        for (AdvancementWidget child : children) {
 
-        for (int i = 0; i < rootChildren.size(); i++) {
-            (i % 2 == 0 ? right : left).add(rootChildren.get(i));
-        }
-
-        int rightBias = -1;
-
-        for (AdvancementWidget child : right) {
-
-            cs$layoutBranch(
+            cs$placeNode(
                     child,
-                    1,
-                    rightBias,
-                    CS_DIR_RIGHT,
+                    this.root,
                     positions,
                     occupied,
+                    reservedEdges,
                     subtreeWeights
             );
-
-            rightBias++;
         }
 
-        int leftBias = 1;
-
-        for (AdvancementWidget child : left) {
-
-            cs$layoutBranch(
-                    child,
-                    -1,
-                    leftBias,
-                    CS_DIR_LEFT,
-                    positions,
-                    occupied,
-                    subtreeWeights
-            );
-
-            leftBias++;
-        }
-
-        int minGridX = positions.values()
-                .stream()
-                .mapToInt(v -> v[0])
-                .min()
-                .orElse(0);
-
-        int minGridY = positions.values()
-                .stream()
-                .mapToInt(v -> v[1])
-                .min()
-                .orElse(0);
+        int minGridX = positions.values().stream().mapToInt(GridPos::x).min().orElse(0);
+        int minGridY = positions.values().stream().mapToInt(GridPos::y).min().orElse(0);
 
         this.minX = Integer.MAX_VALUE;
         this.minY = Integer.MAX_VALUE;
         this.maxX = Integer.MIN_VALUE;
         this.maxY = Integer.MIN_VALUE;
 
-        for (Map.Entry<AdvancementWidget, int[]> entry : positions.entrySet()) {
+        for (Map.Entry<AdvancementWidget, GridPos> entry : positions.entrySet()) {
 
-            int gridX = entry.getValue()[0] - minGridX;
-            int gridY = entry.getValue()[1] - minGridY;
+            int gridX = entry.getValue().x() - minGridX;
+            int gridY = entry.getValue().y() - minGridY;
 
             int px = gridX * CS_SLOT_W;
             int py = gridY * CS_SLOT_H;
 
-            IAdvancementWidgetCS api = (IAdvancementWidgetCS) entry.getKey();
+            IAdvancementWidgetCS api =
+                    (IAdvancementWidgetCS) entry.getKey();
 
             api.setX(px);
             api.setY(py);
 
             this.minX = Math.min(this.minX, px);
-            this.maxX = Math.max(this.maxX, px + 28);
+            this.maxX = Math.max(this.maxX, px + CS_WIDGET_SIZE);
 
             this.minY = Math.min(this.minY, py);
-            this.maxY = Math.max(this.maxY, py + 27);
+            this.maxY = Math.max(this.maxY, py + CS_WIDGET_SIZE);
         }
     }
 
     @Unique
-    private void cs$layoutBranch(
+    private void cs$placeNode(
             AdvancementWidget node,
-            int x,
-            int preferredY,
-            int direction,
-            Map<AdvancementWidget, int[]> positions,
-            Map<Integer, Set<Integer>> occupied,
+            AdvancementWidget parent,
+            Map<AdvancementWidget, GridPos> positions,
+            Set<GridPos> occupied,
+            Set<String> reservedEdges,
             Map<AdvancementWidget, Integer> subtreeWeights
     ) {
 
-        int y = cs$findNearestFreeY(x, preferredY, occupied);
+        GridPos parentPos = positions.get(parent);
 
-        occupied.computeIfAbsent(x, k -> new HashSet<>()).add(y);
+        Random random =
+                new Random(((AdvancementWidgetAccessor) node)
+                        .coralineSystems$getAdvancement()
+                        .getId()
+                        .hashCode());
 
-        positions.put(node, new int[]{x, y});
+        List<Integer> directions =
+                new ArrayList<>(Arrays.asList(theCoralineSystems$RIGHT, theCoralineSystems$DOWN, theCoralineSystems$LEFT, theCoralineSystems$UP));
 
-        ((IAdvancementWidgetCS) node).setArrivalDir(direction);
+        /*
+         * Deterministic pseudo-random ordering.
+         */
+        Collections.shuffle(directions, random);
+
+        LayoutCandidate bestCandidate = null;
+
+        for (int direction : directions) {
+
+            for (int distance = 1; distance <= 6; distance++) {
+
+                int nx = parentPos.x();
+                int ny = parentPos.y();
+
+                switch (direction) {
+
+                    case theCoralineSystems$RIGHT -> nx += distance;
+                    case theCoralineSystems$LEFT -> nx -= distance;
+                    case theCoralineSystems$DOWN -> ny += distance;
+                    case theCoralineSystems$UP -> ny -= distance;
+                }
+
+                GridPos candidatePos = new GridPos(nx, ny);
+
+                if (occupied.contains(candidatePos)) {
+                    continue;
+                }
+
+                if (!cs$isEdgeRouteClear(
+                        parentPos,
+                        candidatePos,
+                        reservedEdges
+                )) {
+                    continue;
+                }
+
+                int score =
+                        cs$computePlacementScore(
+                                parentPos,
+                                candidatePos,
+                                occupied,
+                                subtreeWeights.getOrDefault(node, 1),
+                                distance
+                        );
+
+                if (bestCandidate == null || score < bestCandidate.score()) {
+                    bestCandidate =
+                            new LayoutCandidate(candidatePos, direction, score);
+                }
+            }
+        }
+
+        if (bestCandidate == null) {
+
+            /*
+             * Emergency fallback:
+             * spiral search.
+             */
+            int radius = 2;
+
+            while (bestCandidate == null) {
+
+                for (int dx = -radius; dx <= radius; dx++) {
+                    for (int dy = -radius; dy <= radius; dy++) {
+
+                        GridPos pos =
+                                new GridPos(parentPos.x() + dx, parentPos.y() + dy);
+
+                        if (occupied.contains(pos)) {
+                            continue;
+                        }
+
+                        bestCandidate =
+                                new LayoutCandidate(pos, theCoralineSystems$RIGHT, 9999);
+
+                        break;
+                    }
+                }
+
+                radius++;
+            }
+        }
+
+        positions.put(node, bestCandidate.pos());
+        occupied.add(bestCandidate.pos());
+
+        cs$reserveEdgeRoute(
+                parentPos,
+                bestCandidate.pos(),
+                reservedEdges
+        );
+
+        ((IAdvancementWidgetCS) node)
+                .setArrivalDir(bestCandidate.direction());
 
         List<AdvancementWidget> children =
                 new ArrayList<>(((IAdvancementWidgetCS) node).getChildren());
@@ -270,81 +337,144 @@ public abstract class AdvancementTabMixin {
                 subtreeWeights.getOrDefault(b, 1)
                         - subtreeWeights.getOrDefault(a, 1));
 
-        int nextX = direction == CS_DIR_RIGHT ? x + 1 : x - 1;
-
-        int offset = 0;
-
         for (AdvancementWidget child : children) {
 
-            int preferredChildY;
-
-            if ((offset & 1) == 0) {
-                preferredChildY = y + ((offset + 1) / 2);
-            } else {
-                preferredChildY = y - ((offset + 1) / 2);
-            }
-
-            cs$layoutBranch(
+            cs$placeNode(
                     child,
-                    nextX,
-                    preferredChildY,
-                    direction,
+                    node,
                     positions,
                     occupied,
+                    reservedEdges,
                     subtreeWeights
             );
-
-            offset++;
         }
     }
 
-    /*
-     * Finds the nearest free vertical slot.
-     *
-     * Search order:
-     * preferred
-     * +1
-     * -1
-     * +2
-     * -2
-     * ...
-     */
     @Unique
-    private int cs$findNearestFreeY(
-            int x,
-            int preferredY,
-            Map<Integer, Set<Integer>> occupied
+    private int cs$computePlacementScore(
+            GridPos parent,
+            GridPos LayoutCandidate,
+            Set<GridPos> occupied,
+            int subtreeWeight,
+            int distance
     ) {
 
-        Set<Integer> used = occupied.computeIfAbsent(x, k -> new HashSet<>());
+        int score = 0;
 
-        if (!used.contains(preferredY)) {
-            return preferredY;
+        /*
+         * Prefer shorter connectors.
+         */
+        score += distance * 15;
+
+        /*
+         * Penalize crowded areas.
+         */
+        for (GridPos pos : occupied) {
+
+            int dx = pos.x() - LayoutCandidate.x();
+            int dy = pos.y() - LayoutCandidate.y();
+
+            int distSq = dx * dx + dy * dy;
+
+            if (distSq <= 2) {
+                score += 60;
+            } else if (distSq <= 6) {
+                score += 15;
+            }
         }
 
-        for (int radius = 1; radius < 2048; radius++) {
+        /*
+         * Large subtrees prefer more space.
+         */
+        score -= subtreeWeight * 2;
 
-            int down = preferredY + radius;
+        /*
+         * Slight preference for horizontal progression.
+         */
+        score += Math.abs(LayoutCandidate.y()) * 3;
 
-            if (!used.contains(down)) {
-                return down;
-            }
+        return score;
+    }
 
-            int up = preferredY - radius;
+    @Unique
+    private boolean cs$isEdgeRouteClear(
+            GridPos from,
+            GridPos to,
+            Set<String> reservedEdges
+    ) {
 
-            if (!used.contains(up)) {
-                return up;
+        List<String> route = cs$buildOrthogonalRoute(from, to);
+
+        for (String segment : route) {
+            if (reservedEdges.contains(segment)) {
+                return false;
             }
         }
 
-        return preferredY;
+        return true;
+    }
+
+    @Unique
+    private void cs$reserveEdgeRoute(
+            GridPos from,
+            GridPos to,
+            Set<String> reservedEdges
+    ) {
+
+        reservedEdges.addAll(
+                cs$buildOrthogonalRoute(from, to)
+        );
     }
 
     /*
-     * Weight = total descendants + self.
+     * Orthogonal connector routing:
      *
-     * Larger subtrees are packed first to reduce fragmentation.
+     * horizontal first,
+     * vertical second.
      */
+    @Unique
+    private List<String> cs$buildOrthogonalRoute(
+            GridPos from,
+            GridPos to
+    ) {
+
+        List<String> route = new ArrayList<>();
+
+        int x = from.x();
+        int y = from.y();
+
+        while (x != to.x()) {
+
+            int nextX = x + Integer.signum(to.x() - x);
+
+            route.add(cs$segmentKey(x, y, nextX, y));
+
+            x = nextX;
+        }
+
+        while (y != to.y()) {
+
+            int nextY = y + Integer.signum(to.y() - y);
+
+            route.add(cs$segmentKey(x, y, x, nextY));
+
+            y = nextY;
+        }
+
+        return route;
+    }
+
+    @Unique
+    private String cs$segmentKey(
+            int x1,
+            int y1,
+            int x2,
+            int y2
+    ) {
+
+        return x1 + "," + y1 + ":" + x2 + "," + y2;
+    }
+
     @Unique
     private static int cs$computeWeights(
             AdvancementWidget node,
