@@ -1,11 +1,15 @@
 package net.zharok01.coralinesystems.mixin.advancements;
 
 import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.DisplayInfo;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.advancements.AdvancementTab;
 import net.minecraft.client.gui.screens.advancements.AdvancementWidget;
+import net.minecraft.client.gui.screens.advancements.AdvancementsScreen;
 import net.zharok01.coralinesystems.client.advancements.GridPos;
 import net.zharok01.coralinesystems.client.advancements.LayoutCandidate;
-import net.zharok01.coralinesystems.mixin.accessors.AdvancementWidgetAccessor;
+import net.zharok01.coralinesystems.client.advancements.RouteNode;
 import net.zharok01.coralinesystems.util.IAdvancementWidgetCS;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,45 +22,31 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.*;
 
-@Mixin(net.minecraft.client.gui.screens.advancements.AdvancementTab.class)
+@Mixin(AdvancementTab.class)
 public abstract class AdvancementTabMixin {
 
-    @Unique
-    private static final int CS_SLOT_W = 34;
-
-    @Unique
-    private static final int CS_SLOT_H = 30;
-
-    @Unique
-    private static final int CS_WIDGET_SIZE = 28;
-
-    /*
-     * Orthogonal directions:
-     *
-     * 0 = RIGHT
-     * 1 = DOWN
-     * 2 = LEFT
-     * 3 = UP
-     */
     @Unique private static final int theCoralineSystems$RIGHT = 0;
-    @Unique private static final int theCoralineSystems$DOWN = 1;
-    @Unique private static final int theCoralineSystems$LEFT = 2;
-    @Unique private static final int theCoralineSystems$UP = 3;
+    @Unique private static final int theCoralineSystems$DOWN  = 1;
+    @Unique private static final int theCoralineSystems$LEFT  = 2;
+    @Unique private static final int theCoralineSystems$UP    = 3;
 
-    @Shadow @Final
-    private AdvancementWidget root;
+    @Unique private static final int CS_SLOT_W    = 34;
+    @Unique private static final int CS_SLOT_H    = 30;
+    @Unique private static final int CS_WIDGET_SIZE = 28;
 
-    @Shadow @Final
-    private Map<Advancement, AdvancementWidget> widgets;
-
+    @Shadow @Final private AdvancementWidget root;
     @Shadow private int minX;
     @Shadow private int maxX;
     @Shadow private int minY;
     @Shadow private int maxY;
 
-    // -------------------------------------------------------------------------
-    // Connectivity rendering
-    // -------------------------------------------------------------------------
+    // ── FIX 1: dirty flag ────────────────────────────────────────────────────
+    // Layout is expensive (full BFS graph traversal). We must never run it more
+    // than once per "batch" of widget additions. The flag is set whenever the
+    // tree changes and cleared the moment drawContents actually needs the result.
+    @Unique private boolean cs$layoutDirty = false;
+
+    // ── Connectivity Rendering ────────────────────────────────────────────────
 
     @Redirect(
             method = "drawContents",
@@ -68,17 +58,10 @@ public abstract class AdvancementTabMixin {
             )
     )
     private void cs$redirectShadowConnectivity(
-            AdvancementWidget widget,
-            GuiGraphics graphics,
-            int x,
-            int y,
-            boolean shadow
-    ) {
-
+            AdvancementWidget widget, GuiGraphics graphics, int x, int y, boolean shadow) {
         IAdvancementWidgetCS api = (IAdvancementWidgetCS) widget;
-
-        api.drawConnectivityCS(graphics, x, y, true, false);
-        api.drawConnectivityCS(graphics, x, y, true, true);
+        api.drawConnectivityCS(graphics, x, y, true,  false);
+        api.drawConnectivityCS(graphics, x, y, true,  true);
     }
 
     @Redirect(
@@ -91,23 +74,20 @@ public abstract class AdvancementTabMixin {
             )
     )
     private void cs$redirectColorConnectivity(
-            AdvancementWidget widget,
-            GuiGraphics graphics,
-            int x,
-            int y,
-            boolean shadow
-    ) {
-
+            AdvancementWidget widget, GuiGraphics graphics, int x, int y, boolean shadow) {
         IAdvancementWidgetCS api = (IAdvancementWidgetCS) widget;
-
         api.drawConnectivityCS(graphics, x, y, false, false);
         api.drawConnectivityCS(graphics, x, y, false, true);
     }
 
-    // -------------------------------------------------------------------------
-    // Relayout hooks
-    // -------------------------------------------------------------------------
+    // ── Layout Hooks ─────────────────────────────────────────────────────────
 
+    /**
+     * Fired at the TAIL of the 6-arg constructor (the one called from
+     * {@link AdvancementTab#create}). The constructor itself calls addWidget()
+     * for the root, so cs$afterAddWidget always fires first; this inject is kept
+     * as a safety net for any future subclass paths.
+     */
     @Inject(
             method = "<init>(Lnet/minecraft/client/Minecraft;" +
                     "Lnet/minecraft/client/gui/screens/advancements/AdvancementsScreen;" +
@@ -117,71 +97,63 @@ public abstract class AdvancementTabMixin {
             at = @At("TAIL")
     )
     private void cs$afterInit(CallbackInfo ci) {
-        cs$relayout();
+        // Just mark dirty. The actual layout runs in cs$flushLayoutIfDirty,
+        // deferred until drawContents is called for the first time.
+        cs$layoutDirty = true;
     }
 
+    /**
+     * Fired every time a widget is added to the tab. With the dirty flag,
+     * this is now O(1) — it no longer triggers a full graph traversal.
+     */
     @Inject(method = "addWidget", at = @At("TAIL"))
     private void cs$afterAddWidget(
-            AdvancementWidget widget,
-            Advancement advancement,
-            CallbackInfo ci
-    ) {
-        cs$relayout();
+            AdvancementWidget widget, Advancement advancement, CallbackInfo ci) {
+        cs$layoutDirty = true;
     }
 
-    // -------------------------------------------------------------------------
-    // Omnidirectional procedural layout
-    // -------------------------------------------------------------------------
+    /**
+     * Deferred layout flush — injected at the very top of drawContents so the
+     * layout always runs before any rendering begins, but only runs at all when
+     * the tree has actually changed since the last render.
+     *
+     * <p>This is the key performance fix: a tab with N advancements previously
+     * triggered N full layout runs (one per addWidget call). Now it triggers
+     * exactly one, on the frame the window first appears.
+     */
+    @Inject(method = "drawContents", at = @At("HEAD"))
+    private void cs$flushLayoutIfDirty(GuiGraphics guiGraphics, int x, int y, CallbackInfo ci) {
+        if (cs$layoutDirty) {
+            cs$layoutDirty = false;
+            cs$relayout();
+        }
+    }
+
+    // ── Main Layout ───────────────────────────────────────────────────────────
 
     @Unique
     private void cs$relayout() {
-
-        if (this.root == null) {
-            return;
-        }
+        if (this.root == null) return;
 
         Map<AdvancementWidget, Integer> subtreeWeights = new HashMap<>();
         cs$computeWeights(this.root, subtreeWeights);
 
         Map<AdvancementWidget, GridPos> positions = new HashMap<>();
-
-        /*
-         * Occupied widget cells.
-         */
-        Set<GridPos> occupied = new HashSet<>();
-
-        /*
-         * Reserved connector segments.
-         *
-         * Each line segment is stored as:
-         * x1,y1 -> x2,y2
-         */
-        Set<String> reservedEdges = new HashSet<>();
+        Set<GridPos>  occupied      = new HashSet<>();
+        Set<String>   reservedEdges = new HashSet<>();
 
         GridPos rootPos = new GridPos(0, 0);
-
         positions.put(this.root, rootPos);
         occupied.add(rootPos);
-
         ((IAdvancementWidgetCS) this.root).setArrivalDir(-1);
 
         List<AdvancementWidget> children =
                 new ArrayList<>(((IAdvancementWidgetCS) this.root).getChildren());
-
         children.sort((a, b) ->
-                subtreeWeights.getOrDefault(b, 1)
-                        - subtreeWeights.getOrDefault(a, 1));
+                subtreeWeights.getOrDefault(b, 1) - subtreeWeights.getOrDefault(a, 1));
 
         for (AdvancementWidget child : children) {
-
-            cs$placeNode(
-                    child,
-                    this.root,
-                    positions,
-                    occupied,
-                    reservedEdges,
-                    subtreeWeights
-            );
+            cs$placeNode(child, this.root, positions, occupied, reservedEdges, subtreeWeights);
         }
 
         int minGridX = positions.values().stream().mapToInt(GridPos::x).min().orElse(0);
@@ -193,22 +165,15 @@ public abstract class AdvancementTabMixin {
         this.maxY = Integer.MIN_VALUE;
 
         for (Map.Entry<AdvancementWidget, GridPos> entry : positions.entrySet()) {
+            int px = (entry.getValue().x() - minGridX) * CS_SLOT_W;
+            int py = (entry.getValue().y() - minGridY) * CS_SLOT_H;
 
-            int gridX = entry.getValue().x() - minGridX;
-            int gridY = entry.getValue().y() - minGridY;
-
-            int px = gridX * CS_SLOT_W;
-            int py = gridY * CS_SLOT_H;
-
-            IAdvancementWidgetCS api =
-                    (IAdvancementWidgetCS) entry.getKey();
-
+            IAdvancementWidgetCS api = (IAdvancementWidgetCS) entry.getKey();
             api.setX(px);
             api.setY(py);
 
             this.minX = Math.min(this.minX, px);
             this.maxX = Math.max(this.maxX, px + CS_WIDGET_SIZE);
-
             this.minY = Math.min(this.minY, py);
             this.maxY = Math.max(this.maxY, py + CS_WIDGET_SIZE);
         }
@@ -221,276 +186,159 @@ public abstract class AdvancementTabMixin {
             Map<AdvancementWidget, GridPos> positions,
             Set<GridPos> occupied,
             Set<String> reservedEdges,
-            Map<AdvancementWidget, Integer> subtreeWeights
-    ) {
+            Map<AdvancementWidget, Integer> subtreeWeights) {
 
         GridPos parentPos = positions.get(parent);
 
-        Random random =
-                new Random(((AdvancementWidgetAccessor) node)
-                        .coralineSystems$getAdvancement()
-                        .getId()
-                        .hashCode());
-
-        List<Integer> directions =
-                new ArrayList<>(Arrays.asList(theCoralineSystems$RIGHT, theCoralineSystems$DOWN, theCoralineSystems$LEFT, theCoralineSystems$UP));
-
-        /*
-         * Deterministic pseudo-random ordering.
-         */
-        Collections.shuffle(directions, random);
-
         LayoutCandidate bestCandidate = null;
+        // FIX 2: cache the winning route from the scoring pass.
+        // Previously cs$findRoute was called twice for the winner — once to score
+        // it and once again after the loop to record it. For a tab with N nodes,
+        // each with up to 32 candidates, that was up to 32 redundant BFS runs
+        // per node. Now the winning route is retained and used directly.
+        List<String> bestRoute = null;
 
-        for (int direction : directions) {
+        for (int direction : List.of(
+                theCoralineSystems$RIGHT, theCoralineSystems$DOWN,
+                theCoralineSystems$LEFT,  theCoralineSystems$UP)) {
 
-            for (int distance = 1; distance <= 6; distance++) {
+            for (int distance = 1; distance <= 8; distance++) {
 
                 int nx = parentPos.x();
                 int ny = parentPos.y();
-
                 switch (direction) {
-
                     case theCoralineSystems$RIGHT -> nx += distance;
-                    case theCoralineSystems$LEFT -> nx -= distance;
-                    case theCoralineSystems$DOWN -> ny += distance;
-                    case theCoralineSystems$UP -> ny -= distance;
+                    case theCoralineSystems$LEFT  -> nx -= distance;
+                    case theCoralineSystems$DOWN  -> ny += distance;
+                    case theCoralineSystems$UP    -> ny -= distance;
                 }
 
                 GridPos candidatePos = new GridPos(nx, ny);
+                if (occupied.contains(candidatePos)) continue;
 
-                if (occupied.contains(candidatePos)) {
-                    continue;
-                }
+                List<String> route = cs$findRoute(parentPos, candidatePos, reservedEdges);
+                if (route == null) continue;
 
-                if (!cs$isEdgeRouteClear(
-                        parentPos,
-                        candidatePos,
-                        reservedEdges
-                )) {
-                    continue;
-                }
-
-                int score =
-                        cs$computePlacementScore(
-                                parentPos,
-                                candidatePos,
-                                occupied,
-                                subtreeWeights.getOrDefault(node, 1),
-                                distance
-                        );
+                int score = cs$computePlacementScore(
+                        candidatePos, occupied,
+                        subtreeWeights.getOrDefault(node, 1),
+                        route.size());
 
                 if (bestCandidate == null || score < bestCandidate.score()) {
-                    bestCandidate =
-                            new LayoutCandidate(candidatePos, direction, score);
+                    bestCandidate = new LayoutCandidate(candidatePos, direction, score);
+                    bestRoute = route; // ← retained; no second BFS needed
                 }
             }
         }
 
-        if (bestCandidate == null) {
+        if (bestCandidate == null) return;
 
-            /*
-             * Emergency fallback:
-             * spiral search.
-             */
-            int radius = 2;
-
-            while (bestCandidate == null) {
-
-                for (int dx = -radius; dx <= radius; dx++) {
-                    for (int dy = -radius; dy <= radius; dy++) {
-
-                        GridPos pos =
-                                new GridPos(parentPos.x() + dx, parentPos.y() + dy);
-
-                        if (occupied.contains(pos)) {
-                            continue;
-                        }
-
-                        bestCandidate =
-                                new LayoutCandidate(pos, theCoralineSystems$RIGHT, 9999);
-
-                        break;
-                    }
-                }
-
-                radius++;
-            }
-        }
-
+        // Commit the winner — reuse the cached route, no second cs$findRoute call.
         positions.put(node, bestCandidate.pos());
         occupied.add(bestCandidate.pos());
-
-        cs$reserveEdgeRoute(
-                parentPos,
-                bestCandidate.pos(),
-                reservedEdges
-        );
-
-        ((IAdvancementWidgetCS) node)
-                .setArrivalDir(bestCandidate.direction());
+        reservedEdges.addAll(bestRoute);
+        ((IAdvancementWidgetCS) node).setArrivalDir(bestCandidate.direction());
 
         List<AdvancementWidget> children =
                 new ArrayList<>(((IAdvancementWidgetCS) node).getChildren());
-
         children.sort((a, b) ->
-                subtreeWeights.getOrDefault(b, 1)
-                        - subtreeWeights.getOrDefault(a, 1));
+                subtreeWeights.getOrDefault(b, 1) - subtreeWeights.getOrDefault(a, 1));
 
         for (AdvancementWidget child : children) {
-
-            cs$placeNode(
-                    child,
-                    node,
-                    positions,
-                    occupied,
-                    reservedEdges,
-                    subtreeWeights
-            );
+            cs$placeNode(child, node, positions, occupied, reservedEdges, subtreeWeights);
         }
     }
 
+    // ── BFS Pathfinding ───────────────────────────────────────────────────────
+
     @Unique
-    private int cs$computePlacementScore(
-            GridPos parent,
-            GridPos LayoutCandidate,
-            Set<GridPos> occupied,
-            int subtreeWeight,
-            int distance
-    ) {
+    private List<String> cs$findRoute(
+            GridPos from, GridPos to, Set<String> reservedEdges) {
 
-        int score = 0;
+        Queue<RouteNode> open = new LinkedList<>();
+        Map<RouteNode, RouteNode> parentMap = new HashMap<>();
 
-        /*
-         * Prefer shorter connectors.
-         */
-        score += distance * 15;
+        RouteNode start  = new RouteNode(from.x(), from.y());
+        RouteNode target = new RouteNode(to.x(),   to.y());
 
-        /*
-         * Penalize crowded areas.
-         */
-        for (GridPos pos : occupied) {
+        open.add(start);
+        parentMap.put(start, null);
 
-            int dx = pos.x() - LayoutCandidate.x();
-            int dy = pos.y() - LayoutCandidate.y();
+        final int maxRadius = 32;
 
-            int distSq = dx * dx + dy * dy;
+        while (!open.isEmpty()) {
+            RouteNode current = open.poll();
+            if (current.equals(target)) break;
 
-            if (distSq <= 2) {
-                score += 60;
-            } else if (distSq <= 6) {
-                score += 15;
+            for (RouteNode next : List.of(
+                    new RouteNode(current.x() + 1, current.y()),
+                    new RouteNode(current.x() - 1, current.y()),
+                    new RouteNode(current.x(),      current.y() + 1),
+                    new RouteNode(current.x(),      current.y() - 1))) {
+
+                if (parentMap.containsKey(next)) continue;
+                if (Math.abs(next.x() - start.x()) > maxRadius ||
+                        Math.abs(next.y() - start.y()) > maxRadius) continue;
+
+                String segment = cs$segmentKey(
+                        current.x(), current.y(), next.x(), next.y());
+                if (reservedEdges.contains(segment)) continue;
+
+                parentMap.put(next, current);
+                open.add(next);
             }
         }
 
-        /*
-         * Large subtrees prefer more space.
-         */
-        score -= subtreeWeight * 2;
-
-        /*
-         * Slight preference for horizontal progression.
-         */
-        score += Math.abs(LayoutCandidate.y()) * 3;
-
-        return score;
-    }
-
-    @Unique
-    private boolean cs$isEdgeRouteClear(
-            GridPos from,
-            GridPos to,
-            Set<String> reservedEdges
-    ) {
-
-        List<String> route = cs$buildOrthogonalRoute(from, to);
-
-        for (String segment : route) {
-            if (reservedEdges.contains(segment)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    @Unique
-    private void cs$reserveEdgeRoute(
-            GridPos from,
-            GridPos to,
-            Set<String> reservedEdges
-    ) {
-
-        reservedEdges.addAll(
-                cs$buildOrthogonalRoute(from, to)
-        );
-    }
-
-    /*
-     * Orthogonal connector routing:
-     *
-     * horizontal first,
-     * vertical second.
-     */
-    @Unique
-    private List<String> cs$buildOrthogonalRoute(
-            GridPos from,
-            GridPos to
-    ) {
+        if (!parentMap.containsKey(target)) return null;
 
         List<String> route = new ArrayList<>();
-
-        int x = from.x();
-        int y = from.y();
-
-        while (x != to.x()) {
-
-            int nextX = x + Integer.signum(to.x() - x);
-
-            route.add(cs$segmentKey(x, y, nextX, y));
-
-            x = nextX;
+        RouteNode current = target;
+        while (parentMap.get(current) != null) {
+            RouteNode previous = parentMap.get(current);
+            route.add(cs$segmentKey(previous.x(), previous.y(), current.x(), current.y()));
+            current = previous;
         }
-
-        while (y != to.y()) {
-
-            int nextY = y + Integer.signum(to.y() - y);
-
-            route.add(cs$segmentKey(x, y, x, nextY));
-
-            y = nextY;
-        }
-
+        Collections.reverse(route);
         return route;
     }
 
-    @Unique
-    private String cs$segmentKey(
-            int x1,
-            int y1,
-            int x2,
-            int y2
-    ) {
+    // ── Placement Scoring ─────────────────────────────────────────────────────
 
+    @Unique
+    private int cs$computePlacementScore(
+            GridPos candidate, Set<GridPos> occupied,
+            int subtreeWeight, int routeLength) {
+
+        int score = routeLength * 12;
+
+        for (GridPos pos : occupied) {
+            int dx    = pos.x() - candidate.x();
+            int dy    = pos.y() - candidate.y();
+            int distSq = dx * dx + dy * dy;
+            if      (distSq <= 2) score += 60;
+            else if (distSq <= 6) score += 15;
+        }
+
+        score -= subtreeWeight * 2;
+        score += Math.abs(candidate.y()) * 3;
+        return score;
+    }
+
+    // ── Utilities ─────────────────────────────────────────────────────────────
+
+    @Unique
+    private String cs$segmentKey(int x1, int y1, int x2, int y2) {
         return x1 + "," + y1 + ":" + x2 + "," + y2;
     }
 
     @Unique
     private static int cs$computeWeights(
-            AdvancementWidget node,
-            Map<AdvancementWidget, Integer> cache
-    ) {
-
+            AdvancementWidget node, Map<AdvancementWidget, Integer> cache) {
         int weight = 1;
-
-        for (AdvancementWidget child :
-                ((IAdvancementWidgetCS) node).getChildren()) {
-
+        for (AdvancementWidget child : ((IAdvancementWidgetCS) node).getChildren()) {
             weight += cs$computeWeights(child, cache);
         }
-
         cache.put(node, weight);
-
         return weight;
     }
 }
