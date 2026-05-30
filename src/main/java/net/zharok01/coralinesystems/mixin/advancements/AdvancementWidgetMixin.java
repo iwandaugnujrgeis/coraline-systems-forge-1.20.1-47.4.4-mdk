@@ -141,73 +141,57 @@ public abstract class AdvancementWidgetMixin {
      * facing edges, producing a symmetric gap on both sides regardless of
      * how many grid slots apart the widgets are.
      */
+    // net.zharok01.coralinesystems.mixin.advancements.AdvancementWidgetMixin
+
+    // net.zharok01.coralinesystems.mixin.advancements.AdvancementWidgetMixin
+
     @Unique
     private void theCoralineSystems$drawEdgeLines(GuiGraphics g, int ox, int oy,
                                                   boolean dropShadow, int color) {
         assert this.parent != null;
 
-        // Shadow offset: the shadow copy is drawn 1 px down-right.
         final int d = dropShadow ? 1 : 0;
 
-        // ── Parent frame edges ────────────────────────────────────────────────
-        final int pLeft   = ox + this.parent.getX() + FRAME_INSET_X;
-        final int pRight  = pLeft  + FRAME_SIZE;          // x + 3 + 26 = x + 29
-        final int pTop    = oy + this.parent.getY();
-        final int pBottom = pTop   + FRAME_SIZE;
-        final int pCX     = pLeft  + FRAME_HALF;          // horizontal centre of parent
-        final int pCY     = pTop   + FRAME_HALF;          // vertical   centre of parent
+        // Frame is blitted at widget.x + 3, size 26x26.
+        // Horizontal center (used for vertical lines): widget.x + 3 + 13 = widget.x + 16
+        // Vertical center (used for horizontal lines): widget.y + 0 + 13 = widget.y + 13
+        final int WIDGET_CENTER_X = 16;
+        final int WIDGET_CENTER_Y = 13;
 
-        // ── Child frame edges ─────────────────────────────────────────────────
-        final int cLeft   = ox + this.x + FRAME_INSET_X;
-        final int cRight  = cLeft  + FRAME_SIZE;
-        final int cTop    = oy + this.y;
-        final int cBottom = cTop   + FRAME_SIZE;
-        final int cCX     = cLeft  + FRAME_HALF;
-        final int cCY     = cTop   + FRAME_HALF;
+        final int pCX = ox + this.parent.getX() + WIDGET_CENTER_X;
+        final int pCY = oy + this.parent.getY() + WIDGET_CENTER_Y;
+        final int cCX = ox + this.x             + WIDGET_CENTER_X;
+        final int cCY = oy + this.y             + WIDGET_CENTER_Y;
 
         switch (this.cs_arrivedDir) {
 
             case 0 -> {
-                // RIGHT — child is to the right of parent.
-                // Parent exits its right edge; child enters its left edge.
-                // Junction column at the midpoint between the two facing edges.
-                final int jX = (pRight + cLeft) / 2;
-                g.hLine(pRight + d, jX    + d, pCY  + d, color); // parent → junction
-                g.vLine(jX    + d, pCY   + d, cCY  + d, color); // junction vertical
-                g.hLine(jX    + d, cLeft + d, cCY  + d, color); // junction → child
+                final int jX = (pCX + cCX) / 2;
+                g.hLine(pCX + d, jX  + d, pCY + d, color);
+                g.vLine(jX  + d, pCY + d, cCY + d, color);
+                g.hLine(jX  + d, cCX + d, cCY + d, color);
             }
 
             case 1 -> {
-                // DOWN — child is below parent.
-                // Parent exits its bottom edge; child enters its top edge.
-                // Junction row at the midpoint between the two facing edges.
-                final int jY = (pBottom + cTop) / 2;
-                g.vLine(pCX    + d, pBottom + d, jY   + d, color); // parent → junction
-                g.hLine(pCX    + d, cCX     + d, jY   + d, color); // junction horizontal
-                g.vLine(cCX    + d, jY      + d, cTop + d, color); // junction → child
+                final int jY = (pCY + cCY) / 2;
+                g.vLine(pCX + d, pCY + d, jY  + d, color);
+                g.hLine(pCX + d, cCX + d, jY  + d, color);
+                g.vLine(cCX + d, jY  + d, cCY + d, color);
             }
 
             case 2 -> {
-                // LEFT — child is to the left of parent.
-                // Parent exits its left edge; child enters its right edge.
-                // Junction column at the midpoint between the two facing edges.
-                final int jX = (pLeft + cRight) / 2;
-                g.hLine(pLeft  + d, jX     + d, pCY  + d, color); // parent → junction
-                g.vLine(jX     + d, pCY    + d, cCY  + d, color); // junction vertical
-                g.hLine(jX     + d, cRight + d, cCY  + d, color); // junction → child
+                final int jX = (pCX + cCX) / 2;
+                g.hLine(pCX + d, jX  + d, pCY + d, color);
+                g.vLine(jX  + d, pCY + d, cCY + d, color);
+                g.hLine(jX  + d, cCX + d, cCY + d, color);
             }
 
             case 3 -> {
-                // UP — child is above parent.
-                // Parent exits its top edge; child enters its bottom edge.
-                // Junction row at the midpoint between the two facing edges.
-                final int jY = (pTop + cBottom) / 2;
-                g.vLine(pCX    + d, pTop    + d, jY      + d, color); // parent → junction
-                g.hLine(pCX    + d, cCX     + d, jY      + d, color); // junction horizontal
-                g.vLine(cCX    + d, jY      + d, cBottom + d, color); // junction → child
+                final int jY = (pCY + cCY) / 2;
+                g.vLine(pCX + d, pCY + d, jY  + d, color);
+                g.hLine(pCX + d, cCX + d, jY  + d, color);
+                g.vLine(cCX + d, jY  + d, cCY + d, color);
             }
-
-            // default / -1: root widget — no parent edge to draw.
         }
     }
 

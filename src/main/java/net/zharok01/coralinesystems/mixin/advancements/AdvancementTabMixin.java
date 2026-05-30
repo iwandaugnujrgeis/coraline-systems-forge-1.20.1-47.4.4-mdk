@@ -1,12 +1,9 @@
 package net.zharok01.coralinesystems.mixin.advancements;
 
 import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.DisplayInfo;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.advancements.AdvancementTab;
 import net.minecraft.client.gui.screens.advancements.AdvancementWidget;
-import net.minecraft.client.gui.screens.advancements.AdvancementsScreen;
 import net.zharok01.coralinesystems.client.advancements.GridPos;
 import net.zharok01.coralinesystems.client.advancements.LayoutCandidate;
 import net.zharok01.coralinesystems.client.advancements.RouteNode;
