@@ -13,6 +13,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.client.gui.screens.advancements.AdvancementTab;
 import net.minecraft.client.gui.screens.advancements.AdvancementWidget;
 import net.minecraft.client.gui.screens.advancements.AdvancementWidgetType;
+import net.zharok01.coralinesystems.client.advancements.GridPos;
 import net.zharok01.coralinesystems.util.IAdvancementWidgetCS;
 import org.spongepowered.asm.mixin.*;
 
@@ -38,53 +39,48 @@ public abstract class AdvancementWidgetMixin {
     @Shadow @Nullable private AdvancementWidget parent;
     @Shadow @Nullable private AdvancementProgress progress;
 
-    // The cardinal direction this widget's subtree travels in, set by layout.
-    // −1 = root/unknown, 0 = Right, 1 = Down, 2 = Left, 3 = Up.
     @Unique private int cs_arrivedDir = -1;
+    @Unique @Nullable private List<GridPos> cs_incomingRoute = null;
 
     @Unique private static final ResourceLocation WIDGETS_LOCATION =
             new ResourceLocation("textures/gui/advancements/widgets.png");
 
-    // Frame tint: 20 % brightness preserves rounded-corner transparency while
-    // making locked advancements clearly dark.
     @Unique private static final float CS_FRAME_DIM = 0.20f;
-
-    // Exactly two line colours: green for completed-parent edges, dark for all
-    // others. No white / vanilla fallback — the UI uses only these two.
     @Unique private static final int CS_GREEN_LINE   = 0xFF55FF55;
     @Unique private static final int CS_GREEN_SHADOW = 0xFF004000;
     @Unique private static final int CS_DARK_LINE    = 0xFF404040;
     @Unique private static final int CS_DARK_SHADOW  = 0xFF101010;
 
-    // ── Frame geometry ────────────────────────────────────────────────────────
-    // The advancement frame sprite is blitted at (widget.x + 3, widget.y),
-    // size 26 × 26. All anchor helpers below use these constants.
-    @Unique private static final int FRAME_INSET_X = 3;   // left inset from widget origin
-    @Unique private static final int FRAME_SIZE    = 26;  // width and height of the frame
-    @Unique private static final int FRAME_HALF    = 13;  // FRAME_SIZE / 2
+    @Unique private static final int FRAME_INSET_X = 3;
+    @Unique private static final int FRAME_SIZE    = 26;
+    @Unique private static final int FRAME_HALF    = 13;
 
-    // ── IAdvancementWidgetCS  (Mixin strips the "cs$" prefix automatically) ──
+    @Unique private static final int CS_SLOT_W = 34;
+    @Unique private static final int CS_SLOT_H = 30;
 
-    public void cs$setX(int x)                      { this.x = x; }
-    public void cs$setY(int y)                      { this.y = y; }
-    public List<AdvancementWidget> cs$getChildren() { return this.children; }
+    // ── IAdvancementWidgetCS ──────────────────────────────────────────────────
+
+    public void cs$setX(int x)                       { this.x = x; }
+    public void cs$setY(int y)                       { this.y = y; }
+    public List<AdvancementWidget> cs$getChildren()  { return this.children; }
     @Nullable
-    public AdvancementProgress cs$getProgress()     { return this.progress; }
-    public void cs$setArrivalDir(int dir)           { this.cs_arrivedDir = dir; }
-    public int  cs$getArrivalDir()                  { return this.cs_arrivedDir; }
+    public AdvancementProgress cs$getProgress()      { return this.progress; }
+    @Nullable
+    public AdvancementWidget cs$getParentWidget()    { return this.parent; }
+    public void cs$setArrivalDir(int dir)            { this.cs_arrivedDir = dir; }
+    public int  cs$getArrivalDir()                   { return this.cs_arrivedDir; }
+
+    public void cs$setIncomingRoute(@Nullable List<GridPos> route) {
+        this.cs_incomingRoute = route;
+    }
+
+    @Nullable
+    public List<GridPos> cs$getIncomingRoute() {
+        return this.cs_incomingRoute;
+    }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /**
-     * Returns {@code true} when this advancement should appear "locked":
-     * <ul>
-     * <li>Completed advancements are never locked.</li>
-     * <li>Advancements flagged {@code "hidden": true} in JSON are always
-     * locked until completed.</li>
-     * <li>Any advancement whose direct parent has not yet been completed is
-     * locked (the player is at least two steps away).</li>
-     * </ul>
-     */
     @Unique
     private boolean theCoralineSystems$isObscured() {
         if (this.progress != null && this.progress.isDone()) return false;
@@ -96,16 +92,11 @@ public abstract class AdvancementWidgetMixin {
                 AdvancementProgress pp = ((IAdvancementWidgetCS) pw).getProgress();
                 return pp == null || !pp.isDone();
             }
-            return true; // parent widget missing → treat as locked
+            return true;
         }
-        return false; // root advancement is never locked
+        return false;
     }
 
-    /**
-     * Returns {@code true} when the edge from {@link #parent} to {@code this}
-     * should be drawn in green — i.e. the parent has been completed and this
-     * child is itself visible (not obscured).
-     */
     @Unique
     private boolean theCoralineSystems$isGreenEdge() {
         assert this.parent != null;
@@ -113,132 +104,81 @@ public abstract class AdvancementWidgetMixin {
         return pp != null && pp.isDone() && !this.theCoralineSystems$isObscured();
     }
 
-    /**
-     * Returns the appropriate ARGB colour for an edge given the shadow/green
-     * flags.
-     */
     @Unique
     private static int theCoralineSystems$lineColor(boolean dropShadow, boolean green) {
         if (green) return dropShadow ? CS_GREEN_SHADOW : CS_GREEN_LINE;
         else       return dropShadow ? CS_DARK_SHADOW  : CS_DARK_LINE;
     }
 
-    /**
-     * Draws the L-shaped connector between {@link #parent} and {@code this},
-     * using direction-aware anchor points so that lines always exit and enter
-     * from the correct face of each frame.
-     *
-     * <pre>
-     * Direction  Parent exits   Child enters   Junction axis
-     * ─────────  ────────────   ────────────   ─────────────
-     * RIGHT (0)  right  edge    left   edge    mid-column X
-     * DOWN  (1)  bottom edge    top    edge    mid-row    Y
-     * LEFT  (2)  left   edge    right  edge    mid-column X
-     * UP    (3)  top    edge    bottom edge    mid-row    Y
-     * </pre>
-     *
-     * For each axis the junction is placed at the midpoint between the two
-     * facing edges, producing a symmetric gap on both sides regardless of
-     * how many grid slots apart the widgets are.
-     */
-    // net.zharok01.coralinesystems.mixin.advancements.AdvancementWidgetMixin
-
-    // net.zharok01.coralinesystems.mixin.advancements.AdvancementWidgetMixin
+    // ── Cell-walking renderer ─────────────────────────────────────────────────
 
     @Unique
-    private void theCoralineSystems$drawEdgeLines(GuiGraphics g, int ox, int oy,
-                                                  boolean dropShadow, int color) {
-        assert this.parent != null;
+    private void theCoralineSystems$drawRouteLines(GuiGraphics g, int ox, int oy,
+                                                   boolean dropShadow, int color) {
+        List<GridPos> route = this.cs_incomingRoute;
+        if (route == null || route.isEmpty() || this.parent == null) return;
 
         final int d = dropShadow ? 1 : 0;
 
-        // Frame is blitted at widget.x + 3, size 26x26.
-        // Horizontal center (used for vertical lines): widget.x + 3 + 13 = widget.x + 16
-        // Vertical center (used for horizontal lines): widget.y + 0 + 13 = widget.y + 13
-        final int WIDGET_CENTER_X = 16;
-        final int WIDGET_CENTER_Y = 13;
+        final int pCX = ox + this.parent.getX() + FRAME_INSET_X + FRAME_HALF;
+        final int pCY = oy + this.parent.getY() + FRAME_HALF;
 
-        final int pCX = ox + this.parent.getX() + WIDGET_CENTER_X;
-        final int pCY = oy + this.parent.getY() + WIDGET_CENTER_Y;
-        final int cCX = ox + this.x             + WIDGET_CENTER_X;
-        final int cCY = oy + this.y             + WIDGET_CENTER_Y;
+        int prevX = pCX;
+        int prevY = pCY;
 
-        switch (this.cs_arrivedDir) {
+        for (GridPos cell : route) {
+            int cellPX = ox + cell.x() * CS_SLOT_W + FRAME_INSET_X + FRAME_HALF;
+            int cellPY = oy + cell.y() * CS_SLOT_H + FRAME_HALF;
 
-            case 0 -> {
-                final int jX = (pCX + cCX) / 2;
-                g.hLine(pCX + d, jX  + d, pCY + d, color);
-                g.vLine(jX  + d, pCY + d, cCY + d, color);
-                g.hLine(jX  + d, cCX + d, cCY + d, color);
+            int minX = Math.min(prevX, cellPX);
+            int maxX = Math.max(prevX, cellPX);
+            int minY = Math.min(prevY, cellPY);
+            int maxY = Math.max(prevY, cellPY);
+
+            // Using explicit fill() bypasses Vanilla's vLine off-by-one bug
+            // entirely. This mathematical strictness eliminates T-junction stubs.
+            if (prevY == cellPY) {
+                // Horizontal segment: inclusive of maxX
+                g.fill(minX, prevY + d, maxX + 1, prevY + 1 + d, color);
+            } else {
+                // Vertical segment: inclusive of maxY
+                g.fill(prevX + d, minY, prevX + 1 + d, maxY + 1, color);
             }
 
-            case 1 -> {
-                final int jY = (pCY + cCY) / 2;
-                g.vLine(pCX + d, pCY + d, jY  + d, color);
-                g.hLine(pCX + d, cCX + d, jY  + d, color);
-                g.vLine(cCX + d, jY  + d, cCY + d, color);
-            }
-
-            case 2 -> {
-                final int jX = (pCX + cCX) / 2;
-                g.hLine(pCX + d, jX  + d, pCY + d, color);
-                g.vLine(jX  + d, pCY + d, cCY + d, color);
-                g.hLine(jX  + d, cCX + d, cCY + d, color);
-            }
-
-            case 3 -> {
-                final int jY = (pCY + cCY) / 2;
-                g.vLine(pCX + d, pCY + d, jY  + d, color);
-                g.hLine(pCX + d, cCX + d, jY  + d, color);
-                g.vLine(cCX + d, jY  + d, cCY + d, color);
-            }
+            prevX = cellPX;
+            prevY = cellPY;
         }
     }
 
-    // ── drawConnectivityCS() — filtered connectivity pass ────────────────────
+    // ── drawConnectivityCS() ──────────────────────────────────────────────────
 
-    /**
-     * Draws connectivity lines for {@code this} widget and all its descendants,
-     * filtered to only the "green" or "dark" colour category.
-     *
-     * <p>Invoked four times per frame by {@code AdvancementTabMixin}:
-     * dark shadows → green shadows → dark lines → green lines.  This ordering
-     * guarantees that green lines and their shadows always appear on top of dark
-     * ones regardless of tree traversal order.
-     *
-     * @param dropShadow {@code true} for the shadow pass
-     * @param greenOnly  {@code true} → skip dark edges; {@code false} → skip green
-     */
     public void cs$drawConnectivityCS(GuiGraphics guiGraphics, int x, int y,
                                       boolean dropShadow, boolean greenOnly) {
         if (this.parent != null) {
             boolean green = this.theCoralineSystems$isGreenEdge();
             if (green == greenOnly) {
-                this.theCoralineSystems$drawEdgeLines(
+                this.theCoralineSystems$drawRouteLines(
                         guiGraphics, x, y, dropShadow,
                         theCoralineSystems$lineColor(dropShadow, green));
             }
         }
-        for (AdvancementWidget child : this.children)
+        for (AdvancementWidget child : this.children) {
             ((IAdvancementWidgetCS) child).drawConnectivityCS(
                     guiGraphics, x, y, dropShadow, greenOnly);
+        }
     }
 
-    // ── drawConnectivity() — vanilla entry point (kept for external callers) ─
+    // ── drawConnectivity() — vanilla entry point ──────────────────────────────
 
     /**
-     * @author coralinesystems
-     * @reason Replaced vanilla's white/black two-tone lines with the two-colour
-     * scheme (green or dark only).  {@code AdvancementTabMixin} redirects
-     * both calls from {@code drawContents} to {@link #cs$drawConnectivityCS}
-     * instead, so this path is only hit by external callers.  Per-edge
-     * layering is not guaranteed here; use the redirected path for that.
+     * @author
+     * @reason
      */
     @Overwrite
     public void drawConnectivity(GuiGraphics guiGraphics, int x, int y, boolean dropShadow) {
         if (this.parent != null) {
             boolean green = this.theCoralineSystems$isGreenEdge();
-            this.theCoralineSystems$drawEdgeLines(
+            this.theCoralineSystems$drawRouteLines(
                     guiGraphics, x, y, dropShadow,
                     theCoralineSystems$lineColor(dropShadow, green));
         }
@@ -249,10 +189,8 @@ public abstract class AdvancementWidgetMixin {
     // ── draw() ────────────────────────────────────────────────────────────────
 
     /**
-     * @author coralinesystems
-     * @reason Darkened frame + black-silhouette icon for locked advancements via
-     * RenderSystem shader-colour tinting — no Z-elevated fill geometry,
-     * so the tooltip pass is never occluded.
+     * @author
+     * @reason
      */
     @Overwrite
     public void draw(GuiGraphics guiGraphics, int x, int y) {
@@ -263,8 +201,6 @@ public abstract class AdvancementWidgetMixin {
                 ? AdvancementWidgetType.OBTAINED : AdvancementWidgetType.UNOBTAINED;
 
         if (obscured) {
-            // Darkened frame — texture alpha is preserved so rounded corners
-            // stay transparent; only opaque pixels are dimmed.
             RenderSystem.setShaderColor(CS_FRAME_DIM, CS_FRAME_DIM, CS_FRAME_DIM, 1.0f);
             guiGraphics.blit(WIDGETS_LOCATION,
                     x + this.x + 3, y + this.y,
@@ -272,8 +208,6 @@ public abstract class AdvancementWidgetMixin {
                     128 + frameType.getIndex() * 26, 26, 26);
             RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-            // Black-silhouette icon — zeroing RGB preserves the sprite's alpha,
-            // producing an exact black cutout of the item's shape.
             RenderSystem.setShaderColor(0.0f, 0.0f, 0.0f, 1.0f);
             guiGraphics.renderFakeItem(this.display.getIcon(),
                     x + this.x + 8, y + this.y + 5);
@@ -294,25 +228,19 @@ public abstract class AdvancementWidgetMixin {
     // ── drawHover() ───────────────────────────────────────────────────────────
 
     /**
-     * @author coralinesystems
-     * @reason Locked tooltip shows "???" title + description, black-silhouette
-     * icon, and darkened frame.  Unlocked tooltip faithfully reproduces
-     * vanilla (with the awt2 bug corrected — see below).
-     *
-     * flipUp fix: description Y is now properly anchored based on the
-     * flip state, ensuring it stays inside the tooltip box.
+     * @author
+     * @reason
      */
     @Overwrite
     public void drawHover(GuiGraphics guiGraphics, int x, int y,
                           float fade, int width, int height) {
 
         if (this.theCoralineSystems$isObscured()) {
-            // ── Locked tooltip ────────────────────────────────────────────────
             Component lockedTitle = Component.literal("???");
 
             int textW = this.minecraft.font.width(lockedTitle);
             int boxW  = 29 + textW + 8;
-            int n     = 41; // 26 header + 9 desc line + 6 padding
+            int n     = 41;
 
             boolean flipLeft = width + x + this.x + boxW + 26 >= this.tab.getScreen().width;
             boolean flipUp   = 113 - y - this.y - 26 <= 6 + 9;
@@ -323,15 +251,12 @@ public abstract class AdvancementWidgetMixin {
             int m    = flipLeft ? x + this.x - boxW + 26 + 6 : x + this.x;
             int boxY = flipUp   ? l + 26 - n : l;
 
-            // Background box
             guiGraphics.blitNineSliced(WIDGETS_LOCATION, m, boxY, boxW, n, 10, 200, 26, 0, 52);
 
-            // Header strips
             int j = boxW / 2, k = boxW - j;
             guiGraphics.blit(WIDGETS_LOCATION, m,     l, 0,       AdvancementWidgetType.UNOBTAINED.getIndex() * 26, j, 26);
             guiGraphics.blit(WIDGETS_LOCATION, m + j, l, 200 - k, AdvancementWidgetType.UNOBTAINED.getIndex() * 26, k, 26);
 
-            // Frame — darkened
             RenderSystem.setShaderColor(CS_FRAME_DIM, CS_FRAME_DIM, CS_FRAME_DIM, 1.0f);
             guiGraphics.blit(WIDGETS_LOCATION,
                     x + this.x + 3, y + this.y,
@@ -339,17 +264,14 @@ public abstract class AdvancementWidgetMixin {
                     128 + AdvancementWidgetType.UNOBTAINED.getIndex() * 26, 26, 26);
             RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-            // Title
             int titleX = flipLeft ? m + 5 : x + this.x + 32;
             guiGraphics.drawString(this.minecraft.font, lockedTitle, titleX, y + this.y + 9, -1, false);
 
-            // Description — properly anchored based on flipUp state
             int descY = flipUp ? boxY + 7 : l + 26;
             guiGraphics.drawString(this.minecraft.font,
                     Component.literal("???"),
                     m + 5, descY, 0xAAAAAA, false);
 
-            // Icon — black silhouette
             RenderSystem.setShaderColor(0.0f, 0.0f, 0.0f, 1.0f);
             guiGraphics.renderFakeItem(this.display.getIcon(), x + this.x + 8, y + this.y + 5);
             RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -357,7 +279,6 @@ public abstract class AdvancementWidgetMixin {
             return;
         }
 
-        // ── Unlocked tooltip — vanilla re-implementation (awt2 bug corrected) ─
         boolean bl  = width + x + this.x + this.width + 26 >= this.tab.getScreen().width;
         String  progressText = this.progress == null ? null : this.progress.getProgressText();
         int     progressW    = progressText == null ? 0 : this.minecraft.font.width(progressText);
@@ -379,7 +300,7 @@ public abstract class AdvancementWidgetMixin {
         } else if (j > this.width - 2) {
             j = this.width / 2;
             awt1 = AdvancementWidgetType.OBTAINED;
-            awt2 = AdvancementWidgetType.OBTAINED;   // fixed: was incorrectly UNOBTAINED
+            awt2 = AdvancementWidgetType.OBTAINED;
             awt3 = AdvancementWidgetType.UNOBTAINED;
         } else {
             awt1 = AdvancementWidgetType.OBTAINED;
@@ -428,12 +349,9 @@ public abstract class AdvancementWidgetMixin {
         guiGraphics.renderFakeItem(this.display.getIcon(), x + this.x + 8, y + this.y + 5);
     }
 
-    // ── isMouseOver() ─────────────────────────────────────────────────────────
-
     /**
-     * @author coralinesystems
-     * @reason All visible (non-hidden) advancements are hoverable so the player
-     * can inspect the "???" locked tooltip.
+     * @author
+     * @reason
      */
     @Overwrite
     public boolean isMouseOver(int x, int y, int mouseX, int mouseY) {

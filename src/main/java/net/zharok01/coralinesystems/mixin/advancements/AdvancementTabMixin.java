@@ -4,6 +4,7 @@ import net.minecraft.advancements.Advancement;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.advancements.AdvancementTab;
 import net.minecraft.client.gui.screens.advancements.AdvancementWidget;
+import net.zharok01.coralinesystems.client.advancements.BranchPoint;
 import net.zharok01.coralinesystems.client.advancements.GridPos;
 import net.zharok01.coralinesystems.client.advancements.LayoutCandidate;
 import net.zharok01.coralinesystems.client.advancements.RouteNode;
@@ -27,8 +28,8 @@ public abstract class AdvancementTabMixin {
     @Unique private static final int theCoralineSystems$LEFT  = 2;
     @Unique private static final int theCoralineSystems$UP    = 3;
 
-    @Unique private static final int CS_SLOT_W    = 34;
-    @Unique private static final int CS_SLOT_H    = 30;
+    @Unique private static final int CS_SLOT_W      = 34;
+    @Unique private static final int CS_SLOT_H      = 30;
     @Unique private static final int CS_WIDGET_SIZE = 28;
 
     @Shadow @Final private AdvancementWidget root;
@@ -37,10 +38,6 @@ public abstract class AdvancementTabMixin {
     @Shadow private int minY;
     @Shadow private int maxY;
 
-    // ── FIX 1: dirty flag ────────────────────────────────────────────────────
-    // Layout is expensive (full BFS graph traversal). We must never run it more
-    // than once per "batch" of widget additions. The flag is set whenever the
-    // tree changes and cleared the moment drawContents actually needs the result.
     @Unique private boolean cs$layoutDirty = false;
 
     // ── Connectivity Rendering ────────────────────────────────────────────────
@@ -79,12 +76,6 @@ public abstract class AdvancementTabMixin {
 
     // ── Layout Hooks ─────────────────────────────────────────────────────────
 
-    /**
-     * Fired at the TAIL of the 6-arg constructor (the one called from
-     * {@link AdvancementTab#create}). The constructor itself calls addWidget()
-     * for the root, so cs$afterAddWidget always fires first; this inject is kept
-     * as a safety net for any future subclass paths.
-     */
     @Inject(
             method = "<init>(Lnet/minecraft/client/Minecraft;" +
                     "Lnet/minecraft/client/gui/screens/advancements/AdvancementsScreen;" +
@@ -94,30 +85,15 @@ public abstract class AdvancementTabMixin {
             at = @At("TAIL")
     )
     private void cs$afterInit(CallbackInfo ci) {
-        // Just mark dirty. The actual layout runs in cs$flushLayoutIfDirty,
-        // deferred until drawContents is called for the first time.
         cs$layoutDirty = true;
     }
 
-    /**
-     * Fired every time a widget is added to the tab. With the dirty flag,
-     * this is now O(1) — it no longer triggers a full graph traversal.
-     */
     @Inject(method = "addWidget", at = @At("TAIL"))
     private void cs$afterAddWidget(
             AdvancementWidget widget, Advancement advancement, CallbackInfo ci) {
         cs$layoutDirty = true;
     }
 
-    /**
-     * Deferred layout flush — injected at the very top of drawContents so the
-     * layout always runs before any rendering begins, but only runs at all when
-     * the tree has actually changed since the last render.
-     *
-     * <p>This is the key performance fix: a tab with N advancements previously
-     * triggered N full layout runs (one per addWidget call). Now it triggers
-     * exactly one, on the frame the window first appears.
-     */
     @Inject(method = "drawContents", at = @At("HEAD"))
     private void cs$flushLayoutIfDirty(GuiGraphics guiGraphics, int x, int y, CallbackInfo ci) {
         if (cs$layoutDirty) {
@@ -136,13 +112,16 @@ public abstract class AdvancementTabMixin {
         cs$computeWeights(this.root, subtreeWeights);
 
         Map<AdvancementWidget, GridPos> positions = new HashMap<>();
-        Set<GridPos>  occupied      = new HashSet<>();
-        Set<String>   reservedEdges = new HashSet<>();
+        Set<GridPos> occupied = new HashSet<>();
+        Map<AdvancementWidget, List<GridPos>> committedRoutes = new LinkedHashMap<>();
 
         GridPos rootPos = new GridPos(0, 0);
         positions.put(this.root, rootPos);
         occupied.add(rootPos);
-        ((IAdvancementWidgetCS) this.root).setArrivalDir(-1);
+
+        IAdvancementWidgetCS rootApi = (IAdvancementWidgetCS) this.root;
+        rootApi.setArrivalDir(-1);
+        rootApi.setIncomingRoute(null);
 
         List<AdvancementWidget> children =
                 new ArrayList<>(((IAdvancementWidgetCS) this.root).getChildren());
@@ -150,7 +129,8 @@ public abstract class AdvancementTabMixin {
                 subtreeWeights.getOrDefault(b, 1) - subtreeWeights.getOrDefault(a, 1));
 
         for (AdvancementWidget child : children) {
-            cs$placeNode(child, this.root, positions, occupied, reservedEdges, subtreeWeights);
+            cs$placeNode(child, this.root, positions, occupied,
+                    committedRoutes, subtreeWeights);
         }
 
         int minGridX = positions.values().stream().mapToInt(GridPos::x).min().orElse(0);
@@ -169,6 +149,15 @@ public abstract class AdvancementTabMixin {
             api.setX(px);
             api.setY(py);
 
+            List<GridPos> rawRoute = api.getIncomingRoute();
+            if (rawRoute != null) {
+                List<GridPos> normalizedRoute = new ArrayList<>(rawRoute.size());
+                for (GridPos cell : rawRoute) {
+                    normalizedRoute.add(new GridPos(cell.x() - minGridX, cell.y() - minGridY));
+                }
+                api.setIncomingRoute(normalizedRoute);
+            }
+
             this.minX = Math.min(this.minX, px);
             this.maxX = Math.max(this.maxX, px + CS_WIDGET_SIZE);
             this.minY = Math.min(this.minY, py);
@@ -182,25 +171,20 @@ public abstract class AdvancementTabMixin {
             AdvancementWidget parent,
             Map<AdvancementWidget, GridPos> positions,
             Set<GridPos> occupied,
-            Set<String> reservedEdges,
+            Map<AdvancementWidget, List<GridPos>> committedRoutes,
             Map<AdvancementWidget, Integer> subtreeWeights) {
 
         GridPos parentPos = positions.get(parent);
 
         LayoutCandidate bestCandidate = null;
-        // FIX 2: cache the winning route from the scoring pass.
-        // Previously cs$findRoute was called twice for the winner — once to score
-        // it and once again after the loop to record it. For a tab with N nodes,
-        // each with up to 32 candidates, that was up to 32 redundant BFS runs
-        // per node. Now the winning route is retained and used directly.
-        List<String> bestRoute = null;
+        List<GridPos>   bestRoute     = null;
 
+        // ── Phase 1: Normal placement ─────────────────────────────────────────
         for (int direction : List.of(
                 theCoralineSystems$RIGHT, theCoralineSystems$DOWN,
                 theCoralineSystems$LEFT,  theCoralineSystems$UP)) {
 
             for (int distance = 1; distance <= 8; distance++) {
-
                 int nx = parentPos.x();
                 int ny = parentPos.y();
                 switch (direction) {
@@ -213,28 +197,94 @@ public abstract class AdvancementTabMixin {
                 GridPos candidatePos = new GridPos(nx, ny);
                 if (occupied.contains(candidatePos)) continue;
 
-                List<String> route = cs$findRoute(parentPos, candidatePos, reservedEdges);
+                List<GridPos> route = cs$findRoute(parentPos, candidatePos, occupied);
                 if (route == null) continue;
 
                 int score = cs$computePlacementScore(
-                        candidatePos, occupied,
+                        parentPos, candidatePos, occupied,
                         subtreeWeights.getOrDefault(node, 1),
                         route.size());
 
                 if (bestCandidate == null || score < bestCandidate.score()) {
                     bestCandidate = new LayoutCandidate(candidatePos, direction, score);
-                    bestRoute = route; // ← retained; no second BFS needed
+                    bestRoute     = route;
+                }
+            }
+        }
+
+        // ── Phase 2: Branch-off fallback ──────────────────────────────────────
+        if (bestCandidate == null) {
+            bestCandidate = null;
+            bestRoute     = null;
+
+            for (Map.Entry<AdvancementWidget, List<GridPos>> entry : committedRoutes.entrySet()) {
+                AdvancementWidget sibling = entry.getKey();
+
+                // CORE ANCESTRY FIX: A node may ONLY tap into routes belonging to its
+                // true siblings. This prevents "Copper Pipe" from merging with unrelated lines.
+                if (((IAdvancementWidgetCS) sibling).getParentWidget() != parent) {
+                    continue;
+                }
+
+                List<GridPos> siblingRoute = entry.getValue();
+
+                for (int idx = 0; idx < siblingRoute.size(); idx++) {
+                    GridPos branchCell = siblingRoute.get(idx);
+
+                    for (int direction : List.of(
+                            theCoralineSystems$RIGHT, theCoralineSystems$DOWN,
+                            theCoralineSystems$LEFT,  theCoralineSystems$UP)) {
+
+                        for (int distance = 1; distance <= 8; distance++) {
+                            int nx = branchCell.x();
+                            int ny = branchCell.y();
+                            switch (direction) {
+                                case theCoralineSystems$RIGHT -> nx += distance;
+                                case theCoralineSystems$LEFT  -> nx -= distance;
+                                case theCoralineSystems$DOWN  -> ny += distance;
+                                case theCoralineSystems$UP    -> ny -= distance;
+                            }
+
+                            GridPos candidatePos = new GridPos(nx, ny);
+                            if (occupied.contains(candidatePos)) continue;
+
+                            List<GridPos> tailRoute =
+                                    cs$findRoute(branchCell, candidatePos, occupied);
+                            if (tailRoute == null) continue;
+
+                            List<GridPos> fullRoute = new ArrayList<>();
+                            for (int s = 0; s <= idx; s++) {
+                                fullRoute.add(siblingRoute.get(s));
+                            }
+                            fullRoute.addAll(tailRoute);
+
+                            int score = cs$computePlacementScore(
+                                    parentPos, candidatePos, occupied,
+                                    subtreeWeights.getOrDefault(node, 1),
+                                    fullRoute.size());
+
+                            if (bestCandidate == null || score < bestCandidate.score()) {
+                                bestCandidate = new LayoutCandidate(
+                                        candidatePos, direction, score);
+                                bestRoute = fullRoute;
+                            }
+                        }
+                    }
                 }
             }
         }
 
         if (bestCandidate == null) return;
 
-        // Commit the winner — reuse the cached route, no second cs$findRoute call.
+        // ── Commit ────────────────────────────────────────────────────────────
         positions.put(node, bestCandidate.pos());
-        occupied.add(bestCandidate.pos());
-        reservedEdges.addAll(bestRoute);
-        ((IAdvancementWidgetCS) node).setArrivalDir(bestCandidate.direction());
+        occupied.addAll(bestRoute);
+
+        IAdvancementWidgetCS nodeApi = (IAdvancementWidgetCS) node;
+        nodeApi.setArrivalDir(bestCandidate.direction());
+        nodeApi.setIncomingRoute(bestRoute);
+
+        committedRoutes.put(node, bestRoute);
 
         List<AdvancementWidget> children =
                 new ArrayList<>(((IAdvancementWidgetCS) node).getChildren());
@@ -242,26 +292,33 @@ public abstract class AdvancementTabMixin {
                 subtreeWeights.getOrDefault(b, 1) - subtreeWeights.getOrDefault(a, 1));
 
         for (AdvancementWidget child : children) {
-            cs$placeNode(child, node, positions, occupied, reservedEdges, subtreeWeights);
+            cs$placeNode(child, node, positions, occupied,
+                    committedRoutes, subtreeWeights);
         }
     }
 
     // ── BFS Pathfinding ───────────────────────────────────────────────────────
 
     @Unique
-    private List<String> cs$findRoute(
-            GridPos from, GridPos to, Set<String> reservedEdges) {
+    private List<GridPos> cs$findRoute(
+            GridPos from, GridPos to, Set<GridPos> occupied) {
 
-        Queue<RouteNode> open = new LinkedList<>();
-        Map<RouteNode, RouteNode> parentMap = new HashMap<>();
+        // BFS BOUNDING BOX FIX: Strictly binds the BFS engine to the relevant area
+        // between 'from' and 'to' (with +3 padding). This prevents the engine from
+        // searching the entire massive 1,024 cell grid repeatedly, fixing the 4s lag.
+        int minX = Math.min(from.x(), to.x()) - 3;
+        int maxX = Math.max(from.x(), to.x()) + 3;
+        int minY = Math.min(from.y(), to.y()) - 3;
+        int maxY = Math.max(from.y(), to.y()) + 3;
 
         RouteNode start  = new RouteNode(from.x(), from.y());
         RouteNode target = new RouteNode(to.x(),   to.y());
 
+        Queue<RouteNode>            open      = new LinkedList<>();
+        Map<RouteNode, RouteNode>   parentMap = new HashMap<>();
+
         open.add(start);
         parentMap.put(start, null);
-
-        final int maxRadius = 32;
 
         while (!open.isEmpty()) {
             RouteNode current = open.poll();
@@ -274,12 +331,14 @@ public abstract class AdvancementTabMixin {
                     new RouteNode(current.x(),      current.y() - 1))) {
 
                 if (parentMap.containsKey(next)) continue;
-                if (Math.abs(next.x() - start.x()) > maxRadius ||
-                        Math.abs(next.y() - start.y()) > maxRadius) continue;
 
-                String segment = cs$segmentKey(
-                        current.x(), current.y(), next.x(), next.y());
-                if (reservedEdges.contains(segment)) continue;
+                // Stop the combinatorial explosion
+                if (next.x() < minX || next.x() > maxX ||
+                        next.y() < minY || next.y() > maxY) continue;
+
+                GridPos nextPos = new GridPos(next.x(), next.y());
+                boolean isDestination = next.equals(target);
+                if (!isDestination && occupied.contains(nextPos)) continue;
 
                 parentMap.put(next, current);
                 open.add(next);
@@ -288,12 +347,11 @@ public abstract class AdvancementTabMixin {
 
         if (!parentMap.containsKey(target)) return null;
 
-        List<String> route = new ArrayList<>();
+        List<GridPos> route = new ArrayList<>();
         RouteNode current = target;
         while (parentMap.get(current) != null) {
-            RouteNode previous = parentMap.get(current);
-            route.add(cs$segmentKey(previous.x(), previous.y(), current.x(), current.y()));
-            current = previous;
+            route.add(new GridPos(current.x(), current.y()));
+            current = parentMap.get(current);
         }
         Collections.reverse(route);
         return route;
@@ -303,18 +361,24 @@ public abstract class AdvancementTabMixin {
 
     @Unique
     private int cs$computePlacementScore(
-            GridPos candidate, Set<GridPos> occupied,
+            GridPos parentPos, GridPos candidate, Set<GridPos> occupied,
             int subtreeWeight, int routeLength) {
 
         int score = routeLength * 12;
 
         for (GridPos pos : occupied) {
-            int dx    = pos.x() - candidate.x();
-            int dy    = pos.y() - candidate.y();
+            int dx     = pos.x() - candidate.x();
+            int dy     = pos.y() - candidate.y();
             int distSq = dx * dx + dy * dy;
             if      (distSq <= 2) score += 60;
             else if (distSq <= 6) score += 15;
         }
+
+        // ELASTIC PENALTY FIX: Severely punishes the algorithm if it attempts to throw
+        // an advancement miles away to avoid a mild spatial penalty.
+        int pdx = candidate.x() - parentPos.x();
+        int pdy = candidate.y() - parentPos.y();
+        score += (pdx * pdx + pdy * pdy) * 5;
 
         score -= subtreeWeight * 2;
         score += Math.abs(candidate.y()) * 3;
@@ -322,11 +386,6 @@ public abstract class AdvancementTabMixin {
     }
 
     // ── Utilities ─────────────────────────────────────────────────────────────
-
-    @Unique
-    private String cs$segmentKey(int x1, int y1, int x2, int y2) {
-        return x1 + "," + y1 + ":" + x2 + "," + y2;
-    }
 
     @Unique
     private static int cs$computeWeights(
