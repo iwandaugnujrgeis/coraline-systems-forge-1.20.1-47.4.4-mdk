@@ -220,15 +220,16 @@ public abstract class AdvancementTabMixin {
             for (Map.Entry<AdvancementWidget, List<GridPos>> entry : committedRoutes.entrySet()) {
                 AdvancementWidget sibling = entry.getKey();
 
-                // CORE ANCESTRY FIX: A node may ONLY tap into routes belonging to its
-                // true siblings. This prevents "Copper Pipe" from merging with unrelated lines.
                 if (((IAdvancementWidgetCS) sibling).getParentWidget() != parent) {
                     continue;
                 }
 
                 List<GridPos> siblingRoute = entry.getValue();
 
-                for (int idx = 0; idx < siblingRoute.size(); idx++) {
+                // CORE TRUNK FIX 1: The Sibling Exclusion Zone
+                // Iterates up to size() - 1, strictly forbidding the BFS from branching
+                // off exactly where the sibling widget resides.
+                for (int idx = 0; idx < siblingRoute.size() - 1; idx++) {
                     GridPos branchCell = siblingRoute.get(idx);
 
                     for (int direction : List.of(
@@ -262,6 +263,10 @@ public abstract class AdvancementTabMixin {
                                     parentPos, candidatePos, occupied,
                                     subtreeWeights.getOrDefault(node, 1),
                                     fullRoute.size());
+
+                            // CORE TRUNK FIX 2: Trunk Proximity Gravity
+                            // Imposes an exponentially growing penalty the further out the branch point is.
+                            score += (idx * 8);
 
                             if (bestCandidate == null || score < bestCandidate.score()) {
                                 bestCandidate = new LayoutCandidate(
@@ -303,9 +308,6 @@ public abstract class AdvancementTabMixin {
     private List<GridPos> cs$findRoute(
             GridPos from, GridPos to, Set<GridPos> occupied) {
 
-        // BFS BOUNDING BOX FIX: Strictly binds the BFS engine to the relevant area
-        // between 'from' and 'to' (with +3 padding). This prevents the engine from
-        // searching the entire massive 1,024 cell grid repeatedly, fixing the 4s lag.
         int minX = Math.min(from.x(), to.x()) - 3;
         int maxX = Math.max(from.x(), to.x()) + 3;
         int minY = Math.min(from.y(), to.y()) - 3;
@@ -332,7 +334,6 @@ public abstract class AdvancementTabMixin {
 
                 if (parentMap.containsKey(next)) continue;
 
-                // Stop the combinatorial explosion
                 if (next.x() < minX || next.x() > maxX ||
                         next.y() < minY || next.y() > maxY) continue;
 
@@ -374,8 +375,6 @@ public abstract class AdvancementTabMixin {
             else if (distSq <= 6) score += 15;
         }
 
-        // ELASTIC PENALTY FIX: Severely punishes the algorithm if it attempts to throw
-        // an advancement miles away to avoid a mild spatial penalty.
         int pdx = candidate.x() - parentPos.x();
         int pdy = candidate.y() - parentPos.y();
         score += (pdx * pdx + pdy * pdy) * 5;
