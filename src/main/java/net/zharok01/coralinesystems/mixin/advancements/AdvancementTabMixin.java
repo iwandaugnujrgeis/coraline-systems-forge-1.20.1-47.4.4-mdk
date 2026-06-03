@@ -4,7 +4,8 @@ import net.minecraft.advancements.Advancement;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.advancements.AdvancementTab;
 import net.minecraft.client.gui.screens.advancements.AdvancementWidget;
-import net.zharok01.coralinesystems.client.advancements.BranchPoint;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.zharok01.coralinesystems.client.advancements.GridPos;
 import net.zharok01.coralinesystems.client.advancements.LayoutCandidate;
 import net.zharok01.coralinesystems.client.advancements.RouteNode;
@@ -32,13 +33,72 @@ public abstract class AdvancementTabMixin {
     @Unique private static final int CS_SLOT_H      = 30;
     @Unique private static final int CS_WIDGET_SIZE = 28;
 
+    // Procedural Textures
+    @Unique private static final ResourceLocation CS_TEX_BEDROCK  = new ResourceLocation("textures/block/bedrock.png");
+    @Unique private static final ResourceLocation CS_TEX_DIRT     = new ResourceLocation("textures/block/dirt.png");
+    @Unique private static final ResourceLocation CS_TEX_STONE    = new ResourceLocation("textures/block/stone.png");
+    @Unique private static final ResourceLocation CS_TEX_COAL     = new ResourceLocation("textures/block/coal_ore.png");
+    @Unique private static final ResourceLocation CS_TEX_IRON     = new ResourceLocation("textures/block/iron_ore.png");
+    @Unique private static final ResourceLocation CS_TEX_REDSTONE = new ResourceLocation("textures/block/redstone_ore.png");
+    @Unique private static final ResourceLocation CS_TEX_DIAMOND  = new ResourceLocation("textures/block/diamond_ore.png");
+    @Unique private static final ResourceLocation CS_TEX_GOLD     = new ResourceLocation("textures/block/gold_ore.png");
+
     @Shadow @Final private AdvancementWidget root;
     @Shadow private int minX;
     @Shadow private int maxX;
     @Shadow private int minY;
     @Shadow private int maxY;
+    @Shadow private double scrollX;
+    @Shadow private double scrollY;
 
     @Unique private boolean cs$layoutDirty = false;
+
+    // ── Procedural Background ────────────────────────────────────────────────
+
+    @Redirect(
+            method = "drawContents",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/gui/GuiGraphics;blit(Lnet/minecraft/resources/ResourceLocation;IIFFIIII)V"
+            )
+    )
+    private void cs$proceduralBackground(
+            GuiGraphics guiGraphics, ResourceLocation originalTexture,
+            int x, int y, float uOffset, float vOffset,
+            int width, int height, int textureWidth, int textureHeight) {
+
+        // Calculate absolute grid coordinates for the 16x16 tile to properly seed our generation
+        int gridX = (x - Mth.floor(this.scrollX)) / 16;
+        int gridY = (y - Mth.floor(this.scrollY)) / 16;
+
+        ResourceLocation textureToDraw;
+
+        if (gridY < 0) {
+            textureToDraw = CS_TEX_BEDROCK;
+        } else if (gridY == 0) {
+            textureToDraw = CS_TEX_DIRT;
+        } else {
+            textureToDraw = CS_TEX_STONE;
+
+            // Replicate the deterministic Beta logic by seeding the grid coordinates
+            Random random = new Random(1234L + gridX + (gridY * 31L));
+            int chance = random.nextInt(100);
+
+            if (chance < 2) {
+                textureToDraw = CS_TEX_DIAMOND;
+            } else if (chance < 5) {
+                textureToDraw = CS_TEX_REDSTONE;
+            } else if (chance < 10) {
+                textureToDraw = CS_TEX_GOLD;
+            } else if (chance < 15) {
+                textureToDraw = CS_TEX_IRON;
+            } else if (chance < 25) {
+                textureToDraw = CS_TEX_COAL;
+            }
+        }
+
+        guiGraphics.blit(textureToDraw, x, y, uOffset, vOffset, width, height, textureWidth, textureHeight);
+    }
 
     // ── Connectivity Rendering ────────────────────────────────────────────────
 
@@ -226,9 +286,6 @@ public abstract class AdvancementTabMixin {
 
                 List<GridPos> siblingRoute = entry.getValue();
 
-                // CORE TRUNK FIX 1: The Sibling Exclusion Zone
-                // Iterates up to size() - 1, strictly forbidding the BFS from branching
-                // off exactly where the sibling widget resides.
                 for (int idx = 0; idx < siblingRoute.size() - 1; idx++) {
                     GridPos branchCell = siblingRoute.get(idx);
 
@@ -264,8 +321,6 @@ public abstract class AdvancementTabMixin {
                                     subtreeWeights.getOrDefault(node, 1),
                                     fullRoute.size());
 
-                            // CORE TRUNK FIX 2: Trunk Proximity Gravity
-                            // Imposes an exponentially growing penalty the further out the branch point is.
                             score += (idx * 8);
 
                             if (bestCandidate == null || score < bestCandidate.score()) {
