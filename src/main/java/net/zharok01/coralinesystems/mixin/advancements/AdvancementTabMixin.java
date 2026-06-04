@@ -44,6 +44,11 @@ public abstract class AdvancementTabMixin {
     @Unique private static final ResourceLocation CS_TEX_REDSTONE = new ResourceLocation("textures/block/redstone_ore.png");
     @Unique private static final ResourceLocation CS_TEX_DIAMOND  = new ResourceLocation("textures/block/diamond_ore.png");
 
+    // New Stone Blob Variant Textures
+    @Unique private static final ResourceLocation CS_TEX_GRANITE  = new ResourceLocation("textures/block/granite.png");
+    @Unique private static final ResourceLocation CS_TEX_ANDESITE = new ResourceLocation("textures/block/andesite.png");
+    @Unique private static final ResourceLocation CS_TEX_GRAVEL   = new ResourceLocation("textures/block/gravel.png");
+
     @Shadow @Final private AdvancementWidget root;
     @Shadow private int minX;
     @Shadow private int maxX;
@@ -54,7 +59,21 @@ public abstract class AdvancementTabMixin {
 
     @Unique private boolean cs$layoutDirty = false;
 
-    // ── Procedural Background ────────────────────────────────────────────────
+    // ── Coordinate Bit-Scrambler ──────────────────────────────────────────────
+
+    /**
+     * High-entropy 2D coordinate mixer to fully scatter linear bits and
+     * eradicate diagonal banding/Marsaglia hyperplane patterns during world-gen simulation.
+     */
+    @Unique
+    private long cs$mixCoordinates(int x, int y) {
+        long hash = ((long) x * 312547891L) ^ ((long) y * 87541243L);
+        hash = (hash ^ (hash >>> 25)) * 0x7a5bc2d3L;
+        hash = (hash ^ (hash >>> 17)) * 0x14f5b2a3L;
+        return hash ^ (hash >>> 13);
+    }
+
+    // ── Procedural Background Rework ──────────────────────────────────────────
 
     @Redirect(
             method = "drawContents",
@@ -68,63 +87,107 @@ public abstract class AdvancementTabMixin {
             int x, int y, float uOffset, float vOffset,
             int width, int height, int textureWidth, int textureHeight) {
 
-        // Calculate absolute grid coordinates for the 16x16 tile to properly seed our generation
         int gridX = (x - Mth.floor(this.scrollX)) / 16;
         int gridY = (y - Mth.floor(this.scrollY)) / 16;
 
-        // 1. Bound Fix: Anchor the layers exactly to the limits
         int topBoundTile = 0;
         int bottomBoundTile = (this.maxY / 16);
 
-        // 2. Beta Noise: Create rugged transitions by shifting the Y boundary up or down based on the X column
-        Random colRandom = new Random(gridX * 9871L);
-        int yOffset = colRandom.nextInt(3) - 1; // Shifts by -1, 0, or 1
+        long colSeed = cs$mixCoordinates(gridX, 0) + 57321L;
+        Random colRandom = new Random(colSeed);
+        int yOffset = colRandom.nextInt(3) - 1;
 
-        // Push the top noise down by + 1. This guarantees gridY == 0 is ALWAYS a solid line of dirt.
         int noisyTop = topBoundTile + 1 + yOffset;
         int noisyBottom = bottomBoundTile + yOffset;
 
         ResourceLocation textureToDraw;
 
-        // 3. Layering & Ore Stratification
         if (gridY <= noisyTop) {
-            textureToDraw = CS_TEX_DIRT; // Fixed: Anything at or above the top boundary is now solid dirt!
+            textureToDraw = CS_TEX_DIRT;
         } else if (gridY >= noisyBottom) {
             textureToDraw = CS_TEX_BEDROCK;
         } else {
-            // Calculate depth ratio for ores: 0.0 (top stone) to 1.0 (bottom stone)
-            float depthRatio = Mth.clamp((float)(gridY - noisyTop) / (float)(noisyBottom - noisyTop), 0.0f, 1.0f);
+            float depthRatio = Mth.clamp((float) (gridY - noisyTop) / (float) (noisyBottom - noisyTop), 0.0f, 1.0f);
 
-            // Replicate the deterministic Beta logic by seeding the grid coordinates
-            Random random = new Random(1234L + gridX + (gridY * 31L));
-            int chance = random.nextInt(1000); // Out of 1000 for precision
+            // 3a. Generate Simplified 5x5 Stone Blobs
+            ResourceLocation stoneBase = CS_TEX_STONE;
+            int blobGridSize = 6; // Spacing the veins out slightly
+            int regionX = Math.floorDiv(gridX, blobGridSize);
+            int regionY = Math.floorDiv(gridY, blobGridSize);
 
-            // Ores are 30% rarer (~13.7% total chance)
-            // Vanilla Spread: Coal -> Iron -> Gold -> Lapis -> Redstone -> Diamond
-            if (chance < 10) {
-                textureToDraw = (depthRatio >= 0.8f) ? CS_TEX_DIAMOND : CS_TEX_STONE;
-            } else if (chance < 24) {
-                textureToDraw = (depthRatio >= 0.6f) ? CS_TEX_REDSTONE : CS_TEX_STONE;
-            } else if (chance < 39) {
-                textureToDraw = (depthRatio >= 0.5f) ? CS_TEX_LAPIS : CS_TEX_STONE;
-            } else if (chance < 63) {
-                textureToDraw = (depthRatio >= 0.4f) ? CS_TEX_GOLD : CS_TEX_STONE;
-            } else if (chance < 88) {
-                textureToDraw = (depthRatio >= 0.2f) ? CS_TEX_IRON : CS_TEX_STONE;
-            } else if (chance < 137) {
-                textureToDraw = CS_TEX_COAL;
+            for (int rx = -1; rx <= 1; rx++) {
+                for (int ry = -1; ry <= 1; ry++) {
+                    int checkRegX = regionX + rx;
+                    int checkRegY = regionY + ry;
+
+                    long blobSeed = cs$mixCoordinates(checkRegX, checkRegY) + 987654321L;
+                    Random blobRand = new Random(blobSeed);
+
+                    // 25% chance this region has a vein center
+                    if (blobRand.nextFloat() < 0.25f) {
+                        ResourceLocation candidateBlobType;
+                        float typeRoll = blobRand.nextFloat();
+                        if (typeRoll < 0.35f) {
+                            candidateBlobType = CS_TEX_GRANITE;
+                        } else if (typeRoll < 0.70f) {
+                            candidateBlobType = CS_TEX_ANDESITE;
+                        } else {
+                            candidateBlobType = CS_TEX_GRAVEL;
+                        }
+
+                        // Determine the center coordinate of the blob
+                        int centerX = checkRegX * blobGridSize + blobRand.nextInt(blobGridSize);
+                        int centerY = checkRegY * blobGridSize + blobRand.nextInt(blobGridSize);
+
+                        int dx = Math.abs(gridX - centerX);
+                        int dy = Math.abs(gridY - centerY);
+
+                        // The 5x5 shape: max distance of 2, excluding the strict corners (dx == 2 && dy == 2)
+                        if (dx <= 2 && dy <= 2) {
+                            if (!(dx == 2 && dy == 2)) {
+                                // Apply flat 20% erosion noise to the entire shape (Core can suffer!)
+                                long noiseSeed = cs$mixCoordinates(gridX, gridY) + blobSeed;
+                                Random noiseRand = new Random(noiseSeed);
+
+                                if (noiseRand.nextFloat() < 0.80f) {
+                                    stoneBase = candidateBlobType;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3b. Scatter Ore Minerals
+            long cellSeed = cs$mixCoordinates(gridX, gridY) + 123456789L;
+            Random random = new Random(cellSeed);
+            int chance = random.nextInt(1000);
+
+            if (chance < 5) {
+                textureToDraw = (depthRatio >= 0.8f) ? CS_TEX_DIAMOND : stoneBase;
+            } else if (chance < 12) {
+                textureToDraw = (depthRatio >= 0.6f) ? CS_TEX_REDSTONE : stoneBase;
+            } else if (chance < 20) {
+                textureToDraw = (depthRatio >= 0.5f) ? CS_TEX_LAPIS : stoneBase;
+            } else if (chance < 32) {
+                textureToDraw = (depthRatio >= 0.4f) ? CS_TEX_GOLD : stoneBase;
+            } else if (chance < 44) {
+                textureToDraw = (depthRatio >= 0.2f) ? CS_TEX_IRON : stoneBase;
+            } else if (chance < 68) {
+                if (random.nextFloat() >= depthRatio) {
+                    textureToDraw = CS_TEX_COAL;
+                } else {
+                    textureToDraw = stoneBase;
+                }
             } else {
-                textureToDraw = CS_TEX_STONE;
+                textureToDraw = stoneBase;
             }
         }
 
-        // 4. Dynamic Gradient Map (10% to 30% darkness based on the entire screen depth)
-        float gradientRatio = Mth.clamp((float)(gridY - topBoundTile) / (float)(bottomBoundTile - topBoundTile), 0.0f, 1.0f);
-
-        // 0.7f is 30% darkness. 0.5f is 50% darkness.
+        // 4. Dynamic Gradient Map
+        float gradientRatio = Mth.clamp((float) (gridY - topBoundTile) / (float) (bottomBoundTile - topBoundTile), 0.0f, 1.0f);
         float brightness = 0.7f - (0.2f * gradientRatio);
 
-        // Apply brightness tint, blit the texture, and restore normal coloring
         guiGraphics.setColor(brightness, brightness, brightness, 1.0F);
         guiGraphics.blit(textureToDraw, x, y, uOffset, vOffset, width, height, textureWidth, textureHeight);
         guiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
