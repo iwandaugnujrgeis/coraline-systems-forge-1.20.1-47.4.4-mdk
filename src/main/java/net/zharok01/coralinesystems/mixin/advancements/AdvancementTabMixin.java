@@ -39,9 +39,10 @@ public abstract class AdvancementTabMixin {
     @Unique private static final ResourceLocation CS_TEX_STONE    = new ResourceLocation("textures/block/stone.png");
     @Unique private static final ResourceLocation CS_TEX_COAL     = new ResourceLocation("textures/block/coal_ore.png");
     @Unique private static final ResourceLocation CS_TEX_IRON     = new ResourceLocation("textures/block/iron_ore.png");
+    @Unique private static final ResourceLocation CS_TEX_GOLD     = new ResourceLocation("textures/block/gold_ore.png");
+    @Unique private static final ResourceLocation CS_TEX_LAPIS    = new ResourceLocation("textures/block/lapis_ore.png");
     @Unique private static final ResourceLocation CS_TEX_REDSTONE = new ResourceLocation("textures/block/redstone_ore.png");
     @Unique private static final ResourceLocation CS_TEX_DIAMOND  = new ResourceLocation("textures/block/diamond_ore.png");
-    @Unique private static final ResourceLocation CS_TEX_GOLD     = new ResourceLocation("textures/block/gold_ore.png");
 
     @Shadow @Final private AdvancementWidget root;
     @Shadow private int minX;
@@ -71,33 +72,62 @@ public abstract class AdvancementTabMixin {
         int gridX = (x - Mth.floor(this.scrollX)) / 16;
         int gridY = (y - Mth.floor(this.scrollY)) / 16;
 
+        // 1. Bound Fix: Anchor the layers exactly to the limits
+        int topBoundTile = 0;
+        int bottomBoundTile = (this.maxY / 16);
+
+        // 2. Beta Noise: Create rugged transitions by shifting the Y boundary up or down based on the X column
+        Random colRandom = new Random(gridX * 9871L);
+        int yOffset = colRandom.nextInt(3) - 1; // Shifts by -1, 0, or 1
+
+        // Push the top noise down by + 1. This guarantees gridY == 0 is ALWAYS a solid line of dirt.
+        int noisyTop = topBoundTile + 1 + yOffset;
+        int noisyBottom = bottomBoundTile + yOffset;
+
         ResourceLocation textureToDraw;
 
-        if (gridY < 0) {
+        // 3. Layering & Ore Stratification
+        if (gridY <= noisyTop) {
+            textureToDraw = CS_TEX_DIRT; // Fixed: Anything at or above the top boundary is now solid dirt!
+        } else if (gridY >= noisyBottom) {
             textureToDraw = CS_TEX_BEDROCK;
-        } else if (gridY == 0) {
-            textureToDraw = CS_TEX_DIRT;
         } else {
-            textureToDraw = CS_TEX_STONE;
+            // Calculate depth ratio for ores: 0.0 (top stone) to 1.0 (bottom stone)
+            float depthRatio = Mth.clamp((float)(gridY - noisyTop) / (float)(noisyBottom - noisyTop), 0.0f, 1.0f);
 
             // Replicate the deterministic Beta logic by seeding the grid coordinates
             Random random = new Random(1234L + gridX + (gridY * 31L));
-            int chance = random.nextInt(100);
+            int chance = random.nextInt(1000); // Out of 1000 for precision
 
-            if (chance < 2) {
-                textureToDraw = CS_TEX_DIAMOND;
-            } else if (chance < 5) {
-                textureToDraw = CS_TEX_REDSTONE;
-            } else if (chance < 10) {
-                textureToDraw = CS_TEX_GOLD;
-            } else if (chance < 15) {
-                textureToDraw = CS_TEX_IRON;
-            } else if (chance < 25) {
+            // Ores are 30% rarer (~13.7% total chance)
+            // Vanilla Spread: Coal -> Iron -> Gold -> Lapis -> Redstone -> Diamond
+            if (chance < 10) {
+                textureToDraw = (depthRatio >= 0.8f) ? CS_TEX_DIAMOND : CS_TEX_STONE;
+            } else if (chance < 24) {
+                textureToDraw = (depthRatio >= 0.6f) ? CS_TEX_REDSTONE : CS_TEX_STONE;
+            } else if (chance < 39) {
+                textureToDraw = (depthRatio >= 0.5f) ? CS_TEX_LAPIS : CS_TEX_STONE;
+            } else if (chance < 63) {
+                textureToDraw = (depthRatio >= 0.4f) ? CS_TEX_GOLD : CS_TEX_STONE;
+            } else if (chance < 88) {
+                textureToDraw = (depthRatio >= 0.2f) ? CS_TEX_IRON : CS_TEX_STONE;
+            } else if (chance < 137) {
                 textureToDraw = CS_TEX_COAL;
+            } else {
+                textureToDraw = CS_TEX_STONE;
             }
         }
 
+        // 4. Dynamic Gradient Map (10% to 30% darkness based on the entire screen depth)
+        float gradientRatio = Mth.clamp((float)(gridY - topBoundTile) / (float)(bottomBoundTile - topBoundTile), 0.0f, 1.0f);
+
+        // 0.7f is 30% darkness. 0.5f is 50% darkness.
+        float brightness = 0.7f - (0.2f * gradientRatio);
+
+        // Apply brightness tint, blit the texture, and restore normal coloring
+        guiGraphics.setColor(brightness, brightness, brightness, 1.0F);
         guiGraphics.blit(textureToDraw, x, y, uOffset, vOffset, width, height, textureWidth, textureHeight);
+        guiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
     // ── Connectivity Rendering ────────────────────────────────────────────────
