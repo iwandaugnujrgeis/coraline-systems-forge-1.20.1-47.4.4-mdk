@@ -43,8 +43,7 @@ public abstract class AdvancementTabMixin {
     @Unique private static final ResourceLocation CS_TEX_LAPIS    = new ResourceLocation("textures/block/lapis_ore.png");
     @Unique private static final ResourceLocation CS_TEX_REDSTONE = new ResourceLocation("textures/block/redstone_ore.png");
     @Unique private static final ResourceLocation CS_TEX_DIAMOND  = new ResourceLocation("textures/block/diamond_ore.png");
-
-    // New Stone Blob Variant Textures
+    @Unique private static final ResourceLocation CS_TEX_DEEPSLATE = new ResourceLocation("textures/block/deepslate.png");
     @Unique private static final ResourceLocation CS_TEX_GRANITE  = new ResourceLocation("textures/block/granite.png");
     @Unique private static final ResourceLocation CS_TEX_ANDESITE = new ResourceLocation("textures/block/andesite.png");
     @Unique private static final ResourceLocation CS_TEX_GRAVEL   = new ResourceLocation("textures/block/gravel.png");
@@ -93,12 +92,19 @@ public abstract class AdvancementTabMixin {
         int topBoundTile = 0;
         int bottomBoundTile = (this.maxY / 16);
 
+        // Push the deepslate transition down to the lower 1/3 of the grid
+        int deepslateBoundTile = topBoundTile + (int)((bottomBoundTile - topBoundTile) * 0.66f);
+
+        // Generate independent jagged noise for all three stratum transitions
         long colSeed = cs$mixCoordinates(gridX, 0) + 57321L;
         Random colRandom = new Random(colSeed);
-        int yOffset = colRandom.nextInt(3) - 1;
+        int topOffset = colRandom.nextInt(3) - 1;
+        int deepslateOffset = colRandom.nextInt(3) - 1;
+        int bottomOffset = colRandom.nextInt(3) - 1;
 
-        int noisyTop = topBoundTile + 1 + yOffset;
-        int noisyBottom = bottomBoundTile + yOffset;
+        int noisyTop = topBoundTile + 1 + topOffset;
+        int noisyDeepslate = deepslateBoundTile + deepslateOffset;
+        int noisyBottom = bottomBoundTile + bottomOffset;
 
         ResourceLocation textureToDraw;
 
@@ -109,9 +115,11 @@ public abstract class AdvancementTabMixin {
         } else {
             float depthRatio = Mth.clamp((float) (gridY - noisyTop) / (float) (noisyBottom - noisyTop), 0.0f, 1.0f);
 
-            // 3a. Generate Simplified 5x5 Stone Blobs
-            ResourceLocation stoneBase = CS_TEX_STONE;
-            int blobGridSize = 6; // Spacing the veins out slightly
+            // Establish the base layer: Stone at the top, Deepslate starting at the 66% mark
+            ResourceLocation stoneBase = (gridY >= noisyDeepslate) ? CS_TEX_DEEPSLATE : CS_TEX_STONE;
+
+            // 3a. Generate Simplified 5x5 Stone Blobs (Granite, Andesite, Gravel)
+            int blobGridSize = 6;
             int regionX = Math.floorDiv(gridX, blobGridSize);
             int regionY = Math.floorDiv(gridY, blobGridSize);
 
@@ -123,7 +131,6 @@ public abstract class AdvancementTabMixin {
                     long blobSeed = cs$mixCoordinates(checkRegX, checkRegY) + 987654321L;
                     Random blobRand = new Random(blobSeed);
 
-                    // 25% chance this region has a vein center
                     if (blobRand.nextFloat() < 0.25f) {
                         ResourceLocation candidateBlobType;
                         float typeRoll = blobRand.nextFloat();
@@ -135,17 +142,14 @@ public abstract class AdvancementTabMixin {
                             candidateBlobType = CS_TEX_GRAVEL;
                         }
 
-                        // Determine the center coordinate of the blob
                         int centerX = checkRegX * blobGridSize + blobRand.nextInt(blobGridSize);
                         int centerY = checkRegY * blobGridSize + blobRand.nextInt(blobGridSize);
 
                         int dx = Math.abs(gridX - centerX);
                         int dy = Math.abs(gridY - centerY);
 
-                        // The 5x5 shape: max distance of 2, excluding the strict corners (dx == 2 && dy == 2)
                         if (dx <= 2 && dy <= 2) {
                             if (!(dx == 2 && dy == 2)) {
-                                // Apply flat 20% erosion noise to the entire shape (Core can suffer!)
                                 long noiseSeed = cs$mixCoordinates(gridX, gridY) + blobSeed;
                                 Random noiseRand = new Random(noiseSeed);
 
