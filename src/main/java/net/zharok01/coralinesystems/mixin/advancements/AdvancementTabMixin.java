@@ -1,11 +1,14 @@
 package net.zharok01.coralinesystems.mixin.advancements;
 
 import net.minecraft.advancements.Advancement;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.advancements.AdvancementTab;
 import net.minecraft.client.gui.screens.advancements.AdvancementWidget;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.zharok01.coralinesystems.client.advancements.GridPos;
 import net.zharok01.coralinesystems.client.advancements.LayoutCandidate;
 import net.zharok01.coralinesystems.client.advancements.RouteNode;
@@ -33,20 +36,24 @@ public abstract class AdvancementTabMixin {
     @Unique private static final int CS_SLOT_H      = 30;
     @Unique private static final int CS_WIDGET_SIZE = 28;
 
-    // Procedural Textures
-    @Unique private static final ResourceLocation CS_TEX_BEDROCK  = new ResourceLocation("textures/block/bedrock.png");
-    @Unique private static final ResourceLocation CS_TEX_DIRT     = new ResourceLocation("textures/block/dirt.png");
-    @Unique private static final ResourceLocation CS_TEX_STONE    = new ResourceLocation("textures/block/stone.png");
-    @Unique private static final ResourceLocation CS_TEX_COAL     = new ResourceLocation("textures/block/coal_ore.png");
-    @Unique private static final ResourceLocation CS_TEX_IRON     = new ResourceLocation("textures/block/iron_ore.png");
-    @Unique private static final ResourceLocation CS_TEX_GOLD     = new ResourceLocation("textures/block/gold_ore.png");
-    @Unique private static final ResourceLocation CS_TEX_LAPIS    = new ResourceLocation("textures/block/lapis_ore.png");
-    @Unique private static final ResourceLocation CS_TEX_REDSTONE = new ResourceLocation("textures/block/redstone_ore.png");
-    @Unique private static final ResourceLocation CS_TEX_DIAMOND  = new ResourceLocation("textures/block/diamond_ore.png");
-    @Unique private static final ResourceLocation CS_TEX_DEEPSLATE = new ResourceLocation("textures/block/deepslate.png");
-    @Unique private static final ResourceLocation CS_TEX_GRANITE  = new ResourceLocation("textures/block/granite.png");
-    @Unique private static final ResourceLocation CS_TEX_ANDESITE = new ResourceLocation("textures/block/andesite.png");
-    @Unique private static final ResourceLocation CS_TEX_GRAVEL   = new ResourceLocation("textures/block/gravel.png");
+    // Procedural Textures (Now pointing to Atlas Sprite Names)
+    @Unique private static final ResourceLocation CS_SPRITE_BEDROCK  = new ResourceLocation("minecraft", "block/bedrock");
+    @Unique private static final ResourceLocation CS_SPRITE_DIRT     = new ResourceLocation("minecraft", "block/dirt");
+    @Unique private static final ResourceLocation CS_SPRITE_STONE    = new ResourceLocation("minecraft", "block/stone");
+    @Unique private static final ResourceLocation CS_SPRITE_COAL     = new ResourceLocation("minecraft", "block/coal_ore");
+    @Unique private static final ResourceLocation CS_SPRITE_IRON     = new ResourceLocation("minecraft", "block/iron_ore");
+    @Unique private static final ResourceLocation CS_SPRITE_GOLD     = new ResourceLocation("minecraft", "block/gold_ore");
+    @Unique private static final ResourceLocation CS_SPRITE_LAPIS    = new ResourceLocation("minecraft", "block/lapis_ore");
+    @Unique private static final ResourceLocation CS_SPRITE_REDSTONE = new ResourceLocation("minecraft", "block/redstone_ore");
+    @Unique private static final ResourceLocation CS_SPRITE_DIAMOND  = new ResourceLocation("minecraft", "block/diamond_ore");
+    @Unique private static final ResourceLocation CS_SPRITE_DEEPSLATE = new ResourceLocation("minecraft", "block/deepslate");
+    @Unique private static final ResourceLocation CS_SPRITE_GRANITE  = new ResourceLocation("minecraft", "block/granite");
+    @Unique private static final ResourceLocation CS_SPRITE_ANDESITE = new ResourceLocation("minecraft", "block/andesite");
+    @Unique private static final ResourceLocation CS_SPRITE_GRAVEL   = new ResourceLocation("minecraft", "block/gravel");
+
+    // Animated Textures
+    @Unique private static final ResourceLocation CS_SPRITE_MAGMA    = new ResourceLocation("minecraft", "block/magma");
+    @Unique private static final ResourceLocation CS_SPRITE_SUS      = new ResourceLocation("gamma", "block/debug2");
 
     @Shadow @Final private AdvancementWidget root;
     @Shadow private int minX;
@@ -60,10 +67,6 @@ public abstract class AdvancementTabMixin {
 
     // ── Coordinate Bit-Scrambler ──────────────────────────────────────────────
 
-    /**
-     * High-entropy 2D coordinate mixer to fully scatter linear bits and
-     * eradicate diagonal banding/Marsaglia hyperplane patterns during world-gen simulation.
-     */
     @Unique
     private long cs$mixCoordinates(int x, int y) {
         long hash = ((long) x * 312547891L) ^ ((long) y * 87541243L);
@@ -92,10 +95,8 @@ public abstract class AdvancementTabMixin {
         int topBoundTile = 0;
         int bottomBoundTile = (this.maxY / 16);
 
-        // Push the deepslate transition down to the lower 1/3 of the grid
         int deepslateBoundTile = topBoundTile + (int)((bottomBoundTile - topBoundTile) * 0.66f);
 
-        // Generate independent jagged noise for all three stratum transitions
         long colSeed = cs$mixCoordinates(gridX, 0) + 57321L;
         Random colRandom = new Random(colSeed);
         int topOffset = colRandom.nextInt(3) - 1;
@@ -109,14 +110,12 @@ public abstract class AdvancementTabMixin {
         ResourceLocation textureToDraw;
 
         if (gridY <= noisyTop) {
-            textureToDraw = CS_TEX_DIRT;
+            textureToDraw = CS_SPRITE_DIRT;
         } else if (gridY >= noisyBottom) {
-            textureToDraw = CS_TEX_BEDROCK;
+            textureToDraw = CS_SPRITE_BEDROCK;
         } else {
             float depthRatio = Mth.clamp((float) (gridY - noisyTop) / (float) (noisyBottom - noisyTop), 0.0f, 1.0f);
-
-            // Establish the base layer: Stone at the top, Deepslate starting at the 66% mark
-            ResourceLocation stoneBase = (gridY >= noisyDeepslate) ? CS_TEX_DEEPSLATE : CS_TEX_STONE;
+            ResourceLocation stoneBase = (gridY >= noisyDeepslate) ? CS_SPRITE_DEEPSLATE : CS_SPRITE_STONE;
 
             // 3a. Generate Simplified 5x5 Stone Blobs (Granite, Andesite, Gravel)
             int blobGridSize = 6;
@@ -135,11 +134,11 @@ public abstract class AdvancementTabMixin {
                         ResourceLocation candidateBlobType;
                         float typeRoll = blobRand.nextFloat();
                         if (typeRoll < 0.35f) {
-                            candidateBlobType = CS_TEX_GRANITE;
+                            candidateBlobType = CS_SPRITE_GRANITE;
                         } else if (typeRoll < 0.70f) {
-                            candidateBlobType = CS_TEX_ANDESITE;
+                            candidateBlobType = CS_SPRITE_ANDESITE;
                         } else {
-                            candidateBlobType = CS_TEX_GRAVEL;
+                            candidateBlobType = CS_SPRITE_GRAVEL;
                         }
 
                         int centerX = checkRegX * blobGridSize + blobRand.nextInt(blobGridSize);
@@ -148,52 +147,65 @@ public abstract class AdvancementTabMixin {
                         int dx = Math.abs(gridX - centerX);
                         int dy = Math.abs(gridY - centerY);
 
-                        if (dx <= 2 && dy <= 2) {
-                            if (!(dx == 2 && dy == 2)) {
-                                long noiseSeed = cs$mixCoordinates(gridX, gridY) + blobSeed;
-                                Random noiseRand = new Random(noiseSeed);
-
-                                if (noiseRand.nextFloat() < 0.80f) {
-                                    stoneBase = candidateBlobType;
-                                }
+                        if (dx <= 2 && dy <= 2 && !(dx == 2 && dy == 2)) {
+                            long noiseSeed = cs$mixCoordinates(gridX, gridY) + blobSeed;
+                            if (new Random(noiseSeed).nextFloat() < 0.80f) {
+                                stoneBase = candidateBlobType;
                             }
                         }
                     }
                 }
             }
 
-            // 3b. Scatter Ore Minerals
+            // 3b. Establish the Magma Seam
+            boolean isMagma = false;
+            if (gridY == noisyBottom - 2 || gridY == noisyBottom - 3) {
+                long magmaSeed = cs$mixCoordinates(gridX, gridY) + 777L;
+                if (new Random(magmaSeed).nextFloat() < 0.65f) {
+                    isMagma = true;
+                }
+            }
+
+            // 3c. Scatter Ore Minerals & Suspicious Blocks
             long cellSeed = cs$mixCoordinates(gridX, gridY) + 123456789L;
             Random random = new Random(cellSeed);
             int chance = random.nextInt(1000);
 
-            if (chance < 5) {
-                textureToDraw = (depthRatio >= 0.8f) ? CS_TEX_DIAMOND : stoneBase;
+            if (isMagma) {
+                textureToDraw = CS_SPRITE_MAGMA;
+            } else if (chance < 2) {
+                textureToDraw = CS_SPRITE_SUS; // Ultra rare animated debug block
+            } else if (chance < 5) {
+                textureToDraw = (depthRatio >= 0.8f) ? CS_SPRITE_DIAMOND : stoneBase;
             } else if (chance < 12) {
-                textureToDraw = (depthRatio >= 0.6f) ? CS_TEX_REDSTONE : stoneBase;
+                textureToDraw = (depthRatio >= 0.6f) ? CS_SPRITE_REDSTONE : stoneBase;
             } else if (chance < 20) {
-                textureToDraw = (depthRatio >= 0.5f) ? CS_TEX_LAPIS : stoneBase;
+                textureToDraw = (depthRatio >= 0.5f) ? CS_SPRITE_LAPIS : stoneBase;
             } else if (chance < 32) {
-                textureToDraw = (depthRatio >= 0.4f) ? CS_TEX_GOLD : stoneBase;
+                textureToDraw = (depthRatio >= 0.4f) ? CS_SPRITE_GOLD : stoneBase;
             } else if (chance < 44) {
-                textureToDraw = (depthRatio >= 0.2f) ? CS_TEX_IRON : stoneBase;
+                textureToDraw = (depthRatio >= 0.2f) ? CS_SPRITE_IRON : stoneBase;
             } else if (chance < 68) {
-                if (random.nextFloat() >= depthRatio) {
-                    textureToDraw = CS_TEX_COAL;
-                } else {
-                    textureToDraw = stoneBase;
-                }
+                textureToDraw = (random.nextFloat() >= depthRatio) ? CS_SPRITE_COAL : stoneBase;
             } else {
                 textureToDraw = stoneBase;
             }
         }
 
-        // 4. Dynamic Gradient Map
+        // 4. Retrieve Animated Sprite & Apply Dynamic Gradient Map
+        // We fetch directly from the global blocks atlas which auto-ticks animated frames
+        TextureAtlasSprite sprite = Minecraft.getInstance()
+                .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
+                .apply(textureToDraw);
+
         float gradientRatio = Mth.clamp((float) (gridY - topBoundTile) / (float) (bottomBoundTile - topBoundTile), 0.0f, 1.0f);
         float brightness = 0.7f - (0.2f * gradientRatio);
 
         guiGraphics.setColor(brightness, brightness, brightness, 1.0F);
-        guiGraphics.blit(textureToDraw, x, y, uOffset, vOffset, width, height, textureWidth, textureHeight);
+
+        // This GuiGraphics overload natively handles dynamic UV coordinates!
+        guiGraphics.blit(x, y, 0, width, height, sprite);
+
         guiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
