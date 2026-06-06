@@ -49,7 +49,10 @@ public abstract class AdvancementTabMixin {
     @Unique private static final ResourceLocation CS_SPRITE_DEEPSLATE = new ResourceLocation("minecraft", "block/deepslate");
     @Unique private static final ResourceLocation CS_SPRITE_GRANITE  = new ResourceLocation("minecraft", "block/granite");
     @Unique private static final ResourceLocation CS_SPRITE_ANDESITE = new ResourceLocation("minecraft", "block/andesite");
-    @Unique private static final ResourceLocation CS_SPRITE_GRAVEL   = new ResourceLocation("minecraft", "block/gravel");
+    @Unique private static final ResourceLocation CS_SPRITE_GRAVEL    = new ResourceLocation("minecraft", "block/gravel");
+    @Unique private static final ResourceLocation CS_SPRITE_TUFF      = new ResourceLocation("minecraft", "block/tuff");
+    @Unique private static final ResourceLocation CS_SPRITE_LIMESTONE = new ResourceLocation("quark", "block/limestone");
+    @Unique private static final ResourceLocation CS_SPRITE_RUBY = new ResourceLocation("rediscovered", "block/ruby_ore");
 
     // Animated Textures
     @Unique private static final ResourceLocation CS_SPRITE_MAGMA    = new ResourceLocation("minecraft", "block/magma");
@@ -111,7 +114,8 @@ public abstract class AdvancementTabMixin {
 
         if (gridY <= noisyTop) {
             textureToDraw = CS_SPRITE_DIRT;
-        } else if (gridY >= noisyBottom) {
+        } else if (gridY >= noisyBottom - 1) {
+            // Bedrock occupies the final two rows, guaranteeing an unbroken bottom strip
             textureToDraw = CS_SPRITE_BEDROCK;
         } else {
             float depthRatio = Mth.clamp((float) (gridY - noisyTop) / (float) (noisyBottom - noisyTop), 0.0f, 1.0f);
@@ -133,16 +137,23 @@ public abstract class AdvancementTabMixin {
                     if (blobRand.nextFloat() < 0.25f) {
                         ResourceLocation candidateBlobType;
                         float typeRoll = blobRand.nextFloat();
-                        if (typeRoll < 0.35f) {
-                            candidateBlobType = CS_SPRITE_GRANITE;
-                        } else if (typeRoll < 0.70f) {
-                            candidateBlobType = CS_SPRITE_ANDESITE;
+                        if (typeRoll < 0.28f) {
+                            candidateBlobType = CS_SPRITE_GRAVEL;    // 28% – most common
+                        } else if (typeRoll < 0.53f) {
+                            candidateBlobType = CS_SPRITE_ANDESITE;  // 25% – common
+                        } else if (typeRoll < 0.73f) {
+                            candidateBlobType = CS_SPRITE_TUFF;      // 20% – common
+                        } else if (typeRoll < 0.87f) {
+                            candidateBlobType = CS_SPRITE_GRANITE;   // 14% – uncommon
                         } else {
-                            candidateBlobType = CS_SPRITE_GRAVEL;
+                            candidateBlobType = CS_SPRITE_LIMESTONE; // 13% – rare
                         }
 
                         int centerX = checkRegX * blobGridSize + blobRand.nextInt(blobGridSize);
                         int centerY = checkRegY * blobGridSize + blobRand.nextInt(blobGridSize);
+
+                        // Skip blobs whose centre sits too close to the dirt layer
+                        if (centerY < topBoundTile + 3) continue;
 
                         int dx = Math.abs(gridX - centerX);
                         int dy = Math.abs(gridY - centerY);
@@ -157,29 +168,35 @@ public abstract class AdvancementTabMixin {
                 }
             }
 
+            /*
             // 3b. Establish the Magma Seam
+            // noisyBottom - 2: solid core row — always magma, no gaps
+            // noisyBottom - 3: ragged top edge — 65% probability for noise
             boolean isMagma = false;
-            if (gridY == noisyBottom - 2 || gridY == noisyBottom - 3) {
+            if (gridY == noisyBottom - 2) {
+                isMagma = true; // Guaranteed solid magma layer
+            } else if (gridY == noisyBottom - 3) {
                 long magmaSeed = cs$mixCoordinates(gridX, gridY) + 777L;
                 if (new Random(magmaSeed).nextFloat() < 0.65f) {
                     isMagma = true;
                 }
             }
+            */
 
             // 3c. Scatter Ore Minerals & Suspicious Blocks
             long cellSeed = cs$mixCoordinates(gridX, gridY) + 123456789L;
             Random random = new Random(cellSeed);
             int chance = random.nextInt(1000);
 
-            if (isMagma) {
-                textureToDraw = CS_SPRITE_MAGMA;
-            } else if (chance < 2) {
-                textureToDraw = CS_SPRITE_SUS; // Ultra rare animated debug block
-            } else if (chance < 5) {
-                textureToDraw = (depthRatio >= 0.8f) ? CS_SPRITE_DIAMOND : stoneBase;
+            if (chance < 2) {
+                textureToDraw = (depthRatio >= 0.5f) ? CS_SPRITE_SUS : stoneBase; // Ultra rare animated debug block
             } else if (chance < 12) {
+                textureToDraw = (depthRatio >= 0.8f) ? CS_SPRITE_DIAMOND : stoneBase;
+            } else if (chance < 18) {
                 textureToDraw = (depthRatio >= 0.6f) ? CS_SPRITE_REDSTONE : stoneBase;
             } else if (chance < 20) {
+                textureToDraw = CS_SPRITE_RUBY;
+            } else if (chance < 24) {
                 textureToDraw = (depthRatio >= 0.5f) ? CS_SPRITE_LAPIS : stoneBase;
             } else if (chance < 32) {
                 textureToDraw = (depthRatio >= 0.4f) ? CS_SPRITE_GOLD : stoneBase;
