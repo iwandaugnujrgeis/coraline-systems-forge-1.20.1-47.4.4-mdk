@@ -46,6 +46,7 @@
     "LecternBlockMixin",
     "MobMixin",
     "NetherPortalCorruptionMixin",
+    "PancakeBlockMixin",
     "PigmanTradesMixin",
     "PigMixin",
     "PlayerMineshaftMixin",

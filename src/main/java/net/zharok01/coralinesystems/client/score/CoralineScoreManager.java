@@ -1,10 +1,9 @@
 package net.zharok01.coralinesystems.client.score;
 
-import net.zharok01.coralinesystems.network.CoralinePacketHandler;
+import net.zharok01.coralinesystems.registry.CoralinePacketHandler;
 import net.zharok01.coralinesystems.network.ScoreThresholdPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.network.PacketDistributor;
 
 public class CoralineScoreManager {
     public static final int REWARD_BLOCK_ACTIVITY = 1;

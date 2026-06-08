@@ -2,7 +2,6 @@ package net.zharok01.coralinesystems.registry;
 
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.StandingAndWallBlockItem;
 import net.minecraftforge.common.ForgeSpawnEggItem;
@@ -11,7 +10,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.zharok01.coralinesystems.CoralineSystems;
-import net.zharok01.coralinesystems.content.item.CobaltPants;
+import net.zharok01.coralinesystems.item.CobaltPants;
 
 import java.util.function.Supplier;
 

@@ -7,9 +7,9 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.zharok01.coralinesystems.CoralineSystems;
-import net.zharok01.coralinesystems.content.entity.BrumeEntity;
-import net.zharok01.coralinesystems.content.entity.HelperEntity;
-import net.zharok01.coralinesystems.content.entity.MonsterEntity;
+import net.zharok01.coralinesystems.entity.BrumeEntity;
+import net.zharok01.coralinesystems.entity.HelperEntity;
+import net.zharok01.coralinesystems.entity.MonsterEntity;
 
 public class IsotopicEntities {
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =

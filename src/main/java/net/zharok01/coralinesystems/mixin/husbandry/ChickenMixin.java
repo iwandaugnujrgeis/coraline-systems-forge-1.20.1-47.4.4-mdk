@@ -7,7 +7,7 @@ import net.minecraft.world.entity.ai.goal.GoalSelector;
 import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.zharok01.coralinesystems.content.entity.ai.UniversalBreedEggDropGoal;
+import net.zharok01.coralinesystems.entity.ai.UniversalBreedEggDropGoal;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;

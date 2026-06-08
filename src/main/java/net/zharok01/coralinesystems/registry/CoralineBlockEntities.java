@@ -6,15 +6,15 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.zharok01.coralinesystems.CoralineSystems;
-import net.zharok01.coralinesystems.content.block.VibrationSensorBlockEntity;
+import net.zharok01.coralinesystems.block.VibrationSensorBlockEntity;
 
 public class CoralineBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, CoralineSystems.MOD_ID);
 
-    public static final RegistryObject<BlockEntityType<net.zharok01.coralinesystems.content.block.ContainerBlockEntity>> CONTAINER_BLOCK_ENTITY =
+    public static final RegistryObject<BlockEntityType<net.zharok01.coralinesystems.block.ContainerBlockEntity>> CONTAINER_BLOCK_ENTITY =
             BLOCK_ENTITIES.register("container_block_entity", () ->
-                    BlockEntityType.Builder.of(net.zharok01.coralinesystems.content.block.ContainerBlockEntity::new,
+                    BlockEntityType.Builder.of(net.zharok01.coralinesystems.block.ContainerBlockEntity::new,
                             CoralineBlocks.CONTAINER_BLOCK.get()).build(null));
 
     public static final RegistryObject<BlockEntityType<VibrationSensorBlockEntity>> VIBRATION_SENSOR =

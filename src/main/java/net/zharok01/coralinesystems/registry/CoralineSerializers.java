@@ -2,8 +2,8 @@ package net.zharok01.coralinesystems.registry;
 
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.zharok01.coralinesystems.CoralineSystems;
-import net.zharok01.coralinesystems.recipe.serializer.CoralineShapedRecipeSerializer;
-import net.zharok01.coralinesystems.recipe.serializer.CoralineShapelessRecipeSerializer;
+import net.zharok01.coralinesystems.crafttweaker.recipe.serializer.CoralineShapedRecipeSerializer;
+import net.zharok01.coralinesystems.crafttweaker.recipe.serializer.CoralineShapelessRecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;

@@ -8,7 +8,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.WallTorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
-import net.zharok01.coralinesystems.content.block.LimitedLightBlock;
+import net.zharok01.coralinesystems.block.LimitedLightBlock;
 import net.zharok01.coralinesystems.registry.CoralineBlocks;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

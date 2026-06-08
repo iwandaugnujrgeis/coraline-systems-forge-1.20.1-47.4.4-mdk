@@ -31,7 +31,7 @@ public abstract class PlayerAdvancementsMixin {
 
         Advancement root = advancement.getRoot();
 
-        // The tab is only shown while its root advancement is completed.
+        // The tab is only shown while its root advancements is completed.
         // This preserves vanilla tab-hide behaviour on revoke.
         if (this.getOrStartProgress(root).isDone()) {
             cs$markVisibleRecursive(root, visibleAdvancements);
@@ -42,7 +42,7 @@ public abstract class PlayerAdvancementsMixin {
     }
 
     /**
-     * Adds every advancement in the subtree to {@code visible}.
+     * Adds every advancements in the subtree to {@code visible}.
      * The {@code isHidden()} flag is intentionally NOT checked here —
      * hidden advancements are shown as locked silhouettes by our draw() override
      * and must reach the client to get a widget.
@@ -63,7 +63,7 @@ public abstract class PlayerAdvancementsMixin {
     }
 
     /**
-     * Removes every advancement in the subtree from {@code visible} and
+     * Removes every advancements in the subtree from {@code visible} and
      * schedules it for removal on the client. Called when the root is revoked.
      */
     @Unique

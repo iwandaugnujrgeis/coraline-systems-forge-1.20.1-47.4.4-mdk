@@ -2,7 +2,7 @@ package net.zharok01.coralinesystems.network;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
-import net.zharok01.coralinesystems.client.gui.ScoreOverlay;
+import net.zharok01.coralinesystems.client.score.ScoreOverlay;
 
 import java.util.function.Supplier;
 

@@ -14,7 +14,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.zharok01.coralinesystems.CoralineSystems;
-import net.zharok01.coralinesystems.content.block.*;
+import net.zharok01.coralinesystems.block.*;
 
 import java.util.function.BiFunction;
 import java.util.function.Supplier;

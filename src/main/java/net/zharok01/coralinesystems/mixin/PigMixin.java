@@ -4,7 +4,7 @@ import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.level.Level;
-import net.zharok01.coralinesystems.content.entity.ai.PigEatItemsGoal;
+import net.zharok01.coralinesystems.entity.ai.PigEatItemsGoal;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

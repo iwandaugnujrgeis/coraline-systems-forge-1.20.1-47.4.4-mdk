@@ -10,7 +10,7 @@ import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.resources.ResourceLocation;
 import net.zharok01.coralinesystems.CoralineSystems;
-import net.zharok01.coralinesystems.content.entity.MonsterEntity;
+import net.zharok01.coralinesystems.entity.MonsterEntity;
 
 public class MonsterEyeLayer extends RenderLayer<MonsterEntity, PlayerModel<MonsterEntity>> {
     // REMEMBER: This texture must have a PURE BLACK background, not transparent!
