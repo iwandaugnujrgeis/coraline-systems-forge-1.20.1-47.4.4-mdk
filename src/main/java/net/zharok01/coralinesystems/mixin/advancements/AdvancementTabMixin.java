@@ -66,6 +66,14 @@ public abstract class AdvancementTabMixin {
     @Shadow private double scrollX;
     @Shadow private double scrollY;
 
+    // ── NEW: shadow the `centered` flag so we can set it ourselves ────────────
+    @Shadow private boolean centered;
+
+    // ── NEW: persistent scroll store (static — survives screen close) ─────────
+    // Double.MAX_VALUE is the "nothing saved yet" sentinel.
+    @Unique private static double cs$savedScrollX = Double.MAX_VALUE;
+    @Unique private static double cs$savedScrollY = Double.MAX_VALUE;
+
     @Unique private boolean cs$layoutDirty = false;
 
     // ── Coordinate Bit-Scrambler ──────────────────────────────────────────────
@@ -280,12 +288,32 @@ public abstract class AdvancementTabMixin {
         cs$layoutDirty = true;
     }
 
+    // ── Layout flush + scroll restore (HEAD) ──────────────────────────────────
+
     @Inject(method = "drawContents", at = @At("HEAD"))
     private void cs$flushLayoutIfDirty(GuiGraphics guiGraphics, int x, int y, CallbackInfo ci) {
+        // 1. Run relayout first so minX/maxX/minY/maxY are up to date before
+        //    either vanilla centering or our scroll restore fires.
         if (cs$layoutDirty) {
             cs$layoutDirty = false;
             cs$relayout();
         }
+
+        // 2. If this is the first draw of a fresh tab instance AND we have a
+        //    previously saved position, restore it and suppress vanilla centering.
+        if (!this.centered && cs$savedScrollX != Double.MAX_VALUE) {
+            this.scrollX = cs$savedScrollX;
+            this.scrollY = cs$savedScrollY;
+            this.centered = true; // prevents vanilla's centering formula from firing
+        }
+    }
+
+    // ── Scroll persistence (TAIL) ─────────────────────────────────────────────
+
+    @Inject(method = "drawContents", at = @At("TAIL"))
+    private void cs$persistScrollPosition(GuiGraphics guiGraphics, int x, int y, CallbackInfo ci) {
+        cs$savedScrollX = this.scrollX;
+        cs$savedScrollY = this.scrollY;
     }
 
     // ── Main Layout ───────────────────────────────────────────────────────────
