@@ -66,11 +66,8 @@ public abstract class AdvancementTabMixin {
     @Shadow private double scrollX;
     @Shadow private double scrollY;
 
-    // ── NEW: shadow the `centered` flag so we can set it ourselves ────────────
     @Shadow private boolean centered;
 
-    // ── NEW: persistent scroll store (static — survives screen close) ─────────
-    // Double.MAX_VALUE is the "nothing saved yet" sentinel.
     @Unique private static double cs$savedScrollX = Double.MAX_VALUE;
     @Unique private static double cs$savedScrollY = Double.MAX_VALUE;
 
@@ -123,13 +120,11 @@ public abstract class AdvancementTabMixin {
         if (gridY <= noisyTop) {
             textureToDraw = CS_SPRITE_DIRT;
         } else if (gridY >= noisyBottom - 1) {
-            // Bedrock occupies the final two rows, guaranteeing an unbroken bottom strip
             textureToDraw = CS_SPRITE_BEDROCK;
         } else {
             float depthRatio = Mth.clamp((float) (gridY - noisyTop) / (float) (noisyBottom - noisyTop), 0.0f, 1.0f);
             ResourceLocation stoneBase = (gridY >= noisyDeepslate) ? CS_SPRITE_DEEPSLATE : CS_SPRITE_STONE;
 
-            // 3a. Generate Simplified 5x5 Stone Blobs (Granite, Andesite, Gravel)
             int blobGridSize = 6;
             int regionX = Math.floorDiv(gridX, blobGridSize);
             int regionY = Math.floorDiv(gridY, blobGridSize);
@@ -146,21 +141,20 @@ public abstract class AdvancementTabMixin {
                         ResourceLocation candidateBlobType;
                         float typeRoll = blobRand.nextFloat();
                         if (typeRoll < 0.28f) {
-                            candidateBlobType = CS_SPRITE_GRAVEL;    // 28% – most common
+                            candidateBlobType = CS_SPRITE_GRAVEL;
                         } else if (typeRoll < 0.53f) {
-                            candidateBlobType = CS_SPRITE_ANDESITE;  // 25% – common
+                            candidateBlobType = CS_SPRITE_ANDESITE;
                         } else if (typeRoll < 0.73f) {
-                            candidateBlobType = CS_SPRITE_TUFF;      // 20% – common
+                            candidateBlobType = CS_SPRITE_TUFF;
                         } else if (typeRoll < 0.87f) {
-                            candidateBlobType = CS_SPRITE_GRANITE;   // 14% – uncommon
+                            candidateBlobType = CS_SPRITE_GRANITE;
                         } else {
-                            candidateBlobType = CS_SPRITE_LIMESTONE; // 13% – rare
+                            candidateBlobType = CS_SPRITE_LIMESTONE;
                         }
 
                         int centerX = checkRegX * blobGridSize + blobRand.nextInt(blobGridSize);
                         int centerY = checkRegY * blobGridSize + blobRand.nextInt(blobGridSize);
 
-                        // Skip blobs whose centre sits too close to the dirt layer
                         if (centerY < topBoundTile + 3) continue;
 
                         int dx = Math.abs(gridX - centerX);
@@ -176,28 +170,12 @@ public abstract class AdvancementTabMixin {
                 }
             }
 
-            /*
-            // 3b. Establish the Magma Seam
-            // noisyBottom - 2: solid core row — always magma, no gaps
-            // noisyBottom - 3: ragged top edge — 65% probability for noise
-            boolean isMagma = false;
-            if (gridY == noisyBottom - 2) {
-                isMagma = true; // Guaranteed solid magma layer
-            } else if (gridY == noisyBottom - 3) {
-                long magmaSeed = cs$mixCoordinates(gridX, gridY) + 777L;
-                if (new Random(magmaSeed).nextFloat() < 0.65f) {
-                    isMagma = true;
-                }
-            }
-            */
-
-            // 3c. Scatter Ore Minerals & Suspicious Blocks
             long cellSeed = cs$mixCoordinates(gridX, gridY) + 123456789L;
             Random random = new Random(cellSeed);
             int chance = random.nextInt(1000);
 
             if (chance < 2) {
-                textureToDraw = (depthRatio >= 0.5f) ? CS_SPRITE_SUS : stoneBase; // Ultra rare animated debug block
+                textureToDraw = (depthRatio >= 0.5f) ? CS_SPRITE_SUS : stoneBase;
             } else if (chance < 12) {
                 textureToDraw = (depthRatio >= 0.8f) ? CS_SPRITE_DIAMOND : stoneBase;
             } else if (chance < 18) {
@@ -217,8 +195,6 @@ public abstract class AdvancementTabMixin {
             }
         }
 
-        // 4. Retrieve Animated Sprite & Apply Dynamic Gradient Map
-        // We fetch directly from the global blocks atlas which auto-ticks animated frames
         TextureAtlasSprite sprite = Minecraft.getInstance()
                 .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
                 .apply(textureToDraw);
@@ -227,10 +203,7 @@ public abstract class AdvancementTabMixin {
         float brightness = 0.7f - (0.2f * gradientRatio);
 
         guiGraphics.setColor(brightness, brightness, brightness, 1.0F);
-
-        // This GuiGraphics overload natively handles dynamic UV coordinates!
         guiGraphics.blit(x, y, 0, width, height, sprite);
-
         guiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
@@ -292,19 +265,15 @@ public abstract class AdvancementTabMixin {
 
     @Inject(method = "drawContents", at = @At("HEAD"))
     private void cs$flushLayoutIfDirty(GuiGraphics guiGraphics, int x, int y, CallbackInfo ci) {
-        // 1. Run relayout first so minX/maxX/minY/maxY are up to date before
-        //    either vanilla centering or our scroll restore fires.
         if (cs$layoutDirty) {
             cs$layoutDirty = false;
             cs$relayout();
         }
 
-        // 2. If this is the first draw of a fresh tab instance AND we have a
-        //    previously saved position, restore it and suppress vanilla centering.
         if (!this.centered && cs$savedScrollX != Double.MAX_VALUE) {
             this.scrollX = cs$savedScrollX;
             this.scrollY = cs$savedScrollY;
-            this.centered = true; // prevents vanilla's centering formula from firing
+            this.centered = true;
         }
     }
 
@@ -363,13 +332,17 @@ public abstract class AdvancementTabMixin {
             api.setX(px);
             api.setY(py);
 
-            List<GridPos> rawRoute = api.getIncomingRoute();
+            // FIX: Always pull from committedRoutes to get physically spliced maps,
+            // bypassing the stale routes natively cached inside the widget.
+            List<GridPos> rawRoute = committedRoutes.get(entry.getKey());
             if (rawRoute != null) {
                 List<GridPos> normalizedRoute = new ArrayList<>(rawRoute.size());
                 for (GridPos cell : rawRoute) {
                     normalizedRoute.add(new GridPos(cell.x() - minGridX, cell.y() - minGridY));
                 }
                 api.setIncomingRoute(normalizedRoute);
+            } else {
+                api.setIncomingRoute(null);
             }
 
             this.minX = Math.min(this.minX, px);
@@ -388,107 +361,134 @@ public abstract class AdvancementTabMixin {
             Map<AdvancementWidget, List<GridPos>> committedRoutes,
             Map<AdvancementWidget, Integer> subtreeWeights) {
 
-        GridPos parentPos = positions.get(parent);
-
         LayoutCandidate bestCandidate = null;
         List<GridPos>   bestRoute     = null;
 
-        // ── Phase 1: Normal placement ─────────────────────────────────────────
-        for (int direction : List.of(
-                theCoralineSystems$RIGHT, theCoralineSystems$DOWN,
-                theCoralineSystems$LEFT,  theCoralineSystems$UP)) {
+        int nodeWeight    = subtreeWeights.getOrDefault(node, 1);
+        int blossomRadius = cs$blossomRadius(nodeWeight);
 
-            for (int distance = 1; distance <= 8; distance++) {
-                int nx = parentPos.x();
-                int ny = parentPos.y();
-                switch (direction) {
-                    case theCoralineSystems$RIGHT -> nx += distance;
-                    case theCoralineSystems$LEFT  -> nx -= distance;
-                    case theCoralineSystems$DOWN  -> ny += distance;
-                    case theCoralineSystems$UP    -> ny -= distance;
-                }
+        int retries = 0;
 
-                GridPos candidatePos = new GridPos(nx, ny);
-                if (occupied.contains(candidatePos)) continue;
+        // The Retry Loop - guarantees placement by splicing the grid on failure
+        while (bestCandidate == null) {
+            // Must fetch dynamically in case parent was moved during a splice
+            GridPos parentPos = positions.get(parent);
 
-                List<GridPos> route = cs$findRoute(parentPos, candidatePos, occupied);
-                if (route == null) continue;
+            List<Integer> directions = new ArrayList<>(List.of(
+                    theCoralineSystems$RIGHT, theCoralineSystems$DOWN,
+                    theCoralineSystems$LEFT,  theCoralineSystems$UP));
+            directions.sort((a, b) ->
+                    cs$countOpenCone(b, parentPos, blossomRadius, occupied)
+                            - cs$countOpenCone(a, parentPos, blossomRadius, occupied));
 
-                int score = cs$computePlacementScore(
-                        parentPos, candidatePos, occupied,
-                        subtreeWeights.getOrDefault(node, 1),
-                        route.size());
+            // ── Phase 1: Normal placement ─────────────────────────────────────────
+            for (int direction : directions) {
+                for (int distance = 1; distance <= 8; distance++) {
+                    int nx = parentPos.x();
+                    int ny = parentPos.y();
+                    switch (direction) {
+                        case theCoralineSystems$RIGHT -> nx += distance;
+                        case theCoralineSystems$LEFT  -> nx -= distance;
+                        case theCoralineSystems$DOWN  -> ny += distance;
+                        case theCoralineSystems$UP    -> ny -= distance;
+                    }
 
-                if (bestCandidate == null || score < bestCandidate.score()) {
-                    bestCandidate = new LayoutCandidate(candidatePos, direction, score);
-                    bestRoute     = route;
+                    GridPos candidatePos = new GridPos(nx, ny);
+                    if (occupied.contains(candidatePos)) continue;
+
+                    List<GridPos> route = cs$findRoute(parentPos, candidatePos, occupied);
+                    if (route == null) continue;
+
+                    int score = cs$computePlacementScore(
+                            parentPos, candidatePos, occupied, nodeWeight, route.size());
+
+                    if (bestCandidate == null || score < bestCandidate.score()) {
+                        bestCandidate = new LayoutCandidate(candidatePos, direction, score);
+                        bestRoute     = route;
+                    }
                 }
             }
-        }
 
-        // ── Phase 2: Branch-off fallback ──────────────────────────────────────
-        if (bestCandidate == null) {
-            bestCandidate = null;
-            bestRoute     = null;
+            // ── Phase 2: Branch-off fallback ──────────────────────────────────────
+            if (bestCandidate == null) {
+                for (Map.Entry<AdvancementWidget, List<GridPos>> entry : committedRoutes.entrySet()) {
+                    AdvancementWidget sibling = entry.getKey();
 
-            for (Map.Entry<AdvancementWidget, List<GridPos>> entry : committedRoutes.entrySet()) {
-                AdvancementWidget sibling = entry.getKey();
+                    if (((IAdvancementWidgetCS) sibling).getParentWidget() != parent) {
+                        continue;
+                    }
 
-                if (((IAdvancementWidgetCS) sibling).getParentWidget() != parent) {
-                    continue;
-                }
+                    List<GridPos> siblingRoute = entry.getValue();
 
-                List<GridPos> siblingRoute = entry.getValue();
+                    for (int idx = 0; idx < siblingRoute.size() - 1; idx++) {
+                        GridPos branchCell = siblingRoute.get(idx);
 
-                for (int idx = 0; idx < siblingRoute.size() - 1; idx++) {
-                    GridPos branchCell = siblingRoute.get(idx);
+                        for (int direction : List.of(
+                                theCoralineSystems$RIGHT, theCoralineSystems$DOWN,
+                                theCoralineSystems$LEFT,  theCoralineSystems$UP)) {
 
-                    for (int direction : List.of(
-                            theCoralineSystems$RIGHT, theCoralineSystems$DOWN,
-                            theCoralineSystems$LEFT,  theCoralineSystems$UP)) {
+                            for (int distance = 1; distance <= 8; distance++) {
+                                int nx = branchCell.x();
+                                int ny = branchCell.y();
+                                switch (direction) {
+                                    case theCoralineSystems$RIGHT -> nx += distance;
+                                    case theCoralineSystems$LEFT  -> nx -= distance;
+                                    case theCoralineSystems$DOWN  -> ny += distance;
+                                    case theCoralineSystems$UP    -> ny -= distance;
+                                }
 
-                        for (int distance = 1; distance <= 8; distance++) {
-                            int nx = branchCell.x();
-                            int ny = branchCell.y();
-                            switch (direction) {
-                                case theCoralineSystems$RIGHT -> nx += distance;
-                                case theCoralineSystems$LEFT  -> nx -= distance;
-                                case theCoralineSystems$DOWN  -> ny += distance;
-                                case theCoralineSystems$UP    -> ny -= distance;
-                            }
+                                GridPos candidatePos = new GridPos(nx, ny);
+                                if (occupied.contains(candidatePos)) continue;
 
-                            GridPos candidatePos = new GridPos(nx, ny);
-                            if (occupied.contains(candidatePos)) continue;
+                                List<GridPos> tailRoute =
+                                        cs$findRoute(branchCell, candidatePos, occupied);
+                                if (tailRoute == null) continue;
 
-                            List<GridPos> tailRoute =
-                                    cs$findRoute(branchCell, candidatePos, occupied);
-                            if (tailRoute == null) continue;
+                                List<GridPos> fullRoute = new ArrayList<>();
+                                for (int s = 0; s <= idx; s++) {
+                                    fullRoute.add(siblingRoute.get(s));
+                                }
+                                fullRoute.addAll(tailRoute);
 
-                            List<GridPos> fullRoute = new ArrayList<>();
-                            for (int s = 0; s <= idx; s++) {
-                                fullRoute.add(siblingRoute.get(s));
-                            }
-                            fullRoute.addAll(tailRoute);
+                                int score = cs$computePlacementScore(
+                                        parentPos, candidatePos, occupied, nodeWeight, fullRoute.size());
+                                score += (idx * 8);
 
-                            int score = cs$computePlacementScore(
-                                    parentPos, candidatePos, occupied,
-                                    subtreeWeights.getOrDefault(node, 1),
-                                    fullRoute.size());
-
-                            score += (idx * 8);
-
-                            if (bestCandidate == null || score < bestCandidate.score()) {
-                                bestCandidate = new LayoutCandidate(
-                                        candidatePos, direction, score);
-                                bestRoute = fullRoute;
+                                if (bestCandidate == null || score < bestCandidate.score()) {
+                                    bestCandidate = new LayoutCandidate(
+                                            candidatePos, direction, score);
+                                    bestRoute = fullRoute;
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        if (bestCandidate == null) return;
+            if (bestCandidate != null) break; // Found a valid layout, exit loop.
+
+            // ── Phase 3: Grid Splicing (Dynamic Expansion) ─────────────────────────
+            // If we are boxed in, physically split the grid along the parent's axis
+            // to inject an empty lane and try Phase 1 & 2 again.
+            int spliceDir = directions.get(retries % directions.size());
+            cs$spliceGrid(positions, committedRoutes, parentPos, spliceDir);
+
+            // Rebuild occupancy map based on the newly expanded coordinates
+            occupied.clear();
+            occupied.addAll(positions.values());
+            for (List<GridPos> route : committedRoutes.values()) {
+                occupied.addAll(route);
+            }
+
+            retries++;
+            if (retries > 10) {
+                // Hard-failsafe to prevent server lockups in extreme edge cases
+                // (Should mathematically never be reached due to splicing)
+                bestCandidate = new LayoutCandidate(new GridPos(parentPos.x(), parentPos.y() + 1), theCoralineSystems$DOWN, 0);
+                bestRoute = List.of(parentPos, bestCandidate.pos());
+                break;
+            }
+        }
 
         // ── Commit ────────────────────────────────────────────────────────────
         positions.put(node, bestCandidate.pos());
@@ -500,15 +500,88 @@ public abstract class AdvancementTabMixin {
 
         committedRoutes.put(node, bestRoute);
 
-        List<AdvancementWidget> children =
+        List<AdvancementWidget> nodeChildren =
                 new ArrayList<>(((IAdvancementWidgetCS) node).getChildren());
-        children.sort((a, b) ->
+        nodeChildren.sort((a, b) ->
                 subtreeWeights.getOrDefault(b, 1) - subtreeWeights.getOrDefault(a, 1));
 
-        for (AdvancementWidget child : children) {
+        for (AdvancementWidget child : nodeChildren) {
             cs$placeNode(child, node, positions, occupied,
                     committedRoutes, subtreeWeights);
         }
+    }
+
+    // ── Phase 3: Splicing Logic ───────────────────────────────────────────────
+
+    @Unique
+    private void cs$spliceGrid(
+            Map<AdvancementWidget, GridPos> positions,
+            Map<AdvancementWidget, List<GridPos>> committedRoutes,
+            GridPos origin, int spliceDir) {
+
+        // 1. Shift Nodes
+        for (Map.Entry<AdvancementWidget, GridPos> entry : positions.entrySet()) {
+            entry.setValue(cs$shiftGridPos(entry.getValue(), origin, spliceDir));
+        }
+
+        // 2. Shift and Stretch Routes
+        for (Map.Entry<AdvancementWidget, List<GridPos>> entry : committedRoutes.entrySet()) {
+            AdvancementWidget widget = entry.getKey();
+            List<GridPos> oldRoute = entry.getValue();
+            if (oldRoute == null || oldRoute.isEmpty()) continue;
+
+            List<GridPos> newRoute = new ArrayList<>();
+
+            // 2a. FIX: Check if the grid splice tore the implicit gap between the parent and the first route node
+            AdvancementWidget parent = ((IAdvancementWidgetCS) widget).getParentWidget();
+            if (parent != null) {
+                GridPos parentPos = positions.get(parent); // This is safely already shifted from Step 1
+                if (parentPos != null) {
+                    GridPos firstShifted = cs$shiftGridPos(oldRoute.get(0), origin, spliceDir);
+                    int dx = Math.abs(parentPos.x() - firstShifted.x());
+                    int dy = Math.abs(parentPos.y() - firstShifted.y());
+
+                    if (dx + dy > 1) {
+                        int fillerX = (parentPos.x() + firstShifted.x()) / 2;
+                        int fillerY = (parentPos.y() + firstShifted.y()) / 2;
+                        newRoute.add(new GridPos(fillerX, fillerY));
+                    }
+                }
+            }
+
+            // 2b. Shift the existing line path and patch tears between segments
+            for (int i = 0; i < oldRoute.size(); i++) {
+                GridPos p1 = oldRoute.get(i);
+                GridPos shiftedP1 = cs$shiftGridPos(p1, origin, spliceDir);
+                newRoute.add(shiftedP1);
+
+                if (i + 1 < oldRoute.size()) {
+                    GridPos p2 = oldRoute.get(i + 1);
+                    GridPos shiftedP2 = cs$shiftGridPos(p2, origin, spliceDir);
+
+                    int dx = Math.abs(shiftedP1.x() - shiftedP2.x());
+                    int dy = Math.abs(shiftedP1.y() - shiftedP2.y());
+
+                    if (dx + dy > 1) {
+                        int fillerX = (shiftedP1.x() + shiftedP2.x()) / 2;
+                        int fillerY = (shiftedP1.y() + shiftedP2.y()) / 2;
+                        newRoute.add(new GridPos(fillerX, fillerY));
+                    }
+                }
+            }
+            entry.setValue(newRoute);
+        }
+    }
+
+    @Unique
+    private GridPos cs$shiftGridPos(GridPos pos, GridPos origin, int dir) {
+        int x = pos.x();
+        int y = pos.y();
+        if (dir == theCoralineSystems$RIGHT && x > origin.x()) return new GridPos(x + 1, y);
+        if (dir == theCoralineSystems$LEFT  && x < origin.x()) return new GridPos(x - 1, y);
+        if (dir == theCoralineSystems$DOWN  && y > origin.y()) return new GridPos(x, y + 1);
+        if (dir == theCoralineSystems$UP    && y < origin.y()) return new GridPos(x, y - 1);
+        return pos;
     }
 
     // ── BFS Pathfinding ───────────────────────────────────────────────────────
@@ -591,6 +664,33 @@ public abstract class AdvancementTabMixin {
         score -= subtreeWeight * 2;
         score += Math.abs(candidate.y()) * 3;
         return score;
+    }
+
+    // ── Blossom helpers ───────────────────────────────────────────────────────
+
+    @Unique
+    private static int cs$blossomRadius(int weight) {
+        return Math.max(1, (int) Math.ceil(Math.sqrt(weight)));
+    }
+
+    @Unique
+    private static int cs$countOpenCone(
+            int direction, GridPos origin, int radius, Set<GridPos> occupied) {
+
+        int free = 0;
+        for (int along = 1; along <= radius; along++) {
+            for (int perp = -radius; perp <= radius; perp++) {
+                int cx, cy;
+                switch (direction) {
+                    case 0 -> { cx = origin.x() + along; cy = origin.y() + perp; } // RIGHT
+                    case 1 -> { cx = origin.x() + perp;  cy = origin.y() + along; } // DOWN
+                    case 2 -> { cx = origin.x() - along; cy = origin.y() + perp; } // LEFT
+                    default -> { cx = origin.x() + perp;  cy = origin.y() - along; } // UP
+                }
+                if (!occupied.contains(new GridPos(cx, cy))) free++;
+            }
+        }
+        return free;
     }
 
     // ── Utilities ─────────────────────────────────────────────────────────────
