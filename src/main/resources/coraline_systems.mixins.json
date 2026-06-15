@@ -37,6 +37,7 @@
     "CraftingTableRecipeManagerMixin",
     "DrownedEquipmentMixin",
     "EaselBlockMixin",
+    "EntityMixin",
     "FurnaceRecipeManagerMixin",
     "GiantMixin",
     "GiantStompMixin",
