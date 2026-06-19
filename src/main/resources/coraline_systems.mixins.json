@@ -46,6 +46,7 @@
     "JukeboxBlockEntityMixin",
     "LecternBlockMixin",
     "MobMixin",
+    "MushroomBlockMixin",
     "NetherPortalCorruptionMixin",
     "PancakeBlockMixin",
     "PigmanTradesMixin",

@@ -15,6 +15,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.zharok01.coralinesystems.client.ClientStaticPortalEffect;
+import net.zharok01.coralinesystems.client.TranscendingPortalOverlay;
 import net.zharok01.coralinesystems.registry.CoralinePacketHandler;
 import net.zharok01.coralinesystems.registry.*;
 import org.slf4j.Logger;
@@ -71,6 +72,7 @@ public class CoralineSystems {
         public static void onClientSetup(FMLClientSetupEvent event) {
             CoralineBlocks.registerRenderLayers();
             ClientStaticPortalEffect.init();
+            TranscendingPortalOverlay.init();
         }
     }
 }

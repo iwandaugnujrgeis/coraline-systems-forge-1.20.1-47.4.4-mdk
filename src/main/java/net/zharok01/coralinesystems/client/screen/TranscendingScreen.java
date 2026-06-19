@@ -1,15 +1,24 @@
 package net.zharok01.coralinesystems.client.screen;
 
 import com.legacy.structure_gel.api.block.GelPortalBlock;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.GameNarrator;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
-import net.zharok01.coralinesystems.client.portal.PortalTransitionContext;
+import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.zharok01.coralinesystems.client.portal.PortalTransitionContext;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -26,14 +35,13 @@ public class TranscendingScreen extends Screen
     // ── Chunk-ready watchdog ────────────────────────────────────────────────
     private static final long TIMEOUT_MS = 30_000L;
 
-    // ── Static handle so TranscendingPortalOverlay can read our state ───────
-    // Set in init(), cleared in removed(). Never access from the server side.
+    // ── Static handle so external code can check if we're active ───────────
     @Nullable
     public static TranscendingScreen ACTIVE = null;
 
     // ── Per-instance state ───────────────────────────────────────────────────
     @Nullable
-    public final GelPortalBlock portalBlock;   // public so the overlay can read it
+    public final GelPortalBlock portalBlock;
     public final boolean isNetherPortal;
 
     private final long createdAt = System.currentTimeMillis();
@@ -63,7 +71,7 @@ public class TranscendingScreen extends Screen
     @Override
     public void removed()
     {
-        ACTIVE = null;    // ← clear so the overlay stops drawing
+        ACTIVE = null;
         super.removed();
     }
 
@@ -121,15 +129,62 @@ public class TranscendingScreen extends Screen
     }
 
     // ── Render ──────────────────────────────────────────────────────────────
-    // The screen itself draws NOTHING — TranscendingPortalOverlay handles
-    // all rendering via RenderGuiOverlayEvent.Post, bypassing GuiGraphics.
+
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
     {
-        // Intentionally empty — do NOT call super.render()
+        float alpha = computeAlpha();
+        if (alpha <= 0.0F) return;
+
+        assert this.minecraft != null;
+
+        // Resolve sprite — Gel portal block, or fall back to vanilla Nether portal
+        TextureAtlasSprite sprite;
+        if (portalBlock != null)
+        {
+            sprite = portalBlock.getPortalTexture();
+        }
+        else
+        {
+            sprite = this.minecraft.getBlockRenderer()
+                    .getBlockModelShaper()
+                    .getParticleIcon(Blocks.NETHER_PORTAL.defaultBlockState());
+        }
+
+        float screenWidth  = this.width;
+        float screenHeight = this.height;
+
+        float u0 = sprite.getU0();
+        float v0 = sprite.getV0();
+        float u1 = sprite.getU1();
+        float v1 = sprite.getV1();
+
+        RenderSystem.disableDepthTest();
+        RenderSystem.depthMask(false);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderTexture(0, InventoryMenu.BLOCK_ATLAS);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
+
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder buf = tesselator.getBuilder();
+        buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        buf.vertex(0,           screenHeight, -90.0).uv(u0, v1).endVertex();
+        buf.vertex(screenWidth, screenHeight, -90.0).uv(u1, v1).endVertex();
+        buf.vertex(screenWidth, 0,            -90.0).uv(u1, v0).endVertex();
+        buf.vertex(0,           0,            -90.0).uv(u0, v0).endVertex();
+        tesselator.end();
+
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.depthMask(true);
+        RenderSystem.enableDepthTest();
+        RenderSystem.disableBlend();
+
+        // Do NOT call super.render() — we don't want the dirt background
     }
 
-    // ── Alpha: readable by the overlay ──────────────────────────────────────
+    // ── Alpha ────────────────────────────────────────────────────────────────
 
     public float computeAlpha()
     {
