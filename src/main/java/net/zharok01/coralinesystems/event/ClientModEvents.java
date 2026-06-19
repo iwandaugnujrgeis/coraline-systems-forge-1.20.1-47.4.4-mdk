@@ -7,6 +7,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.zharok01.coralinesystems.CoralineSystems;
 import net.zharok01.coralinesystems.client.ClientStaticPortalEffect;
+import net.zharok01.coralinesystems.client.TranscendingPortalOverlay;
 import net.zharok01.coralinesystems.client.entity.brume.BrumeRenderer;
 import net.zharok01.coralinesystems.client.entity.helper.HelperRenderer;
 import net.zharok01.coralinesystems.client.entity.monster.MonsterRenderer;
@@ -21,10 +22,5 @@ public class ClientModEvents {
         event.registerEntityRenderer(IsotopicEntities.HELPER.get(), HelperRenderer::new);
         event.registerEntityRenderer(IsotopicEntities.MONSTER.get(), MonsterRenderer::new);
         event.registerEntityRenderer(IsotopicEntities.BRUME.get(), BrumeRenderer::new);
-    }
-
-    @SubscribeEvent
-    public void clientSetup(FMLClientSetupEvent event) {
-        ClientStaticPortalEffect.init();
     }
 }
