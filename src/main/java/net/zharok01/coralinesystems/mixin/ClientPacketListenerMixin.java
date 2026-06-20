@@ -3,13 +3,14 @@ package net.zharok01.coralinesystems.mixin;
 import com.legacy.structure_gel.api.block.GelPortalBlock;
 import com.legacy.structure_gel.core.capability.entity.GelEntity;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.ReceivingLevelScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
-import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
 import net.minecraft.network.protocol.game.ClientboundRespawnPacket;
 import net.minecraft.network.protocol.game.ClientboundSetDefaultSpawnPositionPacket;
-import net.zharok01.coralinesystems.client.portal.PortalTransitionContext;
-import net.zharok01.coralinesystems.client.screen.TranscendingScreen;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.zharok01.coralinesystems.client.TranscendingPortalOverlay;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -18,27 +19,18 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+@OnlyIn(Dist.CLIENT)
 @Mixin(ClientPacketListener.class)
 public abstract class ClientPacketListenerMixin
 {
     @Final @Shadow private Minecraft minecraft;
 
-    @Inject(
-            method = "handleGameEvent",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void coraline$silenceNoRespawnBlock(
-            ClientboundGameEventPacket packet, CallbackInfo ci)
-    {
-        if (packet.getEvent() == ClientboundGameEventPacket.NO_RESPAWN_BLOCK_AVAILABLE)
-            ci.cancel();
-    }
+    // ── 1. Snapshot portal type at HEAD of handleRespawn ─────────────────────
+    //
+    // We must read GelEntity.getPortalClient() and player.spinningEffectIntensity
+    // HERE, before handleRespawn rebuilds the player entity — after that point
+    // both values are gone.
 
-    /**
-     * Snapshot portal and Nether portal state at HEAD of handleRespawn,
-     * before the player entity is rebuilt and those values are lost.
-     */
     @Inject(
             method = "handleRespawn",
             at = @At("HEAD")
@@ -46,52 +38,65 @@ public abstract class ClientPacketListenerMixin
     private void coraline$snapshotPortalOnRespawn(
             ClientboundRespawnPacket packet, CallbackInfo ci)
     {
+        // Only act on a genuine dimension-change respawn (not a plain death respawn)
+        // handleRespawn already has that dimension-key guard internally, but we can
+        // do an early-out here too: if the player is null there is nothing to detect.
+        if (this.minecraft.player == null) return;
+
         GelPortalBlock gelPortal = GelEntity.getPortalClient();
 
         if (gelPortal != null)
         {
-            PortalTransitionContext.set(gelPortal);
+            // Gel portal (Skylands or any other Structure Gel portal)
+            TranscendingPortalOverlay.beginTransition(gelPortal);
         }
-        else if (this.minecraft.player != null
-                && this.minecraft.player.spinningEffectIntensity > 0)
+        else if (this.minecraft.player.spinningEffectIntensity > 0)
         {
-            // Nether portal detected — signal with a sentinel state
-            PortalTransitionContext.setNetherPortal();
+            // Vanilla Nether portal — no GelPortalBlock exists, pass null as sentinel
+            TranscendingPortalOverlay.beginTransition(null);
         }
-        else
-        {
-            PortalTransitionContext.clear();
-        }
+        // If neither condition is true this is a death/End respawn — do nothing.
     }
 
-    /**
-     * Redirect the single setScreen(new ReceivingLevelScreen()) call.
-     */
+    // ── 2. Suppress ReceivingLevelScreen during a portal transition ───────────
+    //
+    // handleRespawn calls minecraft.setScreen(new ReceivingLevelScreen()) once
+    // when the dimension actually changes.  We redirect that single call: if our
+    // overlay is active we swallow the screen push; otherwise we let it through
+    // unchanged so first-join and non-portal respawns still work normally.
+
     @Redirect(
             method = "handleRespawn",
             at = @At(
-                    value = "INVOKE",
+                    value  = "INVOKE",
                     target = "Lnet/minecraft/client/Minecraft;setScreen(Lnet/minecraft/client/gui/screens/Screen;)V",
                     ordinal = 0
             )
     )
-    private void coraline$interceptRespawnScreen(
-            Minecraft mc, Screen screen)
+    private void coraline$suppressReceivingLevelScreen(Minecraft mc, Screen screen)
     {
-        if (PortalTransitionContext.hasTransition())
-            mc.setScreen(new TranscendingScreen()); // Context is finally consumed here!
-        else
-            mc.setScreen(screen);
+        if (TranscendingPortalOverlay.isActive() && screen instanceof ReceivingLevelScreen)
+        {
+            // Deliberately do nothing — the overlay is handling the visual cover.
+            return;
+        }
+        mc.setScreen(screen);
     }
+
+    // ── 3. Signal "loading packets received" to the overlay ──────────────────
+    //
+    // The vanilla ReceivingLevelScreen uses handleSetSpawn to know that the
+    // server has sent enough data to start watching for compiled chunks.
+    // We forward the same signal to the overlay's chunk-readiness logic so
+    // the overlay never fades out before packets have arrived.
 
     @Inject(
             method = "handleSetSpawn",
             at = @At("TAIL")
     )
-    private void coraline$forwardLoadingPackets(
+    private void coraline$notifyOverlayPacketsReceived(
             ClientboundSetDefaultSpawnPositionPacket packet, CallbackInfo ci)
     {
-        if (this.minecraft.screen instanceof TranscendingScreen ts)
-            ts.loadingPacketsReceived();
+        TranscendingPortalOverlay.notifyLoadingPacketsReceived();
     }
 }

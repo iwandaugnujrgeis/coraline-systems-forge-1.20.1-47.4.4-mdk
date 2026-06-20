@@ -3,53 +3,51 @@ package net.zharok01.coralinesystems.mixin;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ProgressScreen;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.sounds.SoundManager;
-import net.minecraft.network.Connection;
-import net.minecraft.world.entity.Entity;
-import net.zharok01.coralinesystems.client.portal.PortalTransitionContext;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.zharok01.coralinesystems.client.TranscendingPortalOverlay;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
-import javax.annotation.Nullable;
+@OnlyIn(Dist.CLIENT)
 
 @Mixin(Minecraft.class)
 public abstract class MinecraftMixin
 {
-    @Shadow private SoundManager soundManager;
-    @Shadow @Nullable public Entity cameraEntity;
-    @Shadow @Nullable private Connection pendingConnection;
-
     /**
-     * Intercept the `updateScreenAndTick` call. If it's trying to push the
-     * "Joining world..." ProgressScreen and we have a portal transition pending,
-     * we simply cancel the call. This safely suppresses the text without
-     * prematurely consuming the PortalTransitionContext.
+     * Suppresses the "Joining world…" ProgressScreen during a portal transition.
+     *
+     * setLevel() calls updateScreenAndTick(new ProgressScreen(...)) which in turn
+     * calls setScreen(progressScreen) — this would flash the dirt background and
+     * "Joining world…" text over our portal overlay.
+     *
+     * We redirect that single setScreen call inside updateScreenAndTick: if our
+     * overlay is currently active AND the incoming screen is a ProgressScreen, we
+     * swallow it.  Every other caller of updateScreenAndTick (clearLevel on
+     * disconnect, etc.) passes through unchanged because isActive() will be false.
+     *
+     * Note: the other work inside updateScreenAndTick — soundManager.stop(),
+     * cameraEntity = null, pendingConnection = null — still executes normally
+     * because we are only redirecting the setScreen call, not cancelling the
+     * entire method.
      */
-    @Inject(
+    @Redirect(
             method = "updateScreenAndTick",
-            at = @At("HEAD"),
-            cancellable = true
+            at = @At(
+                    value  = "INVOKE",
+                    target = "Lnet/minecraft/client/Minecraft;setScreen(Lnet/minecraft/client/gui/screens/Screen;)V"
+            )
     )
-    private void coraline$suppressJoiningWorldScreen(Screen screen, CallbackInfo ci)
+    private void coraline$suppressJoiningWorldScreen(Minecraft mc, Screen screen)
     {
-        if (screen instanceof ProgressScreen && PortalTransitionContext.hasTransition())
+        if (TranscendingPortalOverlay.isActive() && screen instanceof ProgressScreen)
         {
-            // We must manually perform the critical cleanup steps that
-            // updateScreenAndTick normally handles before skipping it.
-            if (this.soundManager != null)
-            {
-                this.soundManager.stop();
-            }
-
-            this.cameraEntity = null;
-            this.pendingConnection = null;
-
-            // Cancel the method. This prevents setScreen(ProgressScreen)
-            // and runTick(false) from executing.
-            ci.cancel();
+            // Deliberately do nothing — the overlay covers the screen visually
+            // and the side-effects we need (soundManager.stop etc.) have already
+            // run earlier in updateScreenAndTick before this call.
+            return;
         }
+        mc.setScreen(screen);
     }
 }
