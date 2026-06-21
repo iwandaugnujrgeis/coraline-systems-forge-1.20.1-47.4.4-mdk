@@ -10,6 +10,7 @@ import net.zharok01.coralinesystems.client.entity.helper.HelperRenderer;
 import net.zharok01.coralinesystems.client.entity.monster.MonsterRenderer;
 import net.zharok01.coralinesystems.client.entity.orb.OrbModel;
 import net.zharok01.coralinesystems.client.entity.orb.OrbRenderer;
+import net.zharok01.coralinesystems.client.entity.orb.OrbPulseRenderer;
 import net.zharok01.coralinesystems.registry.CoralineModelLayers;
 import net.zharok01.coralinesystems.registry.IsotopicEntities;
 
@@ -22,6 +23,7 @@ public class ClientModEvents {
         event.registerEntityRenderer(IsotopicEntities.MONSTER.get(), MonsterRenderer::new);
         event.registerEntityRenderer(IsotopicEntities.BRUME.get(), BrumeRenderer::new);
         event.registerEntityRenderer(IsotopicEntities.ORB.get(), OrbRenderer::new);
+        event.registerEntityRenderer(IsotopicEntities.ORB_PULSE.get(), OrbPulseRenderer::new);
     }
 
     @SubscribeEvent

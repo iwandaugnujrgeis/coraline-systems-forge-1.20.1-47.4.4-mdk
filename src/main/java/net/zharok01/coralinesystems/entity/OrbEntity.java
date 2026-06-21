@@ -251,17 +251,18 @@ public class OrbEntity extends FlyingMob implements Enemy {
                         double dZ = target.getZ() - (this.orb.getZ() + viewVector.z * 4.0D);
 
                         if (!this.orb.isSilent()) {
-                            this.orb.playSound(CoralineSounds.ORB_SHOOT.get(), 1.0F, 1.0F); //TODO: Add the translations!
+                            this.orb.playSound(CoralineSounds.ORB_SHOOT.get(), 1.0F, 1.0F);
                         }
 
-                        // ---> PIN: PLACEHOLDER PROJECTILE <---
-                        // Change this later to your custom Isotopic Projectile!
-                        LargeFireball fireball = new LargeFireball(level, this.orb, dX, dY, dZ, 1);
-                        fireball.setPos(this.orb.getX() + viewVector.x * 1.5D, this.orb.getY(0.5D), this.orb.getZ() + viewVector.z * 1.5D);
-                        level.addFreshEntity(fireball);
-                        // ---------------------------------------
+                        OrbPulseEntity pulse = new OrbPulseEntity(level, this.orb, dX, dY, dZ);
+                        pulse.setPos(
+                                this.orb.getX() + viewVector.x * 1.5D,
+                                this.orb.getY(0.5D),
+                                this.orb.getZ() + viewVector.z * 1.5D
+                        );
+                        level.addFreshEntity(pulse);
 
-                        this.chargeTime = -40; // Cooldown before next attack
+                        this.chargeTime = -40;
                     }
                 } else if (this.chargeTime > 0) {
                     --this.chargeTime;

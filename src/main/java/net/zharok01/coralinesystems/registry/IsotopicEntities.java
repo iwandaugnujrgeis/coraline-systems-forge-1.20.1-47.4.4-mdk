@@ -7,10 +7,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.zharok01.coralinesystems.CoralineSystems;
-import net.zharok01.coralinesystems.entity.BrumeEntity;
-import net.zharok01.coralinesystems.entity.HelperEntity;
-import net.zharok01.coralinesystems.entity.MonsterEntity;
-import net.zharok01.coralinesystems.entity.OrbEntity;
+import net.zharok01.coralinesystems.entity.*;
 
 public class IsotopicEntities {
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
@@ -36,6 +33,14 @@ public class IsotopicEntities {
                     .sized(1.0F, 1.0F) // Roughly the size of a full block
                     .clientTrackingRange(8)
                     .build("orb"));
+
+    public static final RegistryObject<EntityType<OrbPulseEntity>> ORB_PULSE =
+            ENTITY_TYPES.register("orb_pulse", () -> EntityType.Builder
+                    .<OrbPulseEntity>of(OrbPulseEntity::new, MobCategory.MISC)
+                    .sized(0.3125F, 0.3125F)   // matches SmallFireball's hitbox
+                    .clientTrackingRange(4)
+                    .updateInterval(10)
+                    .build("orb_pulse"));
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);
