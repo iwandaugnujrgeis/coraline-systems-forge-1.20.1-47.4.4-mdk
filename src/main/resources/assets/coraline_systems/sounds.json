@@ -331,5 +331,23 @@
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.pig_eat"
+  },
+  "orb_charge": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/monster/hurt1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.orb_charge"
+  },
+  "orb_shoot": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/monster/hurt1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.orb_shoot"
   }
 }
