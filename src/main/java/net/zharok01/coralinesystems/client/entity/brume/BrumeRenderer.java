@@ -20,7 +20,7 @@ public class BrumeRenderer extends MobRenderer<BrumeEntity, PlayerModel<BrumeEnt
     }
 
     @Override
-    public @NotNull ResourceLocation getTextureLocation(BrumeEntity entity) {
+    public @NotNull ResourceLocation getTextureLocation(@NotNull BrumeEntity entity) {
         return TEXTURE;
     }
 }

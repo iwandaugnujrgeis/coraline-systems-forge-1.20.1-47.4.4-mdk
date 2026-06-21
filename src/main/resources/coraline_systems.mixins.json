@@ -34,6 +34,7 @@
     "BrickPyramidIslandMixin",
     "CandleCakeBlockMixin",
     "CaveGrowthsFeatureMixin",
+    "CopperDoorZombieResistanceMixin",
     "CowMixin",
     "CraftingTableRecipeManagerMixin",
     "DrownedEquipmentMixin",

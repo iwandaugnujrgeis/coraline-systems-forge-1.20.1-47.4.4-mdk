@@ -25,7 +25,11 @@ public abstract class GiantStompMixin {
 
     @Inject(method = "aiStep", at = @At("HEAD"))
     private void onAiStep(CallbackInfo ci) {
-        if (!((Object) this instanceof Giant giant)) return;
+        if (
+                !(
+                        (Object) this instanceof Giant giant
+                )
+        ) return;
 
         if (giant.level().isClientSide()) return;
 

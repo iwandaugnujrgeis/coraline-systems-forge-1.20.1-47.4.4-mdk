@@ -14,6 +14,10 @@ loom {
 }
 
 repositories {
+    // Inject the mirror and explicit Maven Central here as well
+    maven { url = "https://mirror.yandex.ru/mirrors/maven/maven2/" }
+    mavenCentral()
+
     maven { url = "https://maven.parchmentmc.org" }
     maven { url = "https://maven.bawnorton.com/releases" }
     maven { url = "https://api.modrinth.com/maven" }
@@ -22,7 +26,6 @@ repositories {
 
 dependencies {
     minecraft "net.minecraft:minecraft:$project.minecraft_version"
-//    mappings loom.officialMojangMappings()
     mappings loom.layered() {
         officialMojangMappings()
         parchment("org.parchmentmc.data:parchment-1.20.1:2023.09.03@zip")
@@ -53,7 +56,6 @@ dependencies {
     implementation("maven.modrinth:structure-gel-api:2.16.2")
 }
 
-
 processResources {
     filesMatching('META-INF/mods.toml') {
         expand project.properties
@@ -62,7 +64,6 @@ processResources {
 
 java {
     withSourcesJar()
-
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
 }
