@@ -4,9 +4,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.FlyingMob;
 import net.minecraft.world.entity.LivingEntity;
@@ -24,6 +26,7 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.zharok01.coralinesystems.registry.CoralineSounds;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.EnumSet;
 
@@ -50,11 +53,26 @@ public class OrbEntity extends FlyingMob implements Enemy {
 
     public static AttributeSupplier.Builder createAttributes() {
         return FlyingMob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 20.0D)
-                .add(Attributes.FOLLOW_RANGE, 32.0D)
-                .add(Attributes.FLYING_SPEED, 0.5D)
+                .add(Attributes.MAX_HEALTH, 6.0D)
+                .add(Attributes.FOLLOW_RANGE, 20.0D)
+                .add(Attributes.FLYING_SPEED, 0.24D)
                 .add(Attributes.MOVEMENT_SPEED, 0.2D)
                 .add(Attributes.ATTACK_DAMAGE, 4.0D);
+    }
+
+    @Override
+    protected SoundEvent getAmbientSound() {
+        return CoralineSounds.ORB_IDLE.get();
+    }
+
+    @Override
+    protected SoundEvent getHurtSound(@NotNull DamageSource damageSource) {
+        return CoralineSounds.ORB_HURT.get();
+    }
+
+    @Override
+    protected SoundEvent getDeathSound() {
+        return CoralineSounds.ORB_DEATH.get();
     }
 
     @Override

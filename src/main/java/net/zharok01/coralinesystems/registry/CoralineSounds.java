@@ -50,7 +50,9 @@ public class CoralineSounds {
 
     public static final RegistryObject<SoundEvent> ORB_CHARGE = createSoundEvent("orb_charge");
     public static final RegistryObject<SoundEvent> ORB_SHOOT = createSoundEvent("orb_shoot");
-
+    public static final RegistryObject<SoundEvent> ORB_IDLE = createSoundEvent("orb_idle");
+    public static final RegistryObject<SoundEvent> ORB_HURT = createSoundEvent("orb_hurt");
+    public static final RegistryObject<SoundEvent> ORB_DEATH = createSoundEvent("orb_death");
 
     private static RegistryObject<SoundEvent> createSoundEvent(final String soundName) {
         return SOUND_EVENTS.register(soundName, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(CoralineSystems.MOD_ID, soundName)));

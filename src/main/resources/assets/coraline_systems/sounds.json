@@ -349,5 +349,35 @@
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.orb_shoot"
+  },
+  "orb_idle": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/orb/say1"
+      },
+      {
+        "name": "coraline_systems:entity/orb/say2"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.orb_idle"
+  },
+  "orb_hurt": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/monster/hurt1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.orb_hurt"
+  },
+  "orb_death": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/monster/hurt1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.orb_death"
   }
 }
