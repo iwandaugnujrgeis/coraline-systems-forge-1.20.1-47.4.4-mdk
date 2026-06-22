@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "coraline_systems:maglev_rail",
+    "coraline_systems:powered_maglev_rail"
+  ]
+}

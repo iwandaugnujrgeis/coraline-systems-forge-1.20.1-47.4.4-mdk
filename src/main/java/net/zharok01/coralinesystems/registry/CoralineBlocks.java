@@ -9,12 +9,9 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.HugeMushroomBlock;
-import net.minecraft.world.level.block.MushroomBlock;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
-import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.level.material.MapColor;
@@ -56,6 +53,8 @@ public class CoralineBlocks {
 		ItemBlockRenderTypes.setRenderLayer(TORCH.get(), RenderType.cutout());
 		ItemBlockRenderTypes.setRenderLayer(STATIC_PORTAL_BLOCK.get(), RenderType.translucent());
 		ItemBlockRenderTypes.setRenderLayer(WHITE_MUSHROOM.get(), RenderType.cutout());
+		ItemBlockRenderTypes.setRenderLayer(MAGLEV_RAIL.get(), RenderType.cutout());
+		ItemBlockRenderTypes.setRenderLayer(POWERED_MAGLEV_RAIL.get(), RenderType.cutout());
 	}
 
 	public static final RegistryObject<Block> STATIC_PORTAL_BLOCK = registerWithoutItem("static_portal_block",
@@ -119,6 +118,22 @@ public class CoralineBlocks {
 							.ignitedByLava()
 			)
 	);
+
+	public static final RegistryObject<Block> MAGLEV_RAIL = register("maglev_rail",
+			() -> new MaglevRailBlock(BlockBehaviour.Properties.of()
+					.noCollission()
+					.strength(0.7F)
+					.sound(SoundType.METAL))
+	);
+
+	public static final RegistryObject<Block> POWERED_MAGLEV_RAIL = register("powered_maglev_rail",
+			() -> new PoweredMaglevRailBlock(BlockBehaviour.Properties.of()
+					.noCollission()
+					.strength(0.7F)
+					.sound(SoundType.METAL))
+	);
+
+	//---
 
 	private static <T extends Block> RegistryObject<T> register(String name, Supplier<T> supplier) {
 		return register(name, supplier, new Item.Properties());

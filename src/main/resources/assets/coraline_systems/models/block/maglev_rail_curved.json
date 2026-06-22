@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/rail_curved",
+  "textures": {
+    "rail": "coraline_systems:block/maglev_rail_turn"
+  }
+}
