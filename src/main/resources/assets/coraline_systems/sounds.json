@@ -336,7 +336,12 @@
     "category": "neutral",
     "sounds": [
       {
-        "name": "coraline_systems:entity/monster/hurt1"
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 1.0
+      },
+      {
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 1.1
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.orb_charge"
@@ -345,7 +350,12 @@
     "category": "neutral",
     "sounds": [
       {
-        "name": "coraline_systems:entity/monster/hurt1"
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 0.8
+      },
+      {
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 0.9
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.orb_shoot"
@@ -366,7 +376,7 @@
     "category": "neutral",
     "sounds": [
       {
-        "name": "coraline_systems:entity/monster/hurt1"
+        "name": "coraline_systems:entity/orb/pulse_loop1"
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.orb_hurt"
@@ -375,7 +385,7 @@
     "category": "neutral",
     "sounds": [
       {
-        "name": "coraline_systems:entity/monster/hurt1"
+        "name": "coraline_systems:entity/orb/pulse_loop1"
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.orb_death"

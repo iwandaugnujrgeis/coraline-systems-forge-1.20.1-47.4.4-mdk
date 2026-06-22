@@ -1,7 +1,8 @@
 package net.zharok01.coralinesystems.entity;
 
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -11,45 +12,35 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.zharok01.coralinesystems.registry.CoralineEffects;
+import net.zharok01.coralinesystems.registry.CoralineParticles;
+import net.zharok01.coralinesystems.registry.CoralineSounds;
 import net.zharok01.coralinesystems.registry.IsotopicEntities;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
 public class OrbPulseEntity extends SmallFireball {
 
-    // How long Haphazard lasts (in ticks). 5 seconds = 100 ticks.
     private static final int HAPHAZARD_DURATION_TICKS = 100;
-
-    // The splash radius around the impact point, in blocks.
-    private static final double SPLASH_RADIUS = 2.0D;
+    private static final double SPLASH_RADIUS = 5.0D;
 
     public OrbPulseEntity(EntityType<? extends OrbPulseEntity> entityType, Level level) {
         super(entityType, level);
     }
 
-    /**
-     * Constructor called by OrbEntity when shooting.
-     * Mirrors the SmallFireball(Level, LivingEntity, double, double, double) pattern
-     * but uses our registered entity type instead of EntityType.SMALL_FIREBALL.
-     */
     public OrbPulseEntity(Level level, LivingEntity shooter,
                           double offsetX, double offsetY, double offsetZ) {
-        // Call Projectile's base constructor with our registered type, then set owner.
-        // We replicate what Fireball's LivingEntity constructor does manually here
-        // because SmallFireball hard-codes EntityType.SMALL_FIREBALL.
         super(IsotopicEntities.ORB_PULSE.get(), level);
         this.setOwner(shooter);
 
-        // Position the pulse at the shooter's eye level, offset slightly forward.
         this.setPos(
                 shooter.getX() + offsetX,
                 shooter.getEyeY() + offsetY,
                 shooter.getZ() + offsetZ
         );
 
-        // xPower / yPower / zPower are the direction fields on AbstractHurtingProjectile.
-        // They drive movement each tick. We normalise them here.
         double length = Math.sqrt(offsetX * offsetX + offsetY * offsetY + offsetZ * offsetZ);
         this.xPower = (offsetX / length) * 0.2D;
         this.yPower = (offsetY / length) * 0.2D;
@@ -57,85 +48,114 @@ public class OrbPulseEntity extends SmallFireball {
     }
 
     // -----------------------------------------------------------------------
-    // Hit handling
+    // Suppress inherited fireball behaviour
     // -----------------------------------------------------------------------
 
     /**
-     * Direct entity hit — apply splash effect centred on the struck entity.
+     * AbstractHurtingProjectile.tick() calls shouldBurn() and, if true,
+     * sets the entity on fire for 1 second every tick — producing the flame
+     * visual. Returning false here cleanly suppresses that.
      */
     @Override
-    protected void onHitEntity(EntityHitResult result) {
-        // Do NOT call super — SmallFireball.onHitEntity sets fire and deals
-        // damage, which we absolutely do not want for the Pulse.
-        if (!this.level().isClientSide) {
-            applySplashEffect(result.getLocation());
-        }
+    protected boolean shouldBurn() {
+        return false;
     }
 
     /**
-     * Block hit — apply splash effect centred on the impact point.
+     * AbstractHurtingProjectile.tick() spawns one particle per tick using
+     * getTrailParticle(). By default this returns ParticleTypes.SMOKE.
+     * Returning our custom ORB_SPARKLE here replaces the smoke trail with
+     * the pink-white sparkle — no smoke, no fire, just sparks.
      */
     @Override
-    protected void onHitBlock(BlockHitResult result) {
+    protected @NotNull ParticleOptions getTrailParticle() {
+        return CoralineParticles.ORB_SPARKLE.get();
+    }
+
+    // -----------------------------------------------------------------------
+    // Hit handling
+    // -----------------------------------------------------------------------
+
+    @Override
+    protected void onHitEntity(@NotNull EntityHitResult result) {
+        // Do NOT call super — SmallFireball.onHitEntity sets fire and deals damage.
+        if (!this.level().isClientSide) {
+            applySplashEffect(result.getLocation());
+            spawnImpactParticles(result.getLocation());
+        }
+    }
+
+    @Override
+    protected void onHitBlock(@NotNull BlockHitResult result) {
         // Do NOT call super — SmallFireball.onHitBlock places fire blocks.
         if (!this.level().isClientSide) {
             applySplashEffect(result.getLocation());
+            spawnImpactParticles(result.getLocation());
         }
     }
 
-    /**
-     * Called for any hit type. Discards the projectile after impact,
-     * matching SmallFireball's own onHit behaviour.
-     */
     @Override
-    protected void onHit(HitResult result) {
-        super.onHit(result); // Routes to onHitEntity / onHitBlock above.
+    protected void onHit(@NotNull HitResult result) {
+        super.onHit(result);
         if (!this.level().isClientSide) {
             this.discard();
         }
     }
 
-    /**
-     * Scans a 2-block AABB around the impact point and applies Haphazard
-     * to every Player found within range.
-     */
-    private void applySplashEffect(net.minecraft.world.phys.Vec3 impactPos) {
+    private void applySplashEffect(Vec3 impactPos) {
         AABB splashBox = new AABB(
                 impactPos.x - SPLASH_RADIUS, impactPos.y - SPLASH_RADIUS, impactPos.z - SPLASH_RADIUS,
                 impactPos.x + SPLASH_RADIUS, impactPos.y + SPLASH_RADIUS, impactPos.z + SPLASH_RADIUS
         );
 
         List<Player> nearbyPlayers = this.level().getEntitiesOfClass(Player.class, splashBox);
-
         for (Player player : nearbyPlayers) {
-            // Only apply if this player is actually within the sphere (AABB is a rough
-            // over-approximation — distanceTo gives us the precise circle check).
-            if (player.distanceToSqr(impactPos.x, impactPos.y, impactPos.z)
-                    <= SPLASH_RADIUS * SPLASH_RADIUS) {
+            if (player.distanceToSqr(impactPos.x, impactPos.y, impactPos.z) <= SPLASH_RADIUS * SPLASH_RADIUS) {
                 player.addEffect(new MobEffectInstance(
                         CoralineEffects.HAPHAZARD.get(),
                         HAPHAZARD_DURATION_TICKS,
-                        0,       // amplifier 0 — we only need one tier
-                        false,   // not ambient (no reduced particles)
-                        true     // visible particles
+                        0,
+                        false,
+                        true
                 ));
             }
         }
     }
 
+    private void spawnImpactParticles(Vec3 pos) {
+        net.minecraft.server.level.ServerLevel serverLevel =
+                (net.minecraft.server.level.ServerLevel) this.level();
+
+        // Outward burst of custom sparkles
+        serverLevel.sendParticles(
+                CoralineParticles.ORB_SPARKLE.get(),
+                pos.x, pos.y, pos.z,
+                30,
+                0.6D, 0.6D, 0.6D,
+                0.15D
+        );
+
+        // Secondary smoke puff for impact weight
+        serverLevel.sendParticles(
+                ParticleTypes.CLOUD,
+                pos.x, pos.y, pos.z,
+                16,
+                0.3D, 0.3D, 0.3D,
+                0.05D
+        );
+    }
+
     // -----------------------------------------------------------------------
-    // Safety overrides (matching SmallFireball)
+    // Safety overrides
     // -----------------------------------------------------------------------
 
-    /** The Pulse cannot be deflected by hitting it. */
     @Override
     public boolean isPickable() {
         return false;
     }
 
-    /** The Pulse takes no damage and cannot be reflected. */
     @Override
-    public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
+    public boolean hurt(net.minecraft.world.damagesource.@NotNull DamageSource source, float amount) {
         return false;
     }
 }
