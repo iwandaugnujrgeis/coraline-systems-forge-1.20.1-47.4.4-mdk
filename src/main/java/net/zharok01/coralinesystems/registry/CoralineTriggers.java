@@ -18,6 +18,7 @@ public class CoralineTriggers {
     public static final CoralineAdvancementTrigger ZIPLINE = new CoralineAdvancementTrigger(new ResourceLocation(CoralineSystems.MOD_ID, "zipline"));
     public static final CoralineAdvancementTrigger FLY_PIG = new CoralineAdvancementTrigger(new ResourceLocation(CoralineSystems.MOD_ID, "fly_pig"));
     public static final CoralineAdvancementTrigger OPEN_INVENTORY = new CoralineAdvancementTrigger(new ResourceLocation(CoralineSystems.MOD_ID, "open_inventory"));
+    public static final CoralineAdvancementTrigger HARVEST_COMPOST = new CoralineAdvancementTrigger(new ResourceLocation(CoralineSystems.MOD_ID, "harvest_compost"));
 
     // Complex triggers
     public static final FullSacksTrigger FULL_SACKS = new FullSacksTrigger();
@@ -40,6 +41,7 @@ public class CoralineTriggers {
         CriteriaTriggers.register(ZIPLINE);
         CriteriaTriggers.register(FLY_PIG);
         CriteriaTriggers.register(OPEN_INVENTORY);
+        CriteriaTriggers.register(HARVEST_COMPOST);
 
         // Complex triggers
         CriteriaTriggers.register(FULL_SACKS);
