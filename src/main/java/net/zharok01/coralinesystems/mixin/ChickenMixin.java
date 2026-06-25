@@ -1,5 +1,5 @@
 // Postponing this for now! Will take this up after vacation!
-package net.zharok01.coralinesystems.mixin.husbandry;
+package net.zharok01.coralinesystems.mixin;
 
 import net.minecraft.world.entity.ai.goal.BreedGoal;
 import net.minecraft.world.entity.ai.goal.Goal;

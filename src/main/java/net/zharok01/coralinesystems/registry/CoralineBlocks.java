@@ -133,6 +133,30 @@ public class CoralineBlocks {
 					.sound(SoundType.METAL))
 	);
 
+	public static final RegistryObject<Block> ORGANIC_COMPOST = register("organic_compost",
+			() -> new OrganicCompostBlock(
+					BlockBehaviour.Properties.copy(Blocks.DIRT)
+							.randomTicks()
+							.strength(0.6F)
+							.sound(SoundType.GRAVEL)
+			)
+	);
+
+	public static final RegistryObject<Block> COMPOST_FARMLAND = register("organic_compost_farmland",
+			() -> new CompostFarmlandBlock(
+					BlockBehaviour.Properties.copy(Blocks.FARMLAND)
+							.randomTicks()
+			)
+	);
+
+	public static final RegistryObject<Block> BASKET = register("basket",
+			() -> new BasketBlock(
+					BlockBehaviour.Properties.of()
+							.strength(1.5F)
+							.sound(SoundType.WOOD)
+			)
+	);
+
 	//---
 
 	private static <T extends Block> RegistryObject<T> register(String name, Supplier<T> supplier) {

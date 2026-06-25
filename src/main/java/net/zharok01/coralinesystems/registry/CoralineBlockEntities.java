@@ -6,6 +6,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.zharok01.coralinesystems.CoralineSystems;
+import net.zharok01.coralinesystems.block.BasketBlockEntity;
 import net.zharok01.coralinesystems.block.VibrationSensorBlockEntity;
 
 public class CoralineBlockEntities {
@@ -21,6 +22,13 @@ public class CoralineBlockEntities {
             BLOCK_ENTITIES.register("vibration_sensor", () ->
                     BlockEntityType.Builder.of(VibrationSensorBlockEntity::new,
                             CoralineBlocks.VIBRATION_SENSOR.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<BasketBlockEntity>> BASKET =
+            BLOCK_ENTITIES.register("basket", () ->
+                    BlockEntityType.Builder.of(
+                            BasketBlockEntity::new,
+                            CoralineBlocks.BASKET.get()   // the single block this BE is valid for
+                    ).build(null));
 
     public static void register(IEventBus eventBus) {
         BLOCK_ENTITIES.register(eventBus);
