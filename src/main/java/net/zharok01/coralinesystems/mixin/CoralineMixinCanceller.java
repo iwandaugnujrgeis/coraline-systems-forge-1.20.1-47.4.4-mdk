@@ -10,6 +10,8 @@ public class CoralineMixinCanceller implements MixinCanceller {
     public boolean shouldCancel(List<String> targetClassNames, String mixinClassName) {
         return switch (mixinClassName) {
             case "com.ordana.spelunkery.mixins.MineshaftMixin",
+                 "me.jellysquid.mods.sodium.mixin.features.gui.hooks.settings.OptionsScreenMixin",
+                 "org.arbor.extrasounds.mixin.gui.SoundSettingsMixin",
                  "net.mehvahdjukaar.supplementaries.mixins.StrongholdRoomSconceMixin",
                  "net.mehvahdjukaar.supplementaries.mixins.StrongholdCrossingSconceMixin",
                  "com.teamabnormals.caverns_and_chasms.core.mixin.entity.CreeperMixin",
