@@ -25,11 +25,8 @@ public abstract class GiantStompMixin {
 
     @Inject(method = "aiStep", at = @At("HEAD"))
     private void onAiStep(CallbackInfo ci) {
-        if (
-                !(
-                        (Object) this instanceof Giant giant
-                )
-        ) return;
+        LivingEntity entity = (LivingEntity) (Object) this;
+        if (!(entity instanceof Giant giant)) return;
 
         if (giant.level().isClientSide()) return;
 
@@ -45,7 +42,7 @@ public abstract class GiantStompMixin {
             if (distance < 100.0D) {
                 giant.setDeltaMovement(giant.getDeltaMovement().add(0, 1.2D, 0));
                 this.coraline_systems$isJumping = true;
-                this.coraline_systems$stompCooldown = 160;
+                this.coraline_systems$stompCooldown = 80;
             }
         }
 
@@ -73,9 +70,9 @@ public abstract class GiantStompMixin {
         AABB area = giant.getBoundingBox().inflate(8.0D, 4.0D, 8.0D);
         List<LivingEntity> entities = giant.level().getEntitiesOfClass(LivingEntity.class, area, e -> e != giant && e.isAlive());
 
-        for (LivingEntity entity : entities) {
-            double dx = entity.getX() - giant.getX();
-            double dz = entity.getZ() - giant.getZ();
+        for (LivingEntity targetEntity : entities) {
+            double dx = targetEntity.getX() - giant.getX();
+            double dz = targetEntity.getZ() - giant.getZ();
             double distance = Math.sqrt(dx * dx + dz * dz);
 
             if (distance > 0) {
@@ -86,9 +83,10 @@ public abstract class GiantStompMixin {
             double knockbackStrength = 2.5D * (1.0D - (distance / 12.0D));
 
             if (knockbackStrength > 0) {
-                entity.setDeltaMovement(entity.getDeltaMovement().add(dx * knockbackStrength, 0.9D, dz * knockbackStrength));
-                entity.hurt(giant.damageSources().mobAttack(giant), 6.0F);
-                entity.hurtMarked = true;
+                targetEntity.setDeltaMovement(targetEntity.getDeltaMovement().add(dx * knockbackStrength, 0.9D, dz * knockbackStrength));
+
+                targetEntity.hurt(giant.damageSources().mobAttack(giant), 5.0F);
+                targetEntity.hurtMarked = true;
             }
         }
     }
