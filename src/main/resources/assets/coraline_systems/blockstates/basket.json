@@ -1,0 +1,30 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "coraline_systems:block/basket",
+      "x": 180
+    },
+    "facing=east": {
+      "model": "coraline_systems:block/basket",
+      "x": 90,
+      "y": 90
+    },
+    "facing=north": {
+      "model": "coraline_systems:block/basket",
+      "x": 90
+    },
+    "facing=south": {
+      "model": "coraline_systems:block/basket",
+      "x": 90,
+      "y": 180
+    },
+    "facing=up": {
+      "model": "coraline_systems:block/basket"
+    },
+    "facing=west": {
+      "model": "coraline_systems:block/basket",
+      "x": 90,
+      "y": 270
+    }
+  }
+}

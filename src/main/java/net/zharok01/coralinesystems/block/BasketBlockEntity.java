@@ -13,6 +13,8 @@ import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
@@ -20,44 +22,25 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
-import net.zharok01.coralinesystems.block.BasketBlock;
-import net.zharok01.coralinesystems.inventory.BasketMenu;
 import net.zharok01.coralinesystems.registry.CoralineBlockEntities;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-/**
- * Block entity for {@link BasketBlock}.
- *
- * <p>Ported from Farmer's Delight with one key change:
- * the inventory is <strong>9 slots</strong> (one row) instead of 27 (three rows),
- * and the container menu is {@link BasketMenu} instead of {@code ChestMenu.threeRows}.</p>
- */
-public class BasketBlockEntity extends RandomizableContainerBlockEntity implements Basket {
-
-    /** Inventory size: a single row of 9 slots. */
-    private static final int INVENTORY_SIZE = 9;
-
-    private NonNullList<ItemStack> items = NonNullList.withSize(INVENTORY_SIZE, ItemStack.EMPTY);
+public class BasketBlockEntity extends RandomizableContainerBlockEntity implements Basket
+{
+    private NonNullList<ItemStack> items = NonNullList.withSize(27, ItemStack.EMPTY);
     private int transferCooldown = -1;
-
-    // -------------------------------------------------------------------------
-    // Constructor
-    // -------------------------------------------------------------------------
 
     public BasketBlockEntity(BlockPos pos, BlockState state) {
         super(CoralineBlockEntities.BASKET.get(), pos, state);
     }
 
-    // -------------------------------------------------------------------------
-    // Serialisation
-    // -------------------------------------------------------------------------
-
     @Override
-    public void load(CompoundTag compound) {
+    public void load(@NotNull CompoundTag compound) {
         super.load(compound);
         this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
         if (!this.tryLoadLootTable(compound)) {
@@ -67,17 +50,14 @@ public class BasketBlockEntity extends RandomizableContainerBlockEntity implemen
     }
 
     @Override
-    public void saveAdditional(CompoundTag compound) {
+    public void saveAdditional(@NotNull CompoundTag compound) {
         super.saveAdditional(compound);
         if (!this.trySaveLootTable(compound)) {
             ContainerHelper.saveAllItems(compound, this.items);
         }
+
         compound.putInt("TransferCooldown", this.transferCooldown);
     }
-
-    // -------------------------------------------------------------------------
-    // Container contract
-    // -------------------------------------------------------------------------
 
     @Override
     public int getContainerSize() {
@@ -85,13 +65,13 @@ public class BasketBlockEntity extends RandomizableContainerBlockEntity implemen
     }
 
     @Override
-    public ItemStack removeItem(int index, int count) {
+    public @NotNull ItemStack removeItem(int index, int count) {
         this.unpackLootTable(null);
         return ContainerHelper.removeItem(this.getItems(), index, count);
     }
 
     @Override
-    public void setItem(int index, ItemStack stack) {
+    public void setItem(int index, @NotNull ItemStack stack) {
         this.unpackLootTable(null);
         this.getItems().set(index, stack);
         if (stack.getCount() > this.getMaxStackSize()) {
@@ -100,147 +80,104 @@ public class BasketBlockEntity extends RandomizableContainerBlockEntity implemen
     }
 
     @Override
-    protected NonNullList<ItemStack> getItems() {
-        return this.items;
-    }
-
-    @Override
-    protected void setItems(NonNullList<ItemStack> items) {
-        this.items = items;
-    }
-
-    // -------------------------------------------------------------------------
-    // Display name
-    // -------------------------------------------------------------------------
-
-    @Override
-    protected Component getDefaultName() {
+    protected @NotNull Component getDefaultName() {
         return Component.translatable("container.coraline_systems.basket");
     }
 
-    // -------------------------------------------------------------------------
-    // Menu creation — uses BasketMenu (9-slot, HopperMenu-style)
-    // -------------------------------------------------------------------------
-
-    @Override
-    protected AbstractContainerMenu createMenu(int id, Inventory playerInventory) {
-        return new BasketMenu(id, playerInventory, this);
-    }
-
-    // -------------------------------------------------------------------------
-    // Basket interface — world-position accessors
-    // -------------------------------------------------------------------------
-
-    @Override
-    public double getLevelX() {
-        return this.worldPosition.getX() + 0.5D;
-    }
-
-    @Override
-    public double getLevelY() {
-        return this.worldPosition.getY() + 0.5D;
-    }
-
-    @Override
-    public double getLevelZ() {
-        return this.worldPosition.getZ() + 0.5D;
-    }
-
-    // -------------------------------------------------------------------------
-    // Item capture helpers (unchanged from FD)
-    // -------------------------------------------------------------------------
-
     public static boolean pullItems(Level level, Basket basket, int facingIndex) {
-        for (ItemEntity itemEntity : getCaptureItems(level, basket, facingIndex)) {
-            if (captureItem(basket, itemEntity)) {
+        for (ItemEntity itementity : getCaptureItems(level, basket, facingIndex)) {
+            if (captureItem(basket, itementity)) {
                 return true;
             }
         }
         return false;
     }
 
-    public static List<ItemEntity> getCaptureItems(Level level, Basket basket, int facingIndex) {
-        return basket.getFacingCollectionArea(facingIndex).toAabbs().stream()
-                .flatMap(aabb -> level.getEntitiesOfClass(
-                        ItemEntity.class,
-                        aabb.move(basket.getLevelX() - 0.5D,
-                                basket.getLevelY() - 0.5D,
-                                basket.getLevelZ() - 0.5D),
-                        EntitySelector.ENTITY_STILL_ALIVE).stream())
-                .collect(Collectors.toList());
-    }
-
-    public static boolean captureItem(Container inventory, ItemEntity itemEntity) {
-        ItemStack entityStack = itemEntity.getItem().copy();
-        ItemStack remainder = putStackInInventoryAllSlots(inventory, entityStack);
-        if (remainder.isEmpty()) {
-            itemEntity.discard();
-            return true;
-        } else {
-            itemEntity.setItem(remainder);
-            return false;
-        }
-    }
-
     public static ItemStack putStackInInventoryAllSlots(Container destination, ItemStack stack) {
-        int size = destination.getContainerSize();
-        for (int i = 0; i < size && !stack.isEmpty(); i++) {
-            stack = insertStack(destination, stack, i);
+        int i = destination.getContainerSize();
+
+        for (int j = 0; j < i && !stack.isEmpty(); ++j) {
+            stack = insertStack(destination, stack, j);
         }
+
         return stack;
+    }
+
+    private static boolean canInsertItemInSlot(Container inventoryIn, ItemStack stack, int index, @Nullable Direction side) {
+        if (!inventoryIn.canPlaceItem(index, stack)) return false;
+        return !(inventoryIn instanceof WorldlyContainer) || ((WorldlyContainer) inventoryIn).canPlaceItemThroughFace(index, stack, side);
+    }
+
+    private static boolean canCombine(ItemStack stack1, ItemStack stack2) {
+        return stack1.getCount() <= stack1.getMaxStackSize() && ItemStack.isSameItemSameTags(stack1, stack2);
     }
 
     private static ItemStack insertStack(Container destination, ItemStack stack, int index) {
-        ItemStack existing = destination.getItem(index);
-
-        if (!canInsertItemInSlot(destination, stack, index, null)) {
-            return stack;
-        }
-
-        boolean changed = false;
-        boolean wasEmpty = destination.isEmpty();
-
-        if (existing.isEmpty()) {
-            destination.setItem(index, stack);
-            stack = ItemStack.EMPTY;
-            changed = true;
-        } else if (canCombine(existing, stack)) {
-            int space = stack.getMaxStackSize() - existing.getCount();
-            int transfer = Math.min(stack.getCount(), space);
-            stack.shrink(transfer);
-            existing.grow(transfer);
-            changed = transfer > 0;
-        }
-
-        if (changed) {
-            if (wasEmpty && destination instanceof BasketBlockEntity basketEntity) {
-                if (!basketEntity.mayTransfer()) {
-                    basketEntity.setTransferCooldown(8);
-                }
+        ItemStack itemstack = destination.getItem(index);
+        if (canInsertItemInSlot(destination, stack, index, null)) {
+            boolean flag = false;
+            boolean isDestinationEmpty = destination.isEmpty();
+            if (itemstack.isEmpty()) {
+                destination.setItem(index, stack);
+                stack = ItemStack.EMPTY;
+                flag = true;
+            } else if (canCombine(itemstack, stack)) {
+                int i = stack.getMaxStackSize() - itemstack.getCount();
+                int j = Math.min(stack.getCount(), i);
+                stack.shrink(j);
+                itemstack.grow(j);
+                flag = j > 0;
             }
-            destination.setChanged();
+
+            if (flag) {
+                if (isDestinationEmpty && destination instanceof BasketBlockEntity) {
+                    BasketBlockEntity firstBasket = (BasketBlockEntity) destination;
+                    if (!firstBasket.mayTransfer()) {
+                        int k = 0;
+
+                        firstBasket.setTransferCooldown(8 - k);
+                    }
+                }
+
+                destination.setChanged();
+            }
         }
 
         return stack;
     }
 
-    private static boolean canInsertItemInSlot(Container inventory, ItemStack stack,
-                                               int index, @Nullable Direction side) {
-        if (!inventory.canPlaceItem(index, stack)) {
-            return false;
+    public static boolean captureItem(Container inventory, ItemEntity itemEntity) {
+        boolean flag = false;
+        ItemStack entityItemStack = itemEntity.getItem().copy();
+        ItemStack remainderStack = putStackInInventoryAllSlots(inventory, entityItemStack);
+        if (remainderStack.isEmpty()) {
+            flag = true;
+            itemEntity.discard();
+        } else {
+            itemEntity.setItem(remainderStack);
         }
-        return !(inventory instanceof WorldlyContainer worldly)
-                || worldly.canPlaceItemThroughFace(index, stack, side);
+
+        return flag;
     }
 
-    private static boolean canCombine(ItemStack existing, ItemStack incoming) {
-        return existing.getCount() < existing.getMaxStackSize()
-                && ItemStack.isSameItemSameTags(existing, incoming);
+    public static List<ItemEntity> getCaptureItems(Level level, Basket basket, int facingIndex) {
+        return basket.getFacingCollectionArea(facingIndex).toAabbs().stream().flatMap((aabb) -> level.getEntitiesOfClass(ItemEntity.class, aabb.move(basket.getLevelX() - 0.5D, basket.getLevelY() - 0.5D, basket.getLevelZ() - 0.5D), EntitySelector.ENTITY_STILL_ALIVE).stream()).collect(Collectors.toList());
     }
 
-    // -------------------------------------------------------------------------
-    // Transfer cooldown
-    // -------------------------------------------------------------------------
+    @Override
+    protected @NotNull NonNullList<ItemStack> getItems() {
+        return this.items;
+    }
+
+    @Override
+    protected void setItems(@NotNull NonNullList<ItemStack> itemsIn) {
+        this.items = itemsIn;
+    }
+
+    @Override
+    protected @NotNull AbstractContainerMenu createMenu(int id, @NotNull Inventory player) {
+        return new ChestMenu(MenuType.GENERIC_9x1, id, player, this, 1);
+    }
 
     public void setTransferCooldown(int ticks) {
         this.transferCooldown = ticks;
@@ -254,55 +191,59 @@ public class BasketBlockEntity extends RandomizableContainerBlockEntity implemen
         return this.transferCooldown > 8;
     }
 
-    // -------------------------------------------------------------------------
-    // Hopper-style tick logic
-    // -------------------------------------------------------------------------
+    private void updateHopper(Supplier<Boolean> supplier) {
+        if (this.level != null && !this.level.isClientSide) {
+            if (!this.isOnTransferCooldown() && this.getBlockState().getValue(BlockStateProperties.ENABLED)) {
+                boolean flag = false;
+                if (!this.isFull()) {
+                    flag = supplier.get();
+                }
+
+                if (flag) {
+                    this.setTransferCooldown(8);
+                    this.setChanged();
+                }
+            }
+        }
+    }
 
     private boolean isFull() {
-        for (ItemStack stack : this.items) {
-            if (stack.isEmpty() || stack.getCount() != stack.getMaxStackSize()) {
+        for (ItemStack itemstack : this.items) {
+            if (itemstack.isEmpty() || itemstack.getCount() != itemstack.getMaxStackSize()) {
                 return false;
             }
         }
+
         return true;
     }
 
-    private void updateHopper(Supplier<Boolean> supplier) {
-        if (this.level == null || this.level.isClientSide) {
-            return;
-        }
-        if (!this.isOnTransferCooldown() && this.getBlockState().getValue(BlockStateProperties.ENABLED)) {
-            boolean pulled = false;
-            if (!this.isFull()) {
-                pulled = supplier.get();
-            }
-            if (pulled) {
-                this.setTransferCooldown(8);
-                this.setChanged();
-            }
-        }
-    }
-
     public void onEntityCollision(Entity entity) {
-        if (entity instanceof ItemEntity itemEntity) {
-            BlockPos pos = this.getBlockPos();
+        if (entity instanceof ItemEntity) {
+            BlockPos blockpos = this.getBlockPos();
             int facing = this.getBlockState().getValue(BasketBlock.FACING).get3DDataValue();
-            if (Shapes.joinIsNotEmpty(
-                    Shapes.create(entity.getBoundingBox().move(-pos.getX(), -pos.getY(), -pos.getZ())),
-                    this.getFacingCollectionArea(facing),
-                    BooleanOp.AND)) {
-                this.updateHopper(() -> captureItem(this, itemEntity));
+            if (Shapes.joinIsNotEmpty(Shapes.create(entity.getBoundingBox().move(-blockpos.getX(), -blockpos.getY(), -blockpos.getZ())), this.getFacingCollectionArea(facing), BooleanOp.AND)) {
+                this.updateHopper(() -> captureItem(this, (ItemEntity) entity));
             }
         }
     }
 
-    /**
-     * Static ticker method — registered via
-     * {@link BasketBlock#getTicker}.
-     */
-    public static void pushItemsTick(Level level, BlockPos pos, BlockState state,
-                                     BasketBlockEntity blockEntity) {
-        blockEntity.transferCooldown--;
+    @Override
+    public double getLevelX() {
+        return (double) this.worldPosition.getX() + 0.5D;
+    }
+
+    @Override
+    public double getLevelY() {
+        return (double) this.worldPosition.getY() + 0.5D;
+    }
+
+    @Override
+    public double getLevelZ() {
+        return (double) this.worldPosition.getZ() + 0.5D;
+    }
+
+    public static void pushItemsTick(Level level, BlockPos pos, BlockState state, BasketBlockEntity blockEntity) {
+        --blockEntity.transferCooldown;
         if (!blockEntity.isOnTransferCooldown()) {
             blockEntity.setTransferCooldown(0);
             int facing = state.getValue(BasketBlock.FACING).get3DDataValue();
