@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/template_farmland",
+  "textures": {
+    "dirt": "coraline_systems:block/organic_compost",
+    "top": "coraline_systems:block/organic_compost_farmland"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "coraline_systems:block/organic_compost"
+      }
+    ]
+  }
+}
