@@ -12,7 +12,7 @@ import net.zharok01.coralinesystems.registry.CoralineEffects;
 /**
  * Listens to MovementInputUpdateEvent on the FORGE bus (client-only dist).
  *
- * This fires from ForgeHooksClient.onMovementInputUpdate(), which is called
+ * This fires from ForgeHooksClientMixin.onMovementInputUpdate(), which is called
  * inside LocalPlayer.aiStep() immediately after input.tick() — meaning the
  * Input object is already populated with this tick's raw WASD values.
  * We simply negate forward and strafe impulses when the local player has Haphazard.
