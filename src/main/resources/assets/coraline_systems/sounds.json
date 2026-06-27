@@ -389,5 +389,19 @@
       }
     ],
     "subtitle": "coraline_systems.sound.subtitle.orb_death"
+  },
+  "pet_teleport": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 0.8
+      },
+      {
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 0.9
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.pet_teleport"
   }
 }
