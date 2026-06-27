@@ -2,6 +2,7 @@ package net.zharok01.coralinesystems.block;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -12,29 +13,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.zharok01.coralinesystems.event.ServerEventListener;
 import net.zharok01.coralinesystems.item.OrbItem;
 import net.zharok01.coralinesystems.registry.CoralineBlockEntities;
-import org.jetbrains.annotations.NotNull;
 
-/**
- * BlockEntity for the Centrifuge block.
- *
- * Interaction contract:
- *   - Player right-clicks holding an {@link OrbItem}.
- *   - If no session is active, the Orb is consumed and a session starts.
- *   - If a session is already active, the interaction is silently ignored.
- */
 public class CentrifugeBlockEntity extends BlockEntity {
 
     public CentrifugeBlockEntity(BlockPos pos, BlockState state) {
         super(CoralineBlockEntities.CENTRIFUGE.get(), pos, state);
     }
 
-    /**
-     * Called from {@link net.zharok01.coralinesystems.block.CentrifugeBlock#use}.
-     *
-     * @param player the player who right-clicked
-     * @param hand   the hand used
-     * @return true if the interaction was handled (Orb consumed, session started)
-     */
     public boolean tryActivate(Player player, InteractionHand hand) {
         if (level == null || level.isClientSide()) {
             return false;
@@ -45,7 +30,6 @@ public class CentrifugeBlockEntity extends BlockEntity {
             return false;
         }
 
-        // Refuse silently if already running.
         if (manager.isActive()) {
             return false;
         }
@@ -55,15 +39,19 @@ public class CentrifugeBlockEntity extends BlockEntity {
             return false;
         }
 
-        // Consume exactly one Orb.
         heldStack.shrink(1);
 
-        // Start the session.
-        manager.startSession();
+        // Pass our own pos so the manager can flip blockstate and
+        // spawn stop effects at the right location.
+        boolean started = manager.startSession((ServerLevel) level, worldPosition);
+        if (!started) {
+            return false;
+        }
 
-        // Placeholder activation sound — swap for your custom SoundEvent later.
+        // Activation sound — one-shot, plays immediately on insertion.
+        // Swap SoundEvents.BEACON_ACTIVATE for your custom SoundEvent later.
         level.playSound(
-                null,                          // null = play for all nearby players
+                null,
                 worldPosition,
                 SoundEvents.BEACON_ACTIVATE,
                 SoundSource.BLOCKS,
@@ -71,18 +59,27 @@ public class CentrifugeBlockEntity extends BlockEntity {
                 1.0f
         );
 
+        // Activation particle burst — FLASH gives a sharp "ignition" pop.
+        ((ServerLevel) level).sendParticles(
+                net.minecraft.core.particles.ParticleTypes.FLASH,
+                worldPosition.getX() + 0.5,
+                worldPosition.getY() + 1.0,
+                worldPosition.getZ() + 0.5,
+                1,       // FLASH looks best as a single instance
+                0.0, 0.0, 0.0,
+                0.0
+        );
+
         return true;
     }
 
-    // ── NBT (nothing to persist for now, skeleton for later) ──────────────
-
     @Override
-    public void load(@NotNull CompoundTag tag) {
+    public void load(CompoundTag tag) {
         super.load(tag);
     }
 
     @Override
-    protected void saveAdditional(@NotNull CompoundTag tag) {
+    protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
     }
 }

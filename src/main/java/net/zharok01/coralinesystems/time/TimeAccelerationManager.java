@@ -1,32 +1,46 @@
 package net.zharok01.coralinesystems.time;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.block.state.BlockState;
+import net.zharok01.coralinesystems.block.CentrifugeBlock;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Server-side singleton that drives the active {@link TimeAccelerationSession}.
- *
- * Lifecycle:
- *   - Created and stored on world load (see ServerEventListener).
- *   - {@link #tick(ServerLevel)} is called every server tick at LOWEST priority.
- *   - {@link #startSession()} is called by CentrifugeBlockEntity on Orb insertion.
- */
 public class TimeAccelerationManager {
 
     @Nullable
     private TimeAccelerationSession activeSession = null;
 
+    /** Position of the Centrifuge that started the current session. */
+    @Nullable
+    private BlockPos sessionSource = null;
+
     /**
-     * Starts a new acceleration session. Does nothing if one is already running.
-     * @return true if a new session was started, false if one was already active
+     * Starts a new acceleration session originating from {@code sourcePos}.
+     * Does nothing if a session is already running.
+     *
+     * @param level     the overworld ServerLevel
+     * @param sourcePos the BlockPos of the Centrifuge that triggered activation
+     * @return true if a new session was started
      */
-    public boolean startSession() {
+    public boolean startSession(ServerLevel level, BlockPos sourcePos) {
         if (activeSession != null) {
             return false;
         }
+
         activeSession = new TimeAccelerationSession();
+        // Store an immutable copy — BlockPos is mutable in some contexts.
+        sessionSource = sourcePos.immutable();
+
+        // Flip the blockstate to activated.
+        setActivatedState(level, sessionSource, true);
+
         return true;
     }
 
@@ -37,12 +51,6 @@ public class TimeAccelerationManager {
 
     /**
      * Called once per server tick for the overworld.
-     *
-     * Advances time by the session's extra ticks (on top of vanilla's own +1),
-     * then broadcasts the updated time to all players so their skies update
-     * every tick instead of once per second.
-     *
-     * @param level the overworld ServerLevel
      */
     public void tick(ServerLevel level) {
         if (activeSession == null) {
@@ -51,35 +59,82 @@ public class TimeAccelerationManager {
 
         double speed = activeSession.getCurrentSpeed();
 
-        // Vanilla unconditionally adds 1 per tick; we add (speed - 1) on top.
-        // Net result: dayTime advances by `speed` ticks this server tick.
         long extraTicks = (long) (speed - 1.0);
         if (extraTicks > 0) {
             level.setDayTime(level.getDayTime() + extraTicks);
         }
 
-        // Broadcast updated time to every player observing this level so the
-        // client sky moves smoothly instead of updating once per second.
         broadcastTime(level);
 
         boolean stillRunning = activeSession.tick();
         if (!stillRunning) {
-            activeSession = null;
+            onSessionEnd(level);
         }
     }
 
     /**
-     * Sends a {@link ClientboundSetTimePacket} to every player currently in
-     * {@code level} or in any level that derives its time from {@code level}
-     * (e.g. the Nether and End share the overworld's daylight rule).
+     * Cleans up after a session expires: resets blockstate, plays stop sound,
+     * and bursts particles at the Centrifuge's position.
      */
+    private void onSessionEnd(ServerLevel level) {
+        if (sessionSource != null) {
+            // Reset blockstate to idle.
+            setActivatedState(level, sessionSource, false);
+
+            double cx = sessionSource.getX() + 0.5;
+            double cy = sessionSource.getY() + 1.0;
+            double cz = sessionSource.getZ() + 0.5;
+
+            // Stop sound — swap for your custom SoundEvent later.
+            level.playSound(
+                    null,
+                    sessionSource,
+                    SoundEvents.BEACON_DEACTIVATE,
+                    SoundSource.BLOCKS,
+                    1.0f,
+                    1.0f
+            );
+
+            // Burst of PORTAL particles on stop — a sharp "shutting down" visual.
+            level.sendParticles(
+                    ParticleTypes.PORTAL,
+                    cx, cy, cz,
+                    60,          // particle count
+                    0.4, 0.4, 0.4,  // spread
+                    0.1          // speed
+            );
+
+            // A few REVERSE_PORTAL for contrast.
+            level.sendParticles(
+                    ParticleTypes.REVERSE_PORTAL,
+                    cx, cy, cz,
+                    20,
+                    0.3, 0.3, 0.3,
+                    0.05
+            );
+        }
+
+        activeSession = null;
+        sessionSource = null;
+    }
+
+    /**
+     * Sets the {@link CentrifugeBlock#ACTIVATED} blockstate property at
+     * {@code pos}, guarding against the block having been broken mid-session.
+     */
+    private void setActivatedState(ServerLevel level, BlockPos pos, boolean activated) {
+        BlockState current = level.getBlockState(pos);
+        if (current.hasProperty(CentrifugeBlock.ACTIVATED)) {
+            level.setBlock(pos, current.setValue(CentrifugeBlock.ACTIVATED, activated), 3);
+        }
+    }
+
     private void broadcastTime(ServerLevel level) {
         ClientboundSetTimePacket packet = new ClientboundSetTimePacket(
                 level.getGameTime(),
                 level.getDayTime(),
-                level.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_DAYLIGHT)
+                level.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)
         );
-
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
             player.connection.send(packet);
         }
