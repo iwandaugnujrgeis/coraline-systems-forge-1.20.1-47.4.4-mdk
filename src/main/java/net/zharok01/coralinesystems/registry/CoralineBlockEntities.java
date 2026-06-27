@@ -7,6 +7,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.zharok01.coralinesystems.CoralineSystems;
 import net.zharok01.coralinesystems.block.BasketBlockEntity;
+import net.zharok01.coralinesystems.block.CentrifugeBlockEntity;
 import net.zharok01.coralinesystems.block.VibrationSensorBlockEntity;
 
 public class CoralineBlockEntities {
@@ -29,6 +30,14 @@ public class CoralineBlockEntities {
                             BasketBlockEntity::new,
                             CoralineBlocks.BASKET.get()   // the single block this BE is valid for
                     ).build(null));
+
+    public static final RegistryObject<BlockEntityType<CentrifugeBlockEntity>> CENTRIFUGE =
+            BLOCK_ENTITIES.register(
+                    "centrifuge",
+                    () -> BlockEntityType.Builder
+                            .of(CentrifugeBlockEntity::new, CoralineBlocks.CENTRIFUGE.get())
+                            .build(null)
+            );
 
     public static void register(IEventBus eventBus) {
         BLOCK_ENTITIES.register(eventBus);

@@ -157,6 +157,16 @@ public class CoralineBlocks {
 			)
 	);
 
+	public static final RegistryObject<Block> CENTRIFUGE = register("centrifuge",
+			() -> new CentrifugeBlock(
+					BlockBehaviour.Properties.of()
+							.mapColor(MapColor.METAL)
+							.requiresCorrectToolForDrops()
+							.strength(3.5f, 6.0f)
+							.sound(SoundType.METAL)
+			)
+	);
+
 	//---
 
 	private static <T extends Block> RegistryObject<T> register(String name, Supplier<T> supplier) {

@@ -11,6 +11,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.zharok01.coralinesystems.CoralineSystems;
 import net.zharok01.coralinesystems.item.CobaltPants;
+import net.zharok01.coralinesystems.item.OrbItem;
 
 import java.util.function.Supplier;
 
@@ -41,6 +42,11 @@ public class CoralineItems {
 	public static final RegistryObject<Item> COBALT_PANTS = REGISTRY.register("cobalt_pants",
 			() -> new ArmorItem(CobaltPants.COBALT, ArmorItem.Type.LEGGINGS,
 					new Item.Properties()));
+
+	public static final RegistryObject<Item> ORB = REGISTRY.register(
+			"orb",
+			() -> new OrbItem(new Item.Properties().stacksTo(16))
+	);
 
 	private static <T extends Item> RegistryObject<T> register(String name, Supplier<T> supplier) {
 		return REGISTRY.register(name, supplier);
