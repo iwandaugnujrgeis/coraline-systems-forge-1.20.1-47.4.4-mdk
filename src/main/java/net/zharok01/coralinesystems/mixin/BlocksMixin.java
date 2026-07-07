@@ -4,13 +4,37 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.TorchflowerCropBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.zharok01.coralinesystems.mixin.accessors.BlockBehaviourAccessor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Slice;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import net.zharok01.coralinesystems.registry.CoralineSoundTypes;
 
 @Mixin(Blocks.class)
 public class BlocksMixin {
+
+    /**
+     * Intercepts block registration to safely override the sound types of vanilla mushrooms
+     * using a mutable accessor interface.
+     */
+    @Inject(
+            method = "register(Ljava/lang/String;Lnet/minecraft/world/level/block/Block;)Lnet/minecraft/world/level/block/Block;",
+            at = @At("HEAD")
+    )
+    private static void coralineSystems$overrideMushroomSoundTypes(String id, Block block, CallbackInfoReturnable<Block> cir) {
+
+        if ("brown_mushroom".equals(id) || "red_mushroom".equals(id)) {
+            // Duck-casts the block to our mutable accessor to swap out the final soundType field at runtime
+            ((BlockBehaviourAccessor) block).setSoundType(CoralineSoundTypes.MUSHROOM);
+        }
+
+        if ("oak_leaves".equals(id) || "spruce_leaves".equals(id) || "birch_leaves".equals(id) || "jungle_leaves".equals(id) || "acacia_leaves".equals(id) || "dark_oak_leaves".equals(id)) {
+            ((BlockBehaviourAccessor) block).setSoundType(CoralineSoundTypes.LEAVES);
+        }
+    }
 
     /**
      * Injects into the static initializer of Blocks to give the Torchflower block a constant light level of 10.
