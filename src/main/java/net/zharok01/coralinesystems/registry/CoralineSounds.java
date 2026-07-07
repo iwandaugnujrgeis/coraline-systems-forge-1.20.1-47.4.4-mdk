@@ -53,8 +53,22 @@ public class CoralineSounds {
     public static final RegistryObject<SoundEvent> ORB_IDLE = createSoundEvent("orb_idle");
     public static final RegistryObject<SoundEvent> ORB_HURT = createSoundEvent("orb_hurt");
     public static final RegistryObject<SoundEvent> ORB_DEATH = createSoundEvent("orb_death");
+    public static final RegistryObject<SoundEvent> ORB_SPAWN = createSoundEvent("orb_spawn");
+    public static final RegistryObject<SoundEvent> ORB_PULSE_IMPACT = createSoundEvent("orb_pulse_impact");
 
     public static final RegistryObject<SoundEvent> PET_TELEPORT = createSoundEvent("pet_teleport");
+
+    public static final RegistryObject<SoundEvent> MUSHROOM_BREAK = createSoundEvent("mushroom_break");
+    public static final RegistryObject<SoundEvent> MUSHROOM_STEP = createSoundEvent("mushroom_step");
+    public static final RegistryObject<SoundEvent> MUSHROOM_PLACE = createSoundEvent("mushroom_place");
+    public static final RegistryObject<SoundEvent> MUSHROOM_HIT = createSoundEvent("mushroom_hit");
+    public static final RegistryObject<SoundEvent> MUSHROOM_FALL = createSoundEvent("mushroom_fall");
+
+    public static final RegistryObject<SoundEvent> LEAVES_BREAK = createSoundEvent("leaves_break");
+    public static final RegistryObject<SoundEvent> LEAVES_STEP = createSoundEvent("leaves_step");
+    public static final RegistryObject<SoundEvent> LEAVES_PLACE = createSoundEvent("leaves_place");
+    public static final RegistryObject<SoundEvent> LEAVES_HIT = createSoundEvent("leaves_hit");
+    public static final RegistryObject<SoundEvent> LEAVES_FALL = createSoundEvent("leaves_fall");
 
     private static RegistryObject<SoundEvent> createSoundEvent(final String soundName) {
         return SOUND_EVENTS.register(soundName, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(CoralineSystems.MOD_ID, soundName)));
