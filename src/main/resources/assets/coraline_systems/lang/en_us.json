@@ -64,5 +64,11 @@
 	"coraline_systems.sound.subtitle.detector_activated": "Sensor hums",
 	"coraline_systems.sound.subtitle.vibration_sensor_ping": "Sensor pings",
 
-	"coraline_systems.sound.subtitle.pig_eat": "Pig chomps"
+	"coraline_systems.sound.subtitle.pig_eat": "Pig chomps",
+
+	"subtitles.coraline_systems.block.mushroom_break": "Mushroom breaks",
+	"subtitles.coraline_systems.block.mushroom_step": "Mushroom steps",
+	"subtitles.coraline_systems.block.mushroom_place": "Mushroom placed",
+	"subtitles.coraline_systems.block.mushroom_hit": "Mushroom thuds",
+	"subtitles.coraline_systems.block.mushroom_fall": "Mushroom lands"
 }
