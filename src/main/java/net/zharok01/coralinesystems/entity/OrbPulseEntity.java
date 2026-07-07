@@ -2,6 +2,7 @@ package net.zharok01.coralinesystems.entity;
 
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -95,9 +96,17 @@ public class OrbPulseEntity extends SmallFireball {
     }
 
     @Override
-    protected void onHit(@NotNull HitResult result) {
-        super.onHit(result);
+    protected void onHit(@NotNull HitResult hitResult) {
+        super.onHit(hitResult);
+
         if (!this.level().isClientSide) {
+            Vec3 impactPos = hitResult.getLocation();
+
+            // FIXED: Play impact sound strictly at the exact collision coordinates
+            this.level().playSound(null, impactPos.x, impactPos.y, impactPos.z,
+                    CoralineSounds.ORB_PULSE_IMPACT.get(), SoundSource.HOSTILE, 1.0F, 1.0F);
+
+            this.spawnImpactParticles(impactPos);
             this.discard();
         }
     }

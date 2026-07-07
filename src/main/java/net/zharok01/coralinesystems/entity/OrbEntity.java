@@ -8,6 +8,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
@@ -25,7 +26,6 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -44,8 +44,7 @@ public class OrbEntity extends FlyingMob implements Enemy {
 
     /**
      * Whether the Orb has been provoked into hostility. Orbs spawn peaceful and
-     * only become hostile after a Player successfully attacks them (melee), or
-     * after they deflect the Player's first arrow (see {@link #hurt}).
+     * only become hostile after a Player successfully attacks them.
      */
     private static final EntityDataAccessor<Boolean> DATA_IS_HOSTILE =
             SynchedEntityData.defineId(OrbEntity.class, EntityDataSerializers.BOOLEAN);
@@ -82,8 +81,9 @@ public class OrbEntity extends FlyingMob implements Enemy {
         return FlyingMob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 9.0D)
                 .add(Attributes.FOLLOW_RANGE, 20.0D)
-                .add(Attributes.FLYING_SPEED, 0.16D)
-                .add(Attributes.MOVEMENT_SPEED, 0.16D)
+                // Lowered base movement attributes for a much gentler floating pace
+                .add(Attributes.FLYING_SPEED, 0.08D)
+                .add(Attributes.MOVEMENT_SPEED, 0.08D)
                 .add(Attributes.ATTACK_DAMAGE, 4.0D);
     }
 
@@ -95,21 +95,14 @@ public class OrbEntity extends FlyingMob implements Enemy {
     public void tick() {
         super.tick();
 
-        // Only dispatch from the server — ServerLevel.sendParticles() broadcasts
-        // to all watching clients, so we don't need a separate client-side branch.
         if (!this.level().isClientSide && this.tickCount % AMBIENT_PARTICLE_INTERVAL == 0) {
             ServerLevel serverLevel = (ServerLevel) this.level();
-
-            // Sparks drizzle from the Orb's centre mass downward.
-            // Small spread (0.4, 0.2, 0.4) keeps them hugging the body.
-            // Speed 0.01 gives a gentle drift; gravity in OrbSparkleParticle
-            // then pulls them down to produce the "raining" effect.
             serverLevel.sendParticles(
                     CoralineParticles.ORB_SPARKLE.get(),
                     this.getX(),
                     this.getY() + 0.5D,
                     this.getZ(),
-                    2,             // count per burst
+                    2,
                     0.4D, 0.2D, 0.4D,
                     0.01D
             );
@@ -120,9 +113,6 @@ public class OrbEntity extends FlyingMob implements Enemy {
     public void onAddedToWorld() {
         super.onAddedToWorld();
 
-        // firstTick is still true at this point on both sides; guard to server only
-        // so the poof isn't triggered twice (once per side) and particles/sounds are
-        // broadcast to all nearby clients from a single authoritative source.
         if (!this.level().isClientSide) {
             ServerLevel serverLevel = (ServerLevel) this.level();
             serverLevel.sendParticles(
@@ -132,7 +122,9 @@ public class OrbEntity extends FlyingMob implements Enemy {
                     0.3D, 0.3D, 0.3D,
                     0.02D
             );
-            this.playSound(CoralineSounds.ORB_SPAWN.get(), 1.0F, 1.0F);
+            // FIXED: Anchor sound to exact spawn coordinates for all nearby listeners
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                    CoralineSounds.ORB_SPAWN.get(), SoundSource.HOSTILE, 1.0F, 1.0F);
         }
     }
 
@@ -150,57 +142,16 @@ public class OrbEntity extends FlyingMob implements Enemy {
 
     /**
      * Neutral-until-provoked damage handling.
-     * <p>
-     * - First arrow hit while neutral: deflected (no damage), Orb becomes hostile.
-     * - Any other hit while neutral (melee, subsequent arrows once hostile, etc.):
-     *   normal damage applies, and if this is the hit that first breaks neutrality
-     *   the Orb also becomes hostile.
+     * Any hit while neutral immediately provokes the Orb and applies damage normally.
+     * Arrow deflection logic completely stripped out.
      */
     @Override
     public boolean hurt(@NotNull DamageSource damageSource, float amount) {
         if (!this.level().isClientSide && !this.isHostile()) {
-            if (damageSource.getDirectEntity() instanceof AbstractArrow arrow) {
-                //this.deflectArrow(arrow);
-                this.setHostile(true);
-                return false;
-            }
-
-            // Any other damage source (melee, other projectiles) provokes the Orb
-            // but is not deflected - it simply applies as normal damage.
             this.setHostile(true);
         }
-
         return super.hurt(damageSource, amount);
     }
-
-    /**
-     * Called when the Orb's shield deflects the Player's first arrow while neutral.
-     * <p>
-     * We do NOT attempt to redirect the arrow's own trajectory here: {@code AbstractArrow}
-     * already applies its own rejection physics (velocity scaled by -0.1, yaw flipped 180°,
-     * then dropped as a pickup or discarded) immediately after {@link #hurt} returns from
-     * within {@code AbstractArrow#onHitEntity}, and fighting that internal state machine
-     * from the outside is unsafe. Instead we just cancel the damage and layer a shield-flash
-     * particle burst + sound on top, which reads as "the arrow bounced off a barrier."
-     * Cheap: one particle burst, one sound - no per-tick cost.
-     */
-
-    /*
-    private void deflectArrow(AbstractArrow arrow) {
-        if (!(this.level() instanceof ServerLevel serverLevel)) {
-            return;
-        }
-
-        serverLevel.sendParticles(
-                CoralineParticles.ORB_SPARKLE.get(),
-                arrow.getX(), arrow.getY(), arrow.getZ(),
-                16,
-                0.15D, 0.15D, 0.15D,
-                0.08D
-        );
-        this.playSound(CoralineSounds.ORB_DEFLECT.get(), 1.0F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
-    }
-    */
 
     // -----------------------------------------------------------------------
     // Sounds
@@ -250,20 +201,10 @@ public class OrbEntity extends FlyingMob implements Enemy {
                                              BlockPos pos,
                                              RandomSource random) {
         long dayTime = level.getLevel().getDayTime() % 24000;
-        boolean isDawn = dayTime >= 22000 || dayTime <= 1000;
-        return isDawn && level.getDifficulty() != Difficulty.PEACEFUL; // TODO: Make them spawn on Peaceful!
+        boolean isDawn = dayTime >= 22000 || dayTime <= 0;
+        return isDawn && level.getDifficulty() != Difficulty.PEACEFUL;
     }
 
-    /**
-     * Repositions the Orb to float somewhere in a 10-20 block band above the terrain
-     * once vanilla's natural spawner has picked a (ground-level) candidate position.
-     * <p>
-     * {@code NO_RESTRICTIONS} placement (registered in {@code CoralineModEvents}) only
-     * skips the placement-validity check - it does not change which Y-candidates the
-     * natural spawner tries, which are still heightmap-derived and land near the ground.
-     * This hook runs once, server-side, after a valid spot has been chosen and lifts
-     * the Orb up to its proper hovering height.
-     */
     @Override
     public SpawnGroupData finalizeSpawn(
             ServerLevelAccessor level,
@@ -305,7 +246,8 @@ public class OrbEntity extends FlyingMob implements Enemy {
                     double distance = vector.length();
                     vector = vector.normalize();
                     if (this.canReach(vector, Mth.ceil(distance))) {
-                        this.orb.setDeltaMovement(this.orb.getDeltaMovement().add(vector.scale(0.1D)));
+                        // Scaled down vector thrust from 0.1D to 0.035D for a much slower, drift-like flight
+                        this.orb.setDeltaMovement(this.orb.getDeltaMovement().add(vector.scale(0.035D)));
                     } else {
                         this.operation = MoveControl.Operation.WAIT;
                     }
@@ -325,13 +267,6 @@ public class OrbEntity extends FlyingMob implements Enemy {
         }
     }
 
-    /**
-     * Keeps the Orb from drifting endlessly skyward. Every {@link #ALTITUDE_CHECK_INTERVAL}
-     * ticks it performs a single heightmap lookup (cheap - backed by the chunk's cached
-     * heightmap, not a raycast) to find the terrain height below the Orb, and if the Orb
-     * is at or above {@link #DESCEND_TRIGGER_HEIGHT} blocks above that terrain, it commands
-     * a downward move back to {@link #DESCEND_TARGET_HEIGHT}.
-     */
     static class OrbDescendGoal extends Goal {
         private final OrbEntity orb;
         private boolean descending;
@@ -370,7 +305,8 @@ public class OrbEntity extends FlyingMob implements Enemy {
         @Override
         public void tick() {
             double targetY = this.groundY() + DESCEND_TARGET_HEIGHT;
-            this.orb.getMoveControl().setWantedPosition(this.orb.getX(), targetY, this.orb.getZ(), 1.0D);
+            // Lower speed modifier on navigation commands during descent
+            this.orb.getMoveControl().setWantedPosition(this.orb.getX(), targetY, this.orb.getZ(), 0.8D);
         }
 
         private double heightAboveGround() {
@@ -379,8 +315,7 @@ public class OrbEntity extends FlyingMob implements Enemy {
 
         private double groundY() {
             BlockPos pos = this.orb.blockPosition();
-            int groundY = this.orb.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos).getY();
-            return groundY;
+            return this.orb.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos).getY();
         }
     }
 
@@ -409,7 +344,8 @@ public class OrbEntity extends FlyingMob implements Enemy {
             double targetX = this.orb.getX() + (random.nextFloat() * 2.0F - 1.0F) * 16.0F;
             double targetY = this.orb.getY() + (random.nextFloat() * 2.0F - 1.0F) * 16.0F;
             double targetZ = this.orb.getZ() + (random.nextFloat() * 2.0F - 1.0F) * 16.0F;
-            this.orb.getMoveControl().setWantedPosition(targetX, targetY, targetZ, 1.0D);
+            // Reduced wanted speed parameter
+            this.orb.getMoveControl().setWantedPosition(targetX, targetY, targetZ, 0.8D);
         }
     }
 
@@ -461,7 +397,9 @@ public class OrbEntity extends FlyingMob implements Enemy {
                     ++this.chargeTime;
 
                     if (this.chargeTime == 10 && !this.orb.isSilent()) {
-                        this.orb.playSound(CoralineSounds.ORB_CHARGE.get(), 1.0F, 1.0F);
+                        // Level-based broadcast localized at Orb position
+                        level.playSound(null, this.orb.getX(), this.orb.getY(), this.orb.getZ(),
+                                CoralineSounds.ORB_CHARGE.get(), SoundSource.HOSTILE, 1.0F, 1.0F);
                     }
 
                     if (this.chargeTime == 20) {
@@ -471,7 +409,9 @@ public class OrbEntity extends FlyingMob implements Enemy {
                         double dZ = target.getZ() - (this.orb.getZ() + view.z * 4.0D);
 
                         if (!this.orb.isSilent()) {
-                            this.orb.playSound(CoralineSounds.ORB_SHOOT.get(), 1.0F, 1.0F);
+                            // Level-based broadcast localized at Orb position, fixing player-centered audio
+                            level.playSound(null, this.orb.getX(), this.orb.getY(), this.orb.getZ(),
+                                    CoralineSounds.ORB_SHOOT.get(), SoundSource.HOSTILE, 1.0F, 1.0F);
                         }
 
                         OrbPulseEntity pulse = new OrbPulseEntity(level, this.orb, dX, dY, dZ);
