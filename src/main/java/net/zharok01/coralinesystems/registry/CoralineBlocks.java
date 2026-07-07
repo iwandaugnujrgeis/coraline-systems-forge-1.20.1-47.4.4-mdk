@@ -55,6 +55,7 @@ public class CoralineBlocks {
 		ItemBlockRenderTypes.setRenderLayer(WHITE_MUSHROOM.get(), RenderType.cutout());
 		ItemBlockRenderTypes.setRenderLayer(MAGLEV_RAIL.get(), RenderType.cutout());
 		ItemBlockRenderTypes.setRenderLayer(POWERED_MAGLEV_RAIL.get(), RenderType.cutout());
+		ItemBlockRenderTypes.setRenderLayer(RADIANT_SAPLING.get(), RenderType.cutout());
 	}
 
 	public static final RegistryObject<Block> STATIC_PORTAL_BLOCK = registerWithoutItem("static_portal_block",
@@ -100,7 +101,7 @@ public class CoralineBlocks {
 							.noCollission()
 							.randomTicks()
 							.instabreak()
-							.sound(SoundType.GRASS)
+							.sound(CoralineSoundTypes.MUSHROOM)
 							.lightLevel(state -> 1)
 							.hasPostProcess(CoralineBlocks::always)
 							.pushReaction(PushReaction.DESTROY),
@@ -164,6 +165,34 @@ public class CoralineBlocks {
 							.requiresCorrectToolForDrops()
 							.strength(3.5f, 6.0f)
 							.sound(SoundType.METAL)
+			)
+	);
+
+	public static final RegistryObject<Block> RADIANT_LEAVES = register("radiant_leaves",
+			() -> new RadiantLeavesBlock(
+					BlockBehaviour.Properties.of()
+							.mapColor(MapColor.COLOR_GREEN)
+							.strength(0.2F)
+							.randomTicks()
+							.sound(SoundType.CHERRY_LEAVES)
+							.noOcclusion()
+							.isValidSpawn((state, level, pos, type) -> false)
+							.isSuffocating((state, level, pos) -> false)
+							.isViewBlocking((state, level, pos) -> false)
+							.ignitedByLava()
+							.pushReaction(PushReaction.DESTROY)
+			)
+	);
+
+	public static final RegistryObject<Block> RADIANT_SAPLING = register("radiant_sapling",
+			() -> new RadiantSaplingBlock(
+					BlockBehaviour.Properties.of()
+							.mapColor(MapColor.PLANT)
+							.noCollission()
+							.randomTicks()
+							.instabreak()
+							.sound(SoundType.GRASS)
+							.pushReaction(PushReaction.DESTROY)
 			)
 	);
 

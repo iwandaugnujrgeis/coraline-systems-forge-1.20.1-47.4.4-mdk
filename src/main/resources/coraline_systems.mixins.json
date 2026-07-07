@@ -29,6 +29,7 @@
     "defaultRequire": 1
   },
   "mixins": [
+    "AbstractMinecartMixin",
     "AnimalBreedPersistenceMixin",
     "AnimalFeedPersistenceMixin",
     "AnimalMixin",
@@ -82,6 +83,7 @@
     "WitherSkeletonMixin",
     "ZombieMixin",
     "ZombiePigmanConversionMixin",
+    "accessors.BlockBehaviourAccessor",
     "accessors.CandleCakeBlockAccessor",
     "advancements.PlayerAdvancementsMixin",
     "alexsmobs.EntityBaldEagleMixin",
