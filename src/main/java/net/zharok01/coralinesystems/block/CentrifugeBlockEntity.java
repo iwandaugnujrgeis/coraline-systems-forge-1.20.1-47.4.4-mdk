@@ -10,7 +10,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.zharok01.coralinesystems.event.ServerEventListener;
+import net.zharok01.coralinesystems.event.CentrifugeEvent;
 import net.zharok01.coralinesystems.item.OrbItem;
 import net.zharok01.coralinesystems.registry.CoralineBlockEntities;
 
@@ -25,7 +25,7 @@ public class CentrifugeBlockEntity extends BlockEntity {
             return false;
         }
 
-        var manager = ServerEventListener.getManager();
+        var manager = CentrifugeEvent.getManager();
         if (manager == null) {
             return false;
         }
