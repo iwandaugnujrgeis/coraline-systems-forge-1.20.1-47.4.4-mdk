@@ -55,6 +55,7 @@ public class CoralineSounds {
     public static final RegistryObject<SoundEvent> ORB_DEATH = createSoundEvent("orb_death");
     public static final RegistryObject<SoundEvent> ORB_SPAWN = createSoundEvent("orb_spawn");
     public static final RegistryObject<SoundEvent> ORB_PULSE_IMPACT = createSoundEvent("orb_pulse_impact");
+    public static final RegistryObject<SoundEvent> ORB_DEATH_BURST = createSoundEvent("orb_death_burst");
 
     public static final RegistryObject<SoundEvent> PET_TELEPORT = createSoundEvent("pet_teleport");
 

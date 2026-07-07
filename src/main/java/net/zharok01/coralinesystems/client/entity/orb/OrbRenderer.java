@@ -81,6 +81,7 @@ public class OrbRenderer<T extends OrbEntity> extends EntityRenderer<T> {
         pose.popPose();
 
         // --- 2. Render the energy shells on top ---
+        // One layer is shed once the Orb reaches critical HP, as a visual low-HP warning.
         VertexConsumer shellBuffer = ORB_SHELL_TEXTURE.buffer(bufferSource, RediscoveredRenderType::energy);
 
         pose.pushPose();
@@ -90,13 +91,15 @@ public class OrbRenderer<T extends OrbEntity> extends EntityRenderer<T> {
 
         pose.scale(2.0F, 2.0F, 2.0F);
 
+        int shellLayers = entity.isCritical() ? 2 : 3;
+
         DragonPylonRenderer.renderPylonShields(
                 this.shellPart, pose, shellBuffer,
                 LightTexture.FULL_BRIGHT,
                 rot * rotSpeed,
                 1.0F,
                 1.12F,
-                3,
+                shellLayers,
                 0.65F
         );
         pose.popPose();

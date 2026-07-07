@@ -42,6 +42,7 @@ public class CoralineSystems {
         CoralineEffects.register(bus);
         CoralineParticles.register(bus);
 
+        bus.addListener(CoralineParticleTypes::init);
         bus.addListener(this::commonSetup);
 
         MinecraftForge.EVENT_BUS.register(this);
@@ -75,6 +76,11 @@ public class CoralineSystems {
             CoralineBlocks.registerRenderLayers();
             ClientStaticPortalEffect.init();
             TranscendingPortalOverlay.init();
+        }
+
+        @SubscribeEvent
+        public static void onRegisterParticleProviders(net.minecraftforge.client.event.RegisterParticleProvidersEvent event) {
+            CoralineParticleTypes.Factories.init(event);
         }
     }
 }

@@ -388,6 +388,20 @@
     ],
     "subtitle": "coraline_systems.sound.subtitle.orb_pulse_impact"
   },
+  "orb_death_burst": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 0.5
+      },
+      {
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 0.6
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.orb_death_burst"
+  },
   "orb_idle": {
     "category": "neutral",
     "sounds": [
@@ -479,20 +493,69 @@
     "category": "block",
     "subtitle": "subtitles.block.generic.break",
     "sounds": [
-      { "name": "minecraft:block/azalea_leaves/break1", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break1", "pitch": 0.92, "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break2", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break2", "pitch": 0.92, "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break3", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break3", "pitch": 0.92, "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break4", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break4", "pitch": 0.92, "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break5", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break5", "pitch": 0.92, "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break6", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break6", "pitch": 0.92, "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break7", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break7", "pitch": 0.92, "volume": 0.85 }
+      {
+        "name": "minecraft:block/azalea_leaves/break1",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break1",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break2",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break2",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break3",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break3",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break4",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break4",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break5",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break5",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break6",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break6",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break7",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break7",
+        "pitch": 0.92,
+        "volume": 0.85
+      }
     ]
   },
   "leaves_fall": {
@@ -509,42 +572,121 @@
     "category": "block",
     "subtitle": "subtitles.block.generic.hit",
     "sounds": [
-      { "name": "minecraft:block/azalea_leaves/step1", "volume": 0.8 },
-      { "name": "minecraft:block/azalea_leaves/step2", "volume": 0.8 },
-      { "name": "minecraft:block/azalea_leaves/step3", "volume": 0.8 },
-      { "name": "minecraft:block/azalea_leaves/step4", "volume": 0.8 },
-      { "name": "minecraft:block/azalea_leaves/step5", "volume": 0.8 }
+      {
+        "name": "minecraft:block/azalea_leaves/step1",
+        "volume": 0.8
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/step2",
+        "volume": 0.8
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/step3",
+        "volume": 0.8
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/step4",
+        "volume": 0.8
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/step5",
+        "volume": 0.8
+      }
     ]
   },
   "leaves_place": {
     "category": "block",
     "subtitle": "subtitles.block.generic.place",
     "sounds": [
-      { "name": "minecraft:block/azalea_leaves/break1", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break1", "pitch": 0.92, "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break2", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break2", "pitch": 0.92, "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break3", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break3", "pitch": 0.92, "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break4", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break4", "pitch": 0.92, "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break5", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break5", "pitch": 0.92, "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break6", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break6", "pitch": 0.92, "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break7", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/break7", "pitch": 0.92, "volume": 0.85 }
+      {
+        "name": "minecraft:block/azalea_leaves/break1",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break1",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break2",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break2",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break3",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break3",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break4",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break4",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break5",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break5",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break6",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break6",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break7",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break7",
+        "pitch": 0.92,
+        "volume": 0.85
+      }
     ]
   },
   "leaves_step": {
     "category": "block",
     "subtitle": "subtitles.block.generic.footsteps",
     "sounds": [
-      { "name": "minecraft:block/azalea_leaves/step1", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/step2", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/step3", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/step4", "volume": 0.85 },
-      { "name": "minecraft:block/azalea_leaves/step5", "volume": 0.85 }
+      {
+        "name": "minecraft:block/azalea_leaves/step1",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/step2",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/step3",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/step4",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/step5",
+        "volume": 0.85
+      }
     ]
   }
 }

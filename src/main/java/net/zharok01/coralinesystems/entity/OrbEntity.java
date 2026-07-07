@@ -33,6 +33,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.zharok01.coralinesystems.registry.CoralineParticles;
 import net.zharok01.coralinesystems.registry.CoralineSounds;
+import net.zharok01.coralinesystems.entity.OrbShieldBurstData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.EnumSet;
@@ -59,6 +60,11 @@ public class OrbEntity extends FlyingMob implements Enemy {
     /** How often (in ticks) the relatively cheap heightmap lookup is performed. */
     private static final int ALTITUDE_CHECK_INTERVAL = 10;
 
+    /** HP the Orb is snapped down to on the single provoking hit that turns it hostile. */
+    private static final float PROVOKED_HEALTH = 3.0F;
+    /** At or below this HP, the Orb is considered critical and sheds a shield layer. */
+    private static final float CRITICAL_HEALTH = 4.0F;
+
     public OrbEntity(EntityType<? extends OrbEntity> entityType, Level level) {
         super(entityType, level);
         this.xpReward = 5;
@@ -79,7 +85,7 @@ public class OrbEntity extends FlyingMob implements Enemy {
 
     public static AttributeSupplier.Builder createAttributes() {
         return FlyingMob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 9.0D)
+                .add(Attributes.MAX_HEALTH, 20.0D)
                 .add(Attributes.FOLLOW_RANGE, 20.0D)
                 // Lowered base movement attributes for a much gentler floating pace
                 .add(Attributes.FLYING_SPEED, 0.08D)
@@ -142,15 +148,75 @@ public class OrbEntity extends FlyingMob implements Enemy {
 
     /**
      * Neutral-until-provoked damage handling.
-     * Any hit while neutral immediately provokes the Orb and applies damage normally.
-     * Arrow deflection logic completely stripped out.
+     * <p>
+     * The Orb spawns peaceful. The first hit that actually lands while it is still
+     * neutral (whether from an arrow or melee) is the "provoking hit": it flips the
+     * Orb hostile and deterministically snaps its health down to {@link #PROVOKED_HEALTH},
+     * regardless of how much damage that hit actually rolled. This guarantees the Orb
+     * is always left at critical HP after being provoked, rather than varying with
+     * arrow charge/enchantments/crits.
+     * <p>
+     * Every hit after that (i.e. once already hostile) behaves as completely normal
+     * damage — no more snapping, no more special-casing.
      */
     @Override
     public boolean hurt(@NotNull DamageSource damageSource, float amount) {
-        if (!this.level().isClientSide && !this.isHostile()) {
+        boolean wasHostileBeforeHit = this.isHostile();
+
+        boolean damaged = super.hurt(damageSource, amount);
+
+        if (damaged && !this.level().isClientSide && !wasHostileBeforeHit) {
             this.setHostile(true);
+
+            // Only snap if the hit didn't already kill it outright (e.g. via /kill or
+            // a massive damage source) — don't resurrect a dead Orb back to 3 HP.
+            if (this.isAlive()) {
+                this.setHealth(PROVOKED_HEALTH);
+            }
         }
-        return super.hurt(damageSource, amount);
+
+        return damaged;
+    }
+
+    /**
+     * True once the Orb's health has dropped to {@link #CRITICAL_HEALTH} or below.
+     * Used by the renderer to drop one shell layer as a visual low-HP warning.
+     */
+    public boolean isCritical() {
+        return this.getHealth() <= CRITICAL_HEALTH;
+    }
+
+    /**
+     * Death "shield burst" — mirrors Rediscovered's PylonBurstEntity.playExplosionEffect():
+     * a burst of the Orb's own energy shell (via OrbShieldBurstData/OrbShieldBurstParticle),
+     * layered with vanilla POOF for weight and a dedicated explosion sound. No damage is
+     * dealt by this burst — it's purely the Orb's death animation.
+     */
+    @Override
+    public void die(@NotNull DamageSource damageSource) {
+        if (!this.level().isClientSide) {
+            ServerLevel serverLevel = (ServerLevel) this.level();
+
+            serverLevel.sendParticles(
+                    new OrbShieldBurstData(),
+                    this.getX(), this.getY() + 0.5D, this.getZ(),
+                    1,
+                    0.0D, 0.0D, 0.0D,
+                    0.0D
+            );
+            serverLevel.sendParticles(
+                    ParticleTypes.POOF,
+                    this.getX(), this.getY() + 0.5D, this.getZ(),
+                    20,
+                    0.3D, 0.3D, 0.3D,
+                    0.05D
+            );
+
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                    CoralineSounds.ORB_DEATH_BURST.get(), SoundSource.HOSTILE, 1.0F, 1.0F);
+        }
+
+        super.die(damageSource);
     }
 
     // -----------------------------------------------------------------------
@@ -201,8 +267,8 @@ public class OrbEntity extends FlyingMob implements Enemy {
                                              BlockPos pos,
                                              RandomSource random) {
         long dayTime = level.getLevel().getDayTime() % 24000;
-        boolean isDawn = dayTime >= 22000 || dayTime <= 0;
-        return isDawn && level.getDifficulty() != Difficulty.PEACEFUL;
+        boolean isDawn = dayTime >= 22000 || dayTime <= 1000;
+        return isDawn && level.getDifficulty() != Difficulty.PEACEFUL; // TODO: Make them spawn on Peaceful!
     }
 
     @Override
