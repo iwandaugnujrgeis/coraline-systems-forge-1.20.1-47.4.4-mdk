@@ -17,28 +17,34 @@ import net.minecraft.world.level.block.state.properties.RailShape;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Maglev Rail — a straight-only rail that allows carts to travel at twice
+ * Maglev Rail — a curve-capable rail that allows carts to travel at twice
  * vanilla's maximum speed (0.8 m/tick vs 0.4 m/tick).
  *
- * The speed is advertised via {@link #getRailMaxSpeed}, which is the Forge hook
- * consumed by {@code AbstractMinecart#getMaxSpeedWithRail()}. A companion Mixin
- * on {@code AbstractMinecart} raises the per-cart ceiling to match whenever the
- * cart sits on a maglev rail; without that, {@code setCurrentCartSpeedCapOnRail}
- * would silently clamp the value back to 0.4.
+ * The speed is advertised via {@link #getRailMaxSpeed}, the Forge hook
+ * consumed by {@code AbstractMinecart#getMaxSpeedWithRail()}. A companion
+ * Mixin on {@code AbstractMinecart} (see {@code AbstractMinecartMixin})
+ * guards the slope-energy correction in {@code moveAlongTrack} for any block
+ * implementing {@link IMaglevRail}; without that guard, carts moving fast
+ * enough on an ascending maglev rail get their velocity direction flipped
+ * by vanilla's own math and are thrown backward down the slope.
  *
- * Like {@code PoweredRailBlock} this uses {@code isStraight = true}, meaning it
- * only accepts the six straight/ascending shapes — no curves.
+ * Unlike {@code PoweredRailBlock}/{@code CopperRailBlock}, this rail uses
+ * {@code isStraight = false} and the full {@code RAIL_SHAPE} property (not
+ * {@code RAIL_SHAPE_STRAIGHT}), so it CAN form curves — confirmed against
+ * {@code RailState.java}, where curve-shape assignment
+ * ({@code SOUTH_EAST}/{@code SOUTH_WEST}/{@code NORTH_WEST}/{@code NORTH_EAST})
+ * is gated behind {@code if (!this.isStraight)}.
  */
-public class MaglevRailBlock extends BaseRailBlock {
+public class MaglevRailBlock extends BaseRailBlock implements IMaglevRail {
 
-    /** Straight-only shape set, matching PoweredRailBlock / CopperRailBlock. */
-    public static final EnumProperty<RailShape> SHAPE = BlockStateProperties.RAIL_SHAPE_STRAIGHT;
+    /** Full shape set (straight + curves), matching vanilla RailBlock. */
+    public static final EnumProperty<RailShape> SHAPE = BlockStateProperties.RAIL_SHAPE;
 
     /** Double vanilla's 0.4 f/tick rail cap. */
-    public static final float MAGLEV_MAX_SPEED = 0.8f;
+    public static final float MAGLEV_MAX_SPEED = 0.6f;
 
     public MaglevRailBlock(BlockBehaviour.Properties properties) {
-        super(true, properties);
+        super(false, properties); // isStraight = false -> curves allowed
         this.registerDefaultState(
                 this.stateDefinition.any()
                         .setValue(SHAPE, RailShape.NORTH_SOUTH)
@@ -74,56 +80,81 @@ public class MaglevRailBlock extends BaseRailBlock {
     }
 
     // -------------------------------------------------------------------------
-    // Rotate / mirror  (straight-only shapes only — same mapping as PoweredRailBlock)
+    // Rotate / mirror — full curve-aware mapping, copied from vanilla RailBlock
     // -------------------------------------------------------------------------
 
     @Override
     public @NotNull BlockState rotate(@NotNull BlockState state, Rotation rotation) {
-        return switch (rotation) {
-            case CLOCKWISE_180 -> switch (state.getValue(SHAPE)) {
-                case ASCENDING_EAST  -> state.setValue(SHAPE, RailShape.ASCENDING_WEST);
-                case ASCENDING_WEST  -> state.setValue(SHAPE, RailShape.ASCENDING_EAST);
-                case ASCENDING_NORTH -> state.setValue(SHAPE, RailShape.ASCENDING_SOUTH);
-                case ASCENDING_SOUTH -> state.setValue(SHAPE, RailShape.ASCENDING_NORTH);
-                default              -> state; // NORTH_SOUTH, EAST_WEST unchanged
-            };
-            case COUNTERCLOCKWISE_90 -> switch (state.getValue(SHAPE)) {
-                case NORTH_SOUTH     -> state.setValue(SHAPE, RailShape.EAST_WEST);
-                case EAST_WEST       -> state.setValue(SHAPE, RailShape.NORTH_SOUTH);
-                case ASCENDING_EAST  -> state.setValue(SHAPE, RailShape.ASCENDING_NORTH);
-                case ASCENDING_WEST  -> state.setValue(SHAPE, RailShape.ASCENDING_SOUTH);
-                case ASCENDING_NORTH -> state.setValue(SHAPE, RailShape.ASCENDING_WEST);
-                case ASCENDING_SOUTH -> state.setValue(SHAPE, RailShape.ASCENDING_EAST);
-                default              -> state;
-            };
-            case CLOCKWISE_90 -> switch (state.getValue(SHAPE)) {
-                case NORTH_SOUTH     -> state.setValue(SHAPE, RailShape.EAST_WEST);
-                case EAST_WEST       -> state.setValue(SHAPE, RailShape.NORTH_SOUTH);
-                case ASCENDING_EAST  -> state.setValue(SHAPE, RailShape.ASCENDING_SOUTH);
-                case ASCENDING_WEST  -> state.setValue(SHAPE, RailShape.ASCENDING_NORTH);
-                case ASCENDING_NORTH -> state.setValue(SHAPE, RailShape.ASCENDING_EAST);
-                case ASCENDING_SOUTH -> state.setValue(SHAPE, RailShape.ASCENDING_WEST);
-                default              -> state;
-            };
-            default -> state;
-        };
+        switch (rotation) {
+            case CLOCKWISE_180:
+                switch (state.getValue(SHAPE)) {
+                    case ASCENDING_EAST:  return state.setValue(SHAPE, RailShape.ASCENDING_WEST);
+                    case ASCENDING_WEST:  return state.setValue(SHAPE, RailShape.ASCENDING_EAST);
+                    case ASCENDING_NORTH: return state.setValue(SHAPE, RailShape.ASCENDING_SOUTH);
+                    case ASCENDING_SOUTH: return state.setValue(SHAPE, RailShape.ASCENDING_NORTH);
+                    case SOUTH_EAST:      return state.setValue(SHAPE, RailShape.NORTH_WEST);
+                    case SOUTH_WEST:      return state.setValue(SHAPE, RailShape.NORTH_EAST);
+                    case NORTH_WEST:      return state.setValue(SHAPE, RailShape.SOUTH_EAST);
+                    case NORTH_EAST:      return state.setValue(SHAPE, RailShape.SOUTH_WEST);
+                    default:              return state; // NORTH_SOUTH, EAST_WEST
+                }
+            case COUNTERCLOCKWISE_90:
+                switch (state.getValue(SHAPE)) {
+                    case ASCENDING_EAST:  return state.setValue(SHAPE, RailShape.ASCENDING_NORTH);
+                    case ASCENDING_WEST:  return state.setValue(SHAPE, RailShape.ASCENDING_SOUTH);
+                    case ASCENDING_NORTH: return state.setValue(SHAPE, RailShape.ASCENDING_WEST);
+                    case ASCENDING_SOUTH: return state.setValue(SHAPE, RailShape.ASCENDING_EAST);
+                    case SOUTH_EAST:      return state.setValue(SHAPE, RailShape.NORTH_EAST);
+                    case SOUTH_WEST:      return state.setValue(SHAPE, RailShape.SOUTH_EAST);
+                    case NORTH_WEST:      return state.setValue(SHAPE, RailShape.SOUTH_WEST);
+                    case NORTH_EAST:      return state.setValue(SHAPE, RailShape.NORTH_WEST);
+                    case NORTH_SOUTH:     return state.setValue(SHAPE, RailShape.EAST_WEST);
+                    case EAST_WEST:       return state.setValue(SHAPE, RailShape.NORTH_SOUTH);
+                }
+            case CLOCKWISE_90:
+                switch (state.getValue(SHAPE)) {
+                    case ASCENDING_EAST:  return state.setValue(SHAPE, RailShape.ASCENDING_SOUTH);
+                    case ASCENDING_WEST:  return state.setValue(SHAPE, RailShape.ASCENDING_NORTH);
+                    case ASCENDING_NORTH: return state.setValue(SHAPE, RailShape.ASCENDING_EAST);
+                    case ASCENDING_SOUTH: return state.setValue(SHAPE, RailShape.ASCENDING_WEST);
+                    case SOUTH_EAST:      return state.setValue(SHAPE, RailShape.SOUTH_WEST);
+                    case SOUTH_WEST:      return state.setValue(SHAPE, RailShape.NORTH_WEST);
+                    case NORTH_WEST:      return state.setValue(SHAPE, RailShape.NORTH_EAST);
+                    case NORTH_EAST:      return state.setValue(SHAPE, RailShape.SOUTH_EAST);
+                    case NORTH_SOUTH:     return state.setValue(SHAPE, RailShape.EAST_WEST);
+                    case EAST_WEST:       return state.setValue(SHAPE, RailShape.NORTH_SOUTH);
+                }
+            default:
+                return state;
+        }
     }
 
     @Override
     public @NotNull BlockState mirror(BlockState state, Mirror mirror) {
         RailShape shape = state.getValue(SHAPE);
-        return switch (mirror) {
-            case LEFT_RIGHT -> switch (shape) {
-                case ASCENDING_NORTH -> state.setValue(SHAPE, RailShape.ASCENDING_SOUTH);
-                case ASCENDING_SOUTH -> state.setValue(SHAPE, RailShape.ASCENDING_NORTH);
-                default              -> super.mirror(state, mirror);
-            };
-            case FRONT_BACK -> switch (shape) {
-                case ASCENDING_EAST -> state.setValue(SHAPE, RailShape.ASCENDING_WEST);
-                case ASCENDING_WEST -> state.setValue(SHAPE, RailShape.ASCENDING_EAST);
-                default             -> super.mirror(state, mirror);
-            };
-            default -> super.mirror(state, mirror);
-        };
+        switch (mirror) {
+            case LEFT_RIGHT:
+                switch (shape) {
+                    case ASCENDING_NORTH: return state.setValue(SHAPE, RailShape.ASCENDING_SOUTH);
+                    case ASCENDING_SOUTH: return state.setValue(SHAPE, RailShape.ASCENDING_NORTH);
+                    case SOUTH_EAST:      return state.setValue(SHAPE, RailShape.NORTH_EAST);
+                    case SOUTH_WEST:      return state.setValue(SHAPE, RailShape.NORTH_WEST);
+                    case NORTH_WEST:      return state.setValue(SHAPE, RailShape.SOUTH_WEST);
+                    case NORTH_EAST:      return state.setValue(SHAPE, RailShape.SOUTH_EAST);
+                    default:              return super.mirror(state, mirror);
+                }
+            case FRONT_BACK:
+                switch (shape) {
+                    case ASCENDING_EAST: return state.setValue(SHAPE, RailShape.ASCENDING_WEST);
+                    case ASCENDING_WEST: return state.setValue(SHAPE, RailShape.ASCENDING_EAST);
+                    case SOUTH_EAST:     return state.setValue(SHAPE, RailShape.SOUTH_WEST);
+                    case SOUTH_WEST:     return state.setValue(SHAPE, RailShape.SOUTH_EAST);
+                    case NORTH_WEST:     return state.setValue(SHAPE, RailShape.NORTH_EAST);
+                    case NORTH_EAST:     return state.setValue(SHAPE, RailShape.NORTH_WEST);
+                    default:             return super.mirror(state, mirror);
+                }
+            default:
+                return super.mirror(state, mirror);
+        }
     }
 }
