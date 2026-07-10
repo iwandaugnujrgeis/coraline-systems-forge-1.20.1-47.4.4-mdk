@@ -56,9 +56,18 @@ public abstract class CrosshairRenderMixin {
         PoseStack pose = guiGraphics.pose();
         pose.pushPose();
 
-        // 0.5F offset accounts for Vanilla's odd-numbered (15x15) sprite integer truncation
-        float centerX = guiGraphics.guiWidth() / 2.0F - 0.5F;
-        float centerY = guiGraphics.guiHeight() / 2.0F - 0.5F;
+        // ---------------------------------------------------------
+        // BULLETPROOF ANCHOR CALCULATION
+        // Replicating Vanilla's exact integer division to find where
+        // the 15x15 sprite actually gets rendered on the screen.
+        // ---------------------------------------------------------
+        int renderX = (guiGraphics.guiWidth() - 15) / 2;
+        int renderY = (guiGraphics.guiHeight() - 15) / 2;
+
+        // The true center of the rendered sprite is exactly 7.5 pixels
+        // offset from the blit coordinates.
+        float centerX = renderX + 7.5F;
+        float centerY = renderY + 7.5F;
 
         float angleDegrees = 0.0F;
 
@@ -94,7 +103,7 @@ public abstract class CrosshairRenderMixin {
 
         angleDegrees += this.coralinesystems$eatSpinAngle;
 
-        // Apply transformations safely without scale distortions
+        // Apply transformations safely
         pose.translate(centerX, centerY, 0.0F);
         pose.mulPose(new Quaternionf().rotationZ((float) Math.toRadians(angleDegrees)));
         pose.translate(-centerX, -centerY, 0.0F);
