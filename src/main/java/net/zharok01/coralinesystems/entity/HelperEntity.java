@@ -11,8 +11,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.tags.BlockTags;
-import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
@@ -32,39 +30,33 @@ import com.legacy.rediscovered.entity.pigman.PigmanEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.zharok01.coralinesystems.entity.ai.HelperBreakBlockGoal;
-import net.zharok01.coralinesystems.entity.ai.HelperPlaceBlockGoal;
+import net.zharok01.coralinesystems.entity.ai.HelperJumpForJoyGoal;
 import net.zharok01.coralinesystems.registry.CoralineSounds;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Optional;
-
 public class HelperEntity extends Monster implements RangedAttackMob {
     private static final EntityDataAccessor<Integer> DATA_SKIN_ID = SynchedEntityData.defineId(HelperEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> IS_GLITCHING = SynchedEntityData.defineId(HelperEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Optional<BlockState>> CARRIED_BLOCK = SynchedEntityData.defineId(HelperEntity.class, EntityDataSerializers.OPTIONAL_BLOCK_STATE);
     private static final EntityDataAccessor<Boolean> IS_JAMMING = SynchedEntityData.defineId(HelperEntity.class, EntityDataSerializers.BOOLEAN);
 
-    public int dancingDuration = 0; // NEW: Tracks the exact length of the song
+    // Radius (in blocks) Helpers scan for a playing Jukebox.
+    private static final double JUKEBOX_SCAN_RADIUS = 64.0D;
 
-    public void setCarriedBlock(@Nullable BlockState state) {
-        // If the state passed is null, we safely store Air instead
-        BlockState nonNullState = (state == null) ? Blocks.AIR.defaultBlockState() : state;
-        this.entityData.set(CARRIED_BLOCK, Optional.of(nonNullState));
-    }
+    // Interval (in ticks) for the walk-in / liveness poll. This ONLY turns
+    // jamming ON for Helpers that are not already jamming (late walk-ins that
+    // missed the JukeboxBlockEntityMixin#startPlaying trigger, or stragglers
+    // that wandered into range). It never touches dancingDuration for a
+    // Helper that's already jamming, so it can't clobber the real countdown
+    // that the mixin set from the record's actual length.
+    private static final int JUKEBOX_POLL_INTERVAL = 20;
 
-    public BlockState getCarriedBlock() {
-        // We look into the Optional. If it's empty, we return Air.
-        // This ensures the method NEVER returns null to the AI goal.
-        return this.entityData.get(CARRIED_BLOCK).orElse(Blocks.AIR.defaultBlockState());
-    }
+    public int dancingDuration = 0; // Tracks the exact length of the song
 
     public void setDancingDuration(int duration) {
         this.dancingDuration = duration;
@@ -95,7 +87,10 @@ public class HelperEntity extends Monster implements RangedAttackMob {
                 this.setGlitching(false);
             }
 
-            // NEW: Tick down the dancing duration
+            // Tick down the dancing duration. This is the ONLY place dancingDuration
+            // is decremented, and it is the authoritative countdown set once by
+            // JukeboxBlockEntityMixin#startPlaying from the record's real length.
+            // Nothing else is allowed to overwrite it while it's still counting down.
             if (this.dancingDuration > 0) {
                 this.dancingDuration--;
                 if (this.dancingDuration <= 0) {
@@ -103,30 +98,47 @@ public class HelperEntity extends Monster implements RangedAttackMob {
                 }
             }
 
-            // Latecomer / drift-correction check — fires every 200 ticks (10 seconds).
-            // FIX: replaced BlockPos.betweenClosed (9 800 allocations + getBlockEntity each)
-            // with a targeted scan of only block-entity positions in the chunk that are
-            // actually jukeboxes. getBlockEntities() returns the already-loaded cache;
-            // no allocation storm, no deserialisation cost.
-            if (this.tickCount % 200 == 0) {
+            // Walk-in / liveness poll — fires every 20 ticks (1 second).
+            // Only acts on Helpers that are NOT currently jamming: if a playing
+            // Jukebox is found within JUKEBOX_SCAN_RADIUS, flip them into the
+            // jamming state immediately (does not touch dancingDuration, so it
+            // never fights the mixin-driven countdown for Helpers already dancing).
+            // Once flipped, the Helper rides along with whatever real Jukebox
+            // eventually stops (via the mixin's stopPlaying hook) rather than a
+            // guessed duration.
+            if (!this.isJamming() && this.tickCount % JUKEBOX_POLL_INTERVAL == 0) {
                 boolean foundPlaying = false;
-                net.minecraft.world.level.chunk.LevelChunk chunk =
-                        this.level().getChunkAt(this.blockPosition());
-                for (net.minecraft.world.level.block.entity.BlockEntity be : chunk.getBlockEntities().values()) {
-                    if (be instanceof net.minecraft.world.level.block.entity.JukeboxBlockEntity jukebox
-                            && jukebox.isRecordPlaying()
-                            && be.getBlockPos().closerThan(this.blockPosition(), 32)) {
-                        foundPlaying = true;
-                        break;
+
+                // JUKEBOX_SCAN_RADIUS (64 blocks) can span multiple chunks, so we
+                // walk every chunk the radius touches rather than only this
+                // Helper's own chunk (which would silently miss jukeboxes in
+                // neighboring chunks at this range).
+                int centerChunkX = net.minecraft.core.SectionPos.blockToSectionCoord(this.getBlockX());
+                int centerChunkZ = net.minecraft.core.SectionPos.blockToSectionCoord(this.getBlockZ());
+                int chunkRadius = (int) Math.ceil(JUKEBOX_SCAN_RADIUS / 16.0D);
+
+                outer:
+                for (int dx = -chunkRadius; dx <= chunkRadius; dx++) {
+                    for (int dz = -chunkRadius; dz <= chunkRadius; dz++) {
+                        net.minecraft.world.level.chunk.LevelChunk chunk =
+                                this.level().getChunkSource().getChunkNow(centerChunkX + dx, centerChunkZ + dz);
+                        if (chunk == null) {
+                            continue; // not loaded — nothing to scan
+                        }
+
+                        for (net.minecraft.world.level.block.entity.BlockEntity be : chunk.getBlockEntities().values()) {
+                            if (be instanceof net.minecraft.world.level.block.entity.JukeboxBlockEntity jukebox
+                                    && jukebox.isRecordPlaying()
+                                    && be.getBlockPos().closerThan(this.blockPosition(), JUKEBOX_SCAN_RADIUS)) {
+                                foundPlaying = true;
+                                break outer;
+                            }
+                        }
                     }
                 }
 
                 if (foundPlaying) {
-                    if (this.dancingDuration < 220) {
-                        this.setDancingDuration(220);
-                    }
-                } else {
-                    this.setDancingDuration(0);
+                    this.setJamming(true);
                 }
             }
         }
@@ -158,101 +170,10 @@ public class HelperEntity extends Monster implements RangedAttackMob {
         }
     }
 
-    static class HelperTakeBlockGoal extends Goal {
-        private final HelperEntity helper;
-
-        public HelperTakeBlockGoal(HelperEntity helper) {
-            this.helper = helper;
-        }
-
-        @Override
-        public boolean canUse() {
-            if (!this.helper.isJamming() || !this.helper.getCarriedBlock().isAir()) {
-                return false;
-            } else if (!this.helper.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
-                return false;
-            } else {
-                //60-tick check:
-                return this.helper.getRandom().nextInt(reducedTickDelay(60)) == 0;
-            }
-        }
-
-        @Override
-        public void tick() {
-            RandomSource random = this.helper.getRandom();
-            Level level = this.helper.level();
-
-            //Looks in an 8x3x8 area around the Helper:
-            int i = Mth.floor(this.helper.getX() - 4.0D + random.nextDouble() * 8.0D);
-            int j = Mth.floor(this.helper.getY() - 1.0D + random.nextDouble() * 3.0D);
-            int k = Mth.floor(this.helper.getZ() - 4.0D + random.nextDouble() * 8.0D);
-
-            BlockPos blockpos = new BlockPos(i, j, k);
-            BlockState blockstate = level.getBlockState(blockpos);
-
-            // Check if the block is something they should pick up
-            // Inside HelperTakeBlockGoal -> tick()
-            if (blockstate.is(BlockTags.DIRT) || blockstate.is(BlockTags.MINEABLE_WITH_PICKAXE)) {
-                this.helper.setCarriedBlock(blockstate);
-                level.setBlock(blockpos, Blocks.AIR.defaultBlockState(), 3);
-
-                //The sounds of the blocks:
-                this.helper.level().playSound(null, this.helper.blockPosition(),
-                        blockstate.getSoundType().getHitSound(), // Use the block's own sound
-                        SoundSource.NEUTRAL, 0.5F, 1.2F);
-            }
-        }
-    }
-
-    static class HelperLeaveBlockGoal extends Goal {
-        private final HelperEntity helper;
-
-        public HelperLeaveBlockGoal(HelperEntity helper) {
-            this.helper = helper;
-        }
-
-        @Override
-        public boolean canUse() {
-            if (!this.helper.isJamming() || this.helper.getCarriedBlock() == null) {
-                return false;
-            } else if (!this.helper.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
-                return false;
-            } else {
-                // Increased frequency: changed from 2000 to 40;
-                // Now they will try to place it every 200 ticks:
-                return this.helper.getRandom().nextInt(reducedTickDelay(200)) == 0;
-            }
-        }
-
-        @Override
-        public void tick() {
-            RandomSource random = this.helper.getRandom();
-            Level level = this.helper.level();
-
-            // Searching for a place to put the block down:
-            int i = Mth.floor(this.helper.getX() - 4.0D + random.nextDouble() * 8.0D);
-            int j = Mth.floor(this.helper.getY() - 1.0D + random.nextDouble() * 3.0D);
-            int k = Mth.floor(this.helper.getZ() - 4.0D + random.nextDouble() * 8.0D);
-
-            BlockPos blockpos = new BlockPos(i, j, k);
-            BlockState blockstate = level.getBlockState(blockpos);
-            BlockPos belowPos = blockpos.below();
-            BlockState belowState = level.getBlockState(belowPos);
-            BlockState carried = this.helper.getCarriedBlock();
-
-            // Placement conditions:
-            // 1. Target block is AIR
-            // 2. Block BELOW is SOLID
-            if (carried != null && blockstate.isAir() && !belowState.isAir() && belowState.isSolidRender(level, belowPos)) {
-                level.setBlock(blockpos, carried, 3);
-                this.helper.setCarriedBlock(null);
-            }
-        }
-    }
-
     @Override
     public boolean canAttack(@NotNull LivingEntity target) {
-        //Stop being hostile when the Jukebox is playing!
+        // Neutral (not hostile) toward everyone — Players and Piglins alike —
+        // while jamming to a Jukebox.
         if (this.isJamming()) {
             return false;
         }
@@ -295,7 +216,7 @@ public class HelperEntity extends Monster implements RangedAttackMob {
         if (!this.level().isClientSide) {
             this.setGlitching(true);
 
-            // FIX: guard matches the same check used in tick() — prevents crash if unregistered
+            // Guard matches the same check used in tick() — prevents crash if unregistered
             if (CoralineSounds.STATIC_BUZZ.isPresent()) {
                 this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
                         CoralineSounds.STATIC_BUZZ.get(), this.getSoundSource(), 1.0F, 1.0F);
@@ -322,10 +243,7 @@ public class HelperEntity extends Monster implements RangedAttackMob {
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
 
-        this.goalSelector.addGoal(1, new HelperBreakBlockGoal(this));
-        this.goalSelector.addGoal(1, new HelperTakeBlockGoal(this));
-        this.goalSelector.addGoal(1, new HelperLeaveBlockGoal(this));
-        this.goalSelector.addGoal(2, new HelperPlaceBlockGoal(this));
+        this.goalSelector.addGoal(1, new HelperJumpForJoyGoal(this));
 
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2D, false) {
             @Override
@@ -334,26 +252,28 @@ public class HelperEntity extends Monster implements RangedAttackMob {
                 if (HelperEntity.this.isJamming()) return false;
                 if (!super.canUse()) return false;
                 return HelperEntity.this.getTarget() != null &&
-                        // distanceToSqr <= 32.0 → sqrt(32) ≈ 5.6 blocks actual distance
-                        HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) <= 32.0D;
+                        // distanceToSqr <= 144.0 -> sqrt(144) = 12 blocks actual distance
+                        HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) <= 144.0D;
             }
 
             @Override
             public boolean canContinueToUse() {
                 if (HelperEntity.this.isJamming()) return false;
+                // Small hysteresis band above the engage range (13 blocks) so the goal
+                // doesn't flicker in/out right at the 12-block edge.
                 return super.canContinueToUse() &&
-                        HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) <= 36.0D;
+                        HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) <= 169.0D;
             }
         });
 
-        // Priority 3: RANGED (Only triggers if distance > 32)
+        // Priority 3: RANGED (Only triggers if distance > 12 blocks, matching the new melee range)
         this.goalSelector.addGoal(3, new RangedAttackGoal(this, 1.0D, 40, 20.0F) {
             @Override
             public boolean canUse() {
                 if (HelperEntity.this.isJamming()) return false;
                 if (!super.canUse()) return false;
                 return HelperEntity.this.getTarget() != null &&
-                        HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) > 32.0D;
+                        HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) > 144.0D;
             }
         });
 
@@ -420,7 +340,6 @@ public class HelperEntity extends Monster implements RangedAttackMob {
         super.defineSynchedData();
         this.entityData.define(DATA_SKIN_ID, 0);
         this.entityData.define(IS_GLITCHING, false);
-        this.entityData.define(CARRIED_BLOCK, Optional.empty());
         this.entityData.define(IS_JAMMING, false);
     }
 

@@ -11,7 +11,7 @@
         },
         {
           "type": "minecraft:item",
-          "name": "galosphere:silver_nugget",
+          "name": "kubejs:silver_nugget",
           "weight": 1
         }
       ]

@@ -35,10 +35,10 @@ public abstract class JukeboxBlockEntityMixin {
             if (stack.getItem() instanceof RecordItem record) {
                 BlockPos pos = jukebox.getBlockPos();
 
-                //Find Helpers within 16 blocks:
+                //Find Helpers within the jam radius (matches HelperEntity.JUKEBOX_SCAN_RADIUS):
                 List<HelperEntity> helpers = level.getEntitiesOfClass(
                         HelperEntity.class,
-                        new AABB(pos).inflate(16.0D)
+                        new AABB(pos).inflate(64.0D)
                 );
 
                 for (HelperEntity helper : helpers) {
@@ -49,7 +49,7 @@ public abstract class JukeboxBlockEntityMixin {
                 if (!helpers.isEmpty() && level instanceof ServerLevel serverLevel) {
                     serverLevel.getEntitiesOfClass(
                             net.minecraft.server.level.ServerPlayer.class,
-                            new AABB(pos).inflate(16.0D)
+                            new AABB(pos).inflate(64.0D)
                     ).stream().findFirst().ifPresent(CoralineTriggers.HELPER_DANCING::trigger);
                 }
             }
@@ -66,7 +66,7 @@ public abstract class JukeboxBlockEntityMixin {
 
             List<HelperEntity> helpers = level.getEntitiesOfClass(
                     HelperEntity.class,
-                    new AABB(pos).inflate(16.0D)
+                    new AABB(pos).inflate(64.0D)
             );
 
             for (HelperEntity helper : helpers) {
