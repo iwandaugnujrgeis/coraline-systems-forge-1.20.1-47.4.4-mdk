@@ -374,6 +374,20 @@
     ],
     "subtitle": "coraline_systems.sound.subtitle.orb_spawn"
   },
+  "orb_despawn": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 0.5
+      },
+      {
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 0.55
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.orb_despawn"
+  },
   "orb_pulse_impact": {
     "category": "neutral",
     "sounds": [
@@ -388,7 +402,7 @@
     ],
     "subtitle": "coraline_systems.sound.subtitle.orb_pulse_impact"
   },
-  "orb_death_burst": {
+  "orb_force_field_burst": {
     "category": "neutral",
     "sounds": [
       {
@@ -400,7 +414,7 @@
         "pitch": 0.6
       }
     ],
-    "subtitle": "coraline_systems.sound.subtitle.orb_death_burst"
+    "subtitle": "coraline_systems.sound.subtitle.orb_force_field_burst"
   },
   "orb_idle": {
     "category": "neutral",
@@ -687,6 +701,12 @@
         "name": "minecraft:block/azalea_leaves/step5",
         "volume": 0.85
       }
+    ]
+  },
+  "dog_howl": {
+    "sounds": [
+      "mob/wolf/howl1",
+      "mob/wolf/howl2"
     ]
   }
 }
