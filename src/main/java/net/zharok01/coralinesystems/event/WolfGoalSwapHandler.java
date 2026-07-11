@@ -8,9 +8,22 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.zharok01.coralinesystems.CoralineSystems;
 import net.zharok01.coralinesystems.entity.ai.SprintingFollowOwnerGoal;
+import net.zharok01.coralinesystems.entity.ai.WolfDistressRoamGoal;
+import net.zharok01.coralinesystems.entity.ai.WolfFleeGoal;
 
 @Mod.EventBusSubscriber(modid = CoralineSystems.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class WolfGoalSwapHandler {
+
+    /**
+     * Priority for the fight-or-flight goals. Must be lower (higher
+     * priority) than SitWhenOrderedToGoal (2) and SprintingFollowOwnerGoal
+     * (6) so GoalSelector's flag-locking lets flee/roam preempt them.
+     * Shares tier 1 with vanilla FloatGoal/WolfPanicGoal — both of those
+     * are unrelated flag sets (FloatGoal has no MOVE flag conflict here
+     * in a way that matters) and firing alongside panic is fine, since
+     * "on fire and also fighting for its life" should still let it flee.
+     */
+    private static final int FIGHT_OR_FLIGHT_PRIORITY = 1;
 
     @SubscribeEvent
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
@@ -26,14 +39,19 @@ public class WolfGoalSwapHandler {
                 .findFirst()
                 .orElse(null);
 
-        if (vanillaWrapped == null) return;
+        if (vanillaWrapped != null) {
+            int priority = vanillaWrapped.getPriority(); // preserve vanilla priority (6)
 
-        int priority = vanillaWrapped.getPriority(); // preserve vanilla priority (6)
+            // Remove the vanilla goal
+            wolf.goalSelector.removeGoal(vanillaWrapped.getGoal());
 
-        // Remove the vanilla goal
-        wolf.goalSelector.removeGoal(vanillaWrapped.getGoal());
+            // Add our sprinting replacement at the same priority
+            wolf.goalSelector.addGoal(priority, new SprintingFollowOwnerGoal(wolf));
+        }
 
-        // Add our sprinting replacement at the same priority
-        wolf.goalSelector.addGoal(priority, new SprintingFollowOwnerGoal(wolf));
+        // Fight-or-flight: flee at low HP while in combat, then roam +
+        // howl until healed. Both registered above sit/follow priority.
+        wolf.goalSelector.addGoal(FIGHT_OR_FLIGHT_PRIORITY, new WolfFleeGoal(wolf));
+        wolf.goalSelector.addGoal(FIGHT_OR_FLIGHT_PRIORITY, new WolfDistressRoamGoal(wolf));
     }
 }
