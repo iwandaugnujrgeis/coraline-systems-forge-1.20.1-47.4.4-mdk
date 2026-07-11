@@ -16,7 +16,7 @@ public class SprintingFollowOwnerGoal extends FollowOwnerGoal {
     private static final float  TELEPORT_THRESHOLD  = 24.0F;
 
     private static final double WALK_SPEED          = 1.0;
-    private static final double SPRINT_SPEED        = 2.0;
+    private static final double SPRINT_SPEED        = 1.3;
 
     /** Minimum squared distance moved in one tick to count as a teleport. */
     private static final double TELEPORT_DETECT_SQ  = 4.0; // 2 blocks — no natural movement crosses this in one tick
