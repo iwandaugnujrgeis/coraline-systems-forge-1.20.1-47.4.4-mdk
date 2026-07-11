@@ -33,7 +33,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.zharok01.coralinesystems.registry.CoralineParticles;
 import net.zharok01.coralinesystems.registry.CoralineSounds;
-import net.zharok01.coralinesystems.entity.OrbShieldBurstData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.EnumSet;
@@ -58,12 +57,22 @@ public class OrbEntity extends FlyingMob implements Enemy {
     /** How far below the trigger height the Orb aims to settle back down to. */
     private static final double DESCEND_TARGET_HEIGHT = 20.0D;
     /** How often (in ticks) the relatively cheap heightmap lookup is performed. */
-    private static final int ALTITUDE_CHECK_INTERVAL = 10;
+    private static final int ALTITUDE_CHECK_INTERVAL = 100;
 
     /** HP the Orb is snapped down to on the single provoking hit that turns it hostile. */
     private static final float PROVOKED_HEALTH = 3.0F;
     /** At or below this HP, the Orb is considered critical and sheds a shield layer. */
     private static final float CRITICAL_HEALTH = 4.0F;
+
+    /**
+     * Time-of-day tick (out of the 24000-tick day cycle) at which any still-alive Orb
+     * despawns naturally, dropping nothing. Orbs spawn around dusk/dawn (~22000-1000);
+     * this gives Players a repeating daily window to hunt them down for loot before
+     * they vanish. Checked on an interval, not every tick, for performance.
+     */
+    private static final long DESPAWN_WINDOW_START = 3001L;
+    private static final long DESPAWN_WINDOW_END = 21999L;
+    private static final int DESPAWN_CHECK_INTERVAL = 200;
 
     public OrbEntity(EntityType<? extends OrbEntity> entityType, Level level) {
         super(entityType, level);
@@ -113,6 +122,37 @@ public class OrbEntity extends FlyingMob implements Enemy {
                     0.01D
             );
         }
+
+        if (!this.level().isClientSide && this.isAlive() && !this.isDeadOrDying()
+                && this.tickCount % DESPAWN_CHECK_INTERVAL == 0) {
+            long dayTime = this.level().getDayTime() % 24000L;
+            if (dayTime >= DESPAWN_WINDOW_START && dayTime <= DESPAWN_WINDOW_END) {
+                this.despawnWithoutLoot();
+            }
+        }
+    }
+
+    /**
+     * Natural daily despawn — no death animation, no loot table, no XP. Just a poof
+     * and a dedicated sound, then gone. Distinct from {@link #die} entirely: a Player
+     * kill always goes through die()/dropFromLootTable via the normal damage pipeline,
+     * while this path is only ever reached here, before health has hit 0.
+     */
+    private void despawnWithoutLoot() {
+        ServerLevel serverLevel = (ServerLevel) this.level();
+
+        serverLevel.sendParticles(
+                ParticleTypes.POOF,
+                this.getX(), this.getY() + 0.5D, this.getZ(),
+                20,
+                0.3D, 0.3D, 0.3D,
+                0.05D
+        );
+
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                CoralineSounds.ORB_DESPAWN.get(), SoundSource.HOSTILE, 1.0F, 1.0F);
+
+        this.discard();
     }
 
     @Override
@@ -156,6 +196,10 @@ public class OrbEntity extends FlyingMob implements Enemy {
      * is always left at critical HP after being provoked, rather than varying with
      * arrow charge/enchantments/crits.
      * <p>
+     * This is also the moment the first shield layer visibly cracks, so a smaller
+     * version of the shield-burst effect (and its sound) plays here — the only other
+     * time it plays is on death.
+     * <p>
      * Every hit after that (i.e. once already hostile) behaves as completely normal
      * damage — no more snapping, no more special-casing.
      */
@@ -172,6 +216,7 @@ public class OrbEntity extends FlyingMob implements Enemy {
             // a massive damage source) — don't resurrect a dead Orb back to 3 HP.
             if (this.isAlive()) {
                 this.setHealth(PROVOKED_HEALTH);
+                this.playForceFieldBurst(0.0F, 14.0F, 0.9F, 0.0F);
             }
         }
 
@@ -187,23 +232,40 @@ public class OrbEntity extends FlyingMob implements Enemy {
     }
 
     /**
+     * Shared shield-burst effect (particle + sound), reused for both the provoking
+     * hit (bigger burst) and death (smaller burst via {@link #die}). Server-only.
+     */
+    private void playForceFieldBurst(float startSize, float endSize, float startAlpha, float endAlpha) {
+        ServerLevel serverLevel = (ServerLevel) this.level();
+
+        serverLevel.sendParticles(
+                new OrbShieldBurstData(10, startSize, endSize, startAlpha, endAlpha),
+                this.getX(), this.getY() + 0.5D, this.getZ(),
+                1,
+                0.0D, 0.0D, 0.0D,
+                0.0D
+        );
+
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                CoralineSounds.ORB_FORCE_FIELD_BURST.get(), SoundSource.HOSTILE, 1.0F, 1.0F);
+    }
+
+    /**
      * Death "shield burst" — mirrors Rediscovered's PylonBurstEntity.playExplosionEffect():
      * a burst of the Orb's own energy shell (via OrbShieldBurstData/OrbShieldBurstParticle),
-     * layered with vanilla POOF for weight and a dedicated explosion sound. No damage is
-     * dealt by this burst — it's purely the Orb's death animation.
+     * layered with vanilla POOF for weight and the same force-field burst sound used on
+     * the provoking hit, but scaled down since the corpse-vanishing effect reads better
+     * smaller than the initial crack. No damage is dealt by this burst — it's purely the
+     * Orb's death animation. The last remaining shield layer is also dropped here (see
+     * isDeadOrDying() check in the renderer) so nothing is left floating around the corpse.
      */
     @Override
     public void die(@NotNull DamageSource damageSource) {
         if (!this.level().isClientSide) {
             ServerLevel serverLevel = (ServerLevel) this.level();
 
-            serverLevel.sendParticles(
-                    new OrbShieldBurstData(),
-                    this.getX(), this.getY() + 0.5D, this.getZ(),
-                    1,
-                    0.0D, 0.0D, 0.0D,
-                    0.0D
-            );
+            this.playForceFieldBurst(0.0F, 10.0F, 1.0F, 0.0F);
+
             serverLevel.sendParticles(
                     ParticleTypes.POOF,
                     this.getX(), this.getY() + 0.5D, this.getZ(),
@@ -211,9 +273,6 @@ public class OrbEntity extends FlyingMob implements Enemy {
                     0.3D, 0.3D, 0.3D,
                     0.05D
             );
-
-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                    CoralineSounds.ORB_DEATH_BURST.get(), SoundSource.HOSTILE, 1.0F, 1.0F);
         }
 
         super.die(damageSource);
@@ -268,7 +327,7 @@ public class OrbEntity extends FlyingMob implements Enemy {
                                              RandomSource random) {
         long dayTime = level.getLevel().getDayTime() % 24000;
         boolean isDawn = dayTime >= 22000 || dayTime <= 1000;
-        return isDawn && level.getDifficulty() != Difficulty.PEACEFUL; // TODO: Make them spawn on Peaceful!
+        return isDawn && level.getDifficulty() != Difficulty.PEACEFUL;
     }
 
     @Override

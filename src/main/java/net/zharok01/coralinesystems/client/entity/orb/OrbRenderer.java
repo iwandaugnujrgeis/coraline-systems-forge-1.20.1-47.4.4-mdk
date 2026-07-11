@@ -81,28 +81,32 @@ public class OrbRenderer<T extends OrbEntity> extends EntityRenderer<T> {
         pose.popPose();
 
         // --- 2. Render the energy shells on top ---
-        // One layer is shed once the Orb reaches critical HP, as a visual low-HP warning.
-        VertexConsumer shellBuffer = ORB_SHELL_TEXTURE.buffer(bufferSource, RediscoveredRenderType::energy);
+        // One layer is shed once the Orb reaches critical HP, and the last remaining
+        // layer disappears entirely once it's dead (the death burst has already taken
+        // its place at that point), so nothing lingers around the corpse.
+        int shellLayers = entity.isDeadOrDying() ? 0 : (entity.isCritical() ? 2 : 3);
 
-        pose.pushPose();
-        int hash = Math.abs(entity.getUUID().hashCode());
-        float rot = (ageInTicks + (hash % 360)) * 8.0F;
-        float rotSpeed = 1.0F / ((hash % 2) + 1);
+        if (shellLayers > 0) {
+            VertexConsumer shellBuffer = ORB_SHELL_TEXTURE.buffer(bufferSource, RediscoveredRenderType::energy);
 
-        pose.scale(2.0F, 2.0F, 2.0F);
+            pose.pushPose();
+            int hash = Math.abs(entity.getUUID().hashCode());
+            float rot = (ageInTicks + (hash % 360)) * 8.0F;
+            float rotSpeed = 1.0F / ((hash % 2) + 1);
 
-        int shellLayers = entity.isCritical() ? 2 : 3;
+            pose.scale(2.0F, 2.0F, 2.0F);
 
-        DragonPylonRenderer.renderPylonShields(
-                this.shellPart, pose, shellBuffer,
-                LightTexture.FULL_BRIGHT,
-                rot * rotSpeed,
-                1.0F,
-                1.12F,
-                shellLayers,
-                0.65F
-        );
-        pose.popPose();
+            DragonPylonRenderer.renderPylonShields(
+                    this.shellPart, pose, shellBuffer,
+                    LightTexture.FULL_BRIGHT,
+                    rot * rotSpeed,
+                    1.0F,
+                    1.12F,
+                    shellLayers,
+                    0.65F
+            );
+            pose.popPose();
+        }
 
         super.render(entity, entityYaw, partialTicks, pose, bufferSource, packedLight);
     }
