@@ -5,6 +5,7 @@ import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.zharok01.coralinesystems.CoralineSystems;
 import net.zharok01.coralinesystems.client.entity.brume.BrumeRenderer;
 import net.zharok01.coralinesystems.client.entity.helper.HelperRenderer;
@@ -13,9 +14,11 @@ import net.zharok01.coralinesystems.client.entity.orb.OrbModel;
 import net.zharok01.coralinesystems.client.entity.orb.OrbPulseRenderer;
 import net.zharok01.coralinesystems.client.entity.orb.OrbRenderer;
 import net.zharok01.coralinesystems.client.particle.OrbSparkleParticle;
+import net.zharok01.coralinesystems.mixin.accessors.BiomeColorsAccessor;
 import net.zharok01.coralinesystems.registry.CoralineModelLayers;
 import net.zharok01.coralinesystems.registry.CoralineParticles;
 import net.zharok01.coralinesystems.registry.IsotopicEntities;
+import net.zharok01.coralinesystems.world.CoralineBiomeColors;
 
 @Mod.EventBusSubscriber(modid = CoralineSystems.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientModEvents {
@@ -49,5 +52,18 @@ public class ClientModEvents {
     @SubscribeEvent
     public static void registerParticleFactories(RegisterParticleProvidersEvent event) {
         event.registerSpriteSet(CoralineParticles.ORB_SPARKLE.get(), OrbSparkleParticle.Factory::new);
+    }
+
+    @SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        // Enqueue work to ensure it safely runs on the main thread during setup
+        event.enqueueWork(() -> {
+            // Overwrite Vanilla's static final ColorResolvers with our Bidirectional Noise Engine
+            BiomeColorsAccessor.coralineSystems$setGrassColorResolver(CoralineBiomeColors.GRASS_RESOLVER);
+            BiomeColorsAccessor.coralineSystems$setFoliageColorResolver(CoralineBiomeColors.FOLIAGE_RESOLVER);
+            BiomeColorsAccessor.coralineSystems$setWaterColorResolver(CoralineBiomeColors.WATER_RESOLVER);
+
+            CoralineSystems.LOGGER.info("Successfully injected Coraline Systems Bidirectional Biome Color Noise!");
+        });
     }
 }
