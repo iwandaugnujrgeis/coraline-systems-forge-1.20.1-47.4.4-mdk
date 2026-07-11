@@ -2,32 +2,39 @@ package net.zharok01.coralinesystems.util;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
-import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Persists the active Centrifuge time-acceleration session to the world's
- * data folder (data/coraline_acceleration_data.dat on the overworld).
+ * Persists ALL currently-active Centrifuge time-acceleration sessions to the
+ * world's data folder (data/coraline_acceleration_data.dat on the overworld).
  *
  * Survives world reload, server restart, and singleplayer quit-to-menu,
- * closing the loophole where a player could log out to freeze the session.
+ * closing the loophole where a player could log out to freeze a session.
+ *
+ * Supports an arbitrary number of concurrent sessions (one per Centrifuge),
+ * each tracked by its source BlockPos.
  */
 public class CentrifugeAccelerationData extends SavedData {
 
     private static final String IDENTIFIER = "coraline_acceleration_data";
 
-    // NBT keys
-    private static final String KEY_ACTIVE          = "SessionActive";
-    private static final String KEY_TICKS_REMAINING = "TicksRemaining";
-    private static final String KEY_SOURCE_X        = "SourceX";
-    private static final String KEY_SOURCE_Y        = "SourceY";
-    private static final String KEY_SOURCE_Z        = "SourceZ";
+    private static final String KEY_SESSIONS = "Sessions";
 
-    private boolean sessionActive   = false;
-    private int     ticksRemaining  = 0;
-    @Nullable
-    private BlockPos sessionSource  = null;
+    private static final String KEY_SOURCE_X          = "SourceX";
+    private static final String KEY_SOURCE_Y          = "SourceY";
+    private static final String KEY_SOURCE_Z          = "SourceZ";
+    private static final String KEY_TICKS_REMAINING   = "TicksRemaining";
+    private static final String KEY_STOPPING          = "Stopping";
+    private static final String KEY_STOP_TICKS_REMAIN = "StopTicksRemaining";
+    private static final String KEY_FROZEN_SPEED      = "FrozenSpeed";
+
+    private List<SavedSession> sessions = new ArrayList<>();
 
     // -------------------------------------------------------------------------
     // Access
@@ -35,8 +42,7 @@ public class CentrifugeAccelerationData extends SavedData {
 
     /**
      * Retrieves (or creates) the data instance from the overworld's storage.
-     * Always stored on the overworld regardless of which dimension calls this,
-     * mirroring the pattern used by {@link CoralineWorldData}.
+     * Always stored on the overworld regardless of which dimension calls this.
      */
     public static CentrifugeAccelerationData get(ServerLevel level) {
         return level.getServer()
@@ -53,52 +59,29 @@ public class CentrifugeAccelerationData extends SavedData {
     // Public API — called by TimeAccelerationManager
     // -------------------------------------------------------------------------
 
-    /** @return true if a session was active when the world was last saved */
-    public boolean isSessionActive() {
-        return sessionActive;
-    }
-
-    /** @return the remaining ticks of the saved session, or 0 if none */
-    public int getTicksRemaining() {
-        return ticksRemaining;
-    }
-
-    /** @return the BlockPos of the Centrifuge that started the session, or null */
-    @Nullable
-    public BlockPos getSessionSource() {
-        return sessionSource;
+    /** @return an immutable-in-spirit snapshot list of every saved session */
+    public List<SavedSession> getSessions() {
+        return sessions;
     }
 
     /**
-     * Records a newly started session and marks the data dirty for the next
-     * auto-save flush.
+     * Replaces the full session list and marks dirty immediately. Used for
+     * structural changes: session start, stop requested, or session end.
      */
-    public void onSessionStart(int totalTicks, BlockPos source) {
-        sessionActive  = true;
-        ticksRemaining = totalTicks;
-        sessionSource  = source.immutable();
+    public void setSessions(List<SavedSession> newSessions) {
+        this.sessions = newSessions;
         setDirty();
     }
 
     /**
-     * Called once per server tick to keep {@code ticksRemaining} current.
-     * Does NOT call {@link #setDirty()} — we rely on the auto-save cadence
-     * (every 6000 ticks by default) to flush mid-session progress. The worst
-     * case on a crash is resuming a few seconds earlier, which is acceptable.
+     * Replaces the full session list WITHOUT forcing a dirty flag. Used for
+     * routine per-tick progress updates — relies on Vanilla's auto-save
+     * cadence (every 6000 ticks by default) to flush mid-session progress.
+     * The worst case on a crash is resuming a few seconds earlier, which is
+     * acceptable — mirrors the original single-session design's tradeoff.
      */
-    public void onSessionTick(int remaining) {
-        ticksRemaining = remaining;
-    }
-
-    /**
-     * Records session end and marks dirty so the cleared state is flushed
-     * before the world closes.
-     */
-    public void onSessionEnd() {
-        sessionActive  = false;
-        ticksRemaining = 0;
-        sessionSource  = null;
-        setDirty();
+    public void setSessionsQuiet(List<SavedSession> newSessions) {
+        this.sessions = newSessions;
     }
 
     // -------------------------------------------------------------------------
@@ -107,15 +90,23 @@ public class CentrifugeAccelerationData extends SavedData {
 
     public static CentrifugeAccelerationData load(CompoundTag tag) {
         CentrifugeAccelerationData data = new CentrifugeAccelerationData();
-        data.sessionActive  = tag.getBoolean(KEY_ACTIVE);
-        data.ticksRemaining = tag.getInt(KEY_TICKS_REMAINING);
 
-        if (data.sessionActive) {
-            data.sessionSource = new BlockPos(
-                    tag.getInt(KEY_SOURCE_X),
-                    tag.getInt(KEY_SOURCE_Y),
-                    tag.getInt(KEY_SOURCE_Z)
+        ListTag list = tag.getList(KEY_SESSIONS, Tag.TAG_COMPOUND);
+        for (int i = 0; i < list.size(); i++) {
+            CompoundTag sessionTag = list.getCompound(i);
+
+            BlockPos source = new BlockPos(
+                    sessionTag.getInt(KEY_SOURCE_X),
+                    sessionTag.getInt(KEY_SOURCE_Y),
+                    sessionTag.getInt(KEY_SOURCE_Z)
             );
+
+            int ticksRemaining = sessionTag.getInt(KEY_TICKS_REMAINING);
+            boolean stopping = sessionTag.getBoolean(KEY_STOPPING);
+            int stopTicksRemaining = sessionTag.getInt(KEY_STOP_TICKS_REMAIN);
+            double frozenSpeed = sessionTag.getDouble(KEY_FROZEN_SPEED);
+
+            data.sessions.add(new SavedSession(source, ticksRemaining, stopping, stopTicksRemaining, frozenSpeed));
         }
 
         return data;
@@ -123,15 +114,33 @@ public class CentrifugeAccelerationData extends SavedData {
 
     @Override
     public CompoundTag save(CompoundTag tag) {
-        tag.putBoolean(KEY_ACTIVE,          sessionActive);
-        tag.putInt(KEY_TICKS_REMAINING,     ticksRemaining);
+        ListTag list = new ListTag();
 
-        if (sessionSource != null) {
-            tag.putInt(KEY_SOURCE_X, sessionSource.getX());
-            tag.putInt(KEY_SOURCE_Y, sessionSource.getY());
-            tag.putInt(KEY_SOURCE_Z, sessionSource.getZ());
+        for (SavedSession session : sessions) {
+            CompoundTag sessionTag = new CompoundTag();
+            sessionTag.putInt(KEY_SOURCE_X, session.source().getX());
+            sessionTag.putInt(KEY_SOURCE_Y, session.source().getY());
+            sessionTag.putInt(KEY_SOURCE_Z, session.source().getZ());
+            sessionTag.putInt(KEY_TICKS_REMAINING, session.ticksRemaining());
+            sessionTag.putBoolean(KEY_STOPPING, session.stopping());
+            sessionTag.putInt(KEY_STOP_TICKS_REMAIN, session.stopTicksRemaining());
+            sessionTag.putDouble(KEY_FROZEN_SPEED, session.frozenSpeed());
+            list.add(sessionTag);
         }
 
+        tag.put(KEY_SESSIONS, list);
         return tag;
     }
+
+    /**
+     * Immutable snapshot of one Centrifuge's session state, used for both
+     * in-memory transfer (Manager -> SavedData) and NBT round-tripping.
+     */
+    public record SavedSession(
+            BlockPos source,
+            int ticksRemaining,
+            boolean stopping,
+            int stopTicksRemaining,
+            double frozenSpeed
+    ) {}
 }

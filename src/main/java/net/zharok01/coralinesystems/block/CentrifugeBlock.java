@@ -2,6 +2,7 @@ package net.zharok01.coralinesystems.block;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -10,6 +11,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -17,6 +19,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.zharok01.coralinesystems.event.CentrifugeEvent;
+import net.zharok01.coralinesystems.time.TimeAccelerationManager;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class CentrifugeBlock extends BaseEntityBlock {
@@ -25,38 +30,65 @@ public class CentrifugeBlock extends BaseEntityBlock {
     public static final BooleanProperty ACTIVATED =
             BooleanProperty.create("activated");
 
+    /**
+     * Drives the third "blocked" blockstate/texture — true whenever the
+     * Centrifuge is Redstone-locked (i.e. currently refusing Orb insertion
+     * because it's receiving a neighbor signal). Independent of ACTIVATED:
+     * a Centrifuge can be LOCKED while idle (never started because it was
+     * powered) or LOCKED while still ACTIVATED (powered mid-session, now
+     * coasting through its abort inertia). The blockstate/model layer
+     * should treat LOCKED as taking visual priority over plain idle, but
+     * players can still see ACTIVATED's running effects layered if both
+     * happen to be true at once during the abort coast-down.
+     */
+    public static final BooleanProperty LOCKED =
+            BooleanProperty.create("locked");
+
     public CentrifugeBlock(BlockBehaviour.Properties properties) {
         super(properties);
-        // Default state: not activated.
-        registerDefaultState(stateDefinition.any().setValue(ACTIVATED, false));
+        // Default state: not activated, not locked.
+        registerDefaultState(stateDefinition.any()
+                .setValue(ACTIVATED, false)
+                .setValue(LOCKED, false));
     }
 
     // ── Blockstate ────────────────────────────────────────────────────────
 
     @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
-        builder.add(ACTIVATED);
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(ACTIVATED, LOCKED);
     }
 
     // ── BlockEntity wiring ────────────────────────────────────────────────
 
     @Nullable
     @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+    public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
         return new CentrifugeBlockEntity(pos, state);
     }
 
     @Override
-    public RenderShape getRenderShape(BlockState state) {
+    public @NotNull RenderShape getRenderShape(@NotNull BlockState state) {
         return RenderShape.MODEL;
     }
 
     // ── Interaction ───────────────────────────────────────────────────────
 
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos,
-                                 Player player, InteractionHand hand,
-                                 BlockHitResult hit) {
+    public @NotNull InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
+                                          @NotNull Player player, @NotNull InteractionHand hand,
+                                          @NotNull BlockHitResult hit) {
+        // Only claim the interaction if the player is actually holding an
+        // Orb — otherwise we must PASS on both sides so vanilla's normal
+        // item-use logic (e.g. placing a held block like a Dropper against
+        // us) runs uninterrupted, including its client-predicted sound.
+        // Previously the client branch unconditionally returned SUCCESS
+        // regardless of held item, which suppressed the client-side place
+        // swing/sound even though the server correctly fell through.
+        if (!(player.getItemInHand(hand).getItem() instanceof net.zharok01.coralinesystems.item.OrbItem)) {
+            return InteractionResult.PASS;
+        }
+
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
@@ -69,16 +101,58 @@ public class CentrifugeBlock extends BaseEntityBlock {
         return InteractionResult.PASS;
     }
 
+    // ── Redstone abort ───────────────────────────────────────────────────
+
+    /**
+     * Vanilla hook fired whenever a neighboring block change could affect
+     * this block's Redstone signal. We check if we're now powered and, if
+     * so, abort any running session at this position with the "aborted"
+     * (alarming) sound/particle variant rather than the calm natural-stop one.
+     */
+    @Override
+    public void neighborChanged(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
+                                @NotNull Block neighborBlock, @NotNull BlockPos neighborPos,
+                                boolean movedByPiston) {
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+
+        if (level.isClientSide()) {
+            return;
+        }
+
+        boolean powered = level.hasNeighborSignal(pos);
+
+        // Keep the LOCKED blockstate (blocked texture + dim glow) in sync
+        // with the actual Redstone-power condition that CentrifugeBlockEntity
+        // .canAcceptOrb() checks — every neighbor change re-evaluates this,
+        // so the visual never drifts from the real insertion-lock state.
+        if (state.hasProperty(LOCKED) && state.getValue(LOCKED) != powered) {
+            level.setBlock(pos, state.setValue(LOCKED, powered), 3);
+        }
+
+        if (!powered) {
+            return;
+        }
+
+        TimeAccelerationManager manager = CentrifugeEvent.getManager();
+        if (manager == null || !(level instanceof ServerLevel serverLevel)) {
+            return;
+        }
+
+        manager.requestStop(serverLevel, pos, true);
+    }
+
     // ── Client-side ambient effects (Furnace pattern) ─────────────────────
 
     /**
      * Called on the client only, roughly once per frame while the chunk is
      * loaded. We gate everything behind the ACTIVATED property so effects
-     * only appear when the Centrifuge is running.
+     * only appear when the Centrifuge is running (including while it's
+     * coasting through its stop-inertia phase, since ACTIVATED stays true
+     * until the session actually ends).
      */
     @Override
-    public void animateTick(BlockState state, Level level, BlockPos pos,
-                            RandomSource random) {
+    public void animateTick(BlockState state, @NotNull Level level, @NotNull BlockPos pos,
+                            @NotNull RandomSource random) {
         if (!state.getValue(ACTIVATED)) {
             return;
         }
@@ -106,11 +180,10 @@ public class CentrifugeBlock extends BaseEntityBlock {
             double oz = (random.nextDouble() - 0.5) * 0.8;
             double oy = random.nextDouble() * 0.4 + 0.5;
 
-            // ENCHANT gives a nice "magical energy" feel; swap freely.
             level.addParticle(
                     ParticleTypes.ENCHANT,
                     cx + ox, cy + oy, cz + oz,
-                    0.0, 0.05, 0.0   // slight upward drift
+                    0.0, 0.05, 0.0
             );
         }
 

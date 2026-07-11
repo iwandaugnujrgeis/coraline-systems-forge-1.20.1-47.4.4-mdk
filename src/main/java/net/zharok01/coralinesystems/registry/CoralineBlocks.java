@@ -23,7 +23,7 @@ import net.minecraftforge.registries.RegistryObject;
 import net.zharok01.coralinesystems.CoralineSystems;
 import net.zharok01.coralinesystems.block.*;
 
-		import java.util.function.BiFunction;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 public class CoralineBlocks {
@@ -165,6 +165,21 @@ public class CoralineBlocks {
 							.requiresCorrectToolForDrops()
 							.strength(3.5f, 6.0f)
 							.sound(SoundType.METAL)
+							// Idle: no light. Activated (speeding up time): full
+							// torch brightness (14). Locked (Redstone-blocked):
+							// a dim warning glow, a bit under a redstone torch's
+							// level 7 — using 5 here. ACTIVATED takes priority
+							// over LOCKED in the unusual case both are briefly
+							// true at once (mid-abort coast-down).
+							.lightLevel(blockState -> {
+								if (blockState.getValue(net.zharok01.coralinesystems.block.CentrifugeBlock.ACTIVATED)) {
+									return 14;
+								}
+								if (blockState.getValue(net.zharok01.coralinesystems.block.CentrifugeBlock.LOCKED)) {
+									return 7;
+								}
+								return 0;
+							})
 			)
 	);
 
