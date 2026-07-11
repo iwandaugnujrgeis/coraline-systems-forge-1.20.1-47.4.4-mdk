@@ -15,7 +15,7 @@ import java.util.*;
 
 public class StaticTeleporter {
 
-    private static final double FARLANDS_EDGE = 12_550_821.0;
+    private static final double FARLANDS_EDGE = 6_960_353.0;
     private static final int SEARCH_RADIUS = 16;
 
     /**

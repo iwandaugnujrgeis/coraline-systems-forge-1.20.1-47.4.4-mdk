@@ -6,6 +6,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -96,7 +97,7 @@ public class StaticPortalLinkData extends SavedData {
     // -------------------------------------------------------------------------
 
     @Override
-    public CompoundTag save(CompoundTag tag) {
+    public @NotNull CompoundTag save(@NotNull CompoundTag tag) {
         ListTag list = new ListTag();
         for (Map.Entry<BlockPos, BlockPos> entry : links.entrySet()) {
             CompoundTag pair = new CompoundTag();
