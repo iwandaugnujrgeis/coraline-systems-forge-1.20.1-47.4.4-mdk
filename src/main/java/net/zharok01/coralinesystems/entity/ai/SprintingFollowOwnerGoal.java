@@ -1,5 +1,7 @@
 package net.zharok01.coralinesystems.entity.ai;
 
+import einstein.subtle_effects.networking.clientbound.ClientBoundEntitySpawnSprintingDustCloudsPacket;
+import einstein.subtle_effects.platform.Services;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
@@ -21,8 +23,20 @@ public class SprintingFollowOwnerGoal extends FollowOwnerGoal {
     /** Minimum squared distance moved in one tick to count as a teleport. */
     private static final double TELEPORT_DETECT_SQ  = 4.0; // 2 blocks — no natural movement crosses this in one tick
 
+    /**
+     * How often (in ticks) to re-send the Subtle Effects sprint dust cloud
+     * packet while sprinting toward the owner. Subtle Effects' own Mixin
+     * throttles itself by distance-moved (0.5 blocks) rather than a tick
+     * timer, but we don't have access to its @Unique state fields from
+     * outside its Mixin class (see project notes — Option B: drive the
+     * same packet ourselves instead of mixin-ing into their Mixin), so we
+     * throttle on our end with a simple tick counter instead.
+     */
+    private static final int SPRINT_DUST_INTERVAL_TICKS = 4;
+
     private final TamableAnimal tamable;
     private final PathNavigation navigation;
+    private int sprintDustCooldown;
 
     public SprintingFollowOwnerGoal(TamableAnimal tamable) {
         super(tamable, WALK_SPEED, WALK_START_DISTANCE, STOP_DISTANCE, false);
@@ -57,10 +71,38 @@ public class SprintingFollowOwnerGoal extends FollowOwnerGoal {
         } else if (distanceSq >= sprintThresholdSq) {
             // 12–24 blocks — sprint
             this.navigation.moveTo(owner, SPRINT_SPEED);
+            trySpawnSprintDust();
         } else {
             // Under 12 blocks — walk
             this.navigation.moveTo(owner, WALK_SPEED);
         }
+    }
+
+    /**
+     * Fires the same clientbound packet Subtle Effects' own CommonLivingEntityMixin
+     * sends for its allowlisted entities (Ravager/Goat/Hoglin/Zoglin), so tamed
+     * Wolves get the identical sprint dust cloud effect without us touching their
+     * Mixin's private @Unique fields.
+     *
+     * Throttled by SPRINT_DUST_INTERVAL_TICKS rather than distance-moved (which is
+     * how their own Mixin throttles) since we don't have access to their internal
+     * state to replicate that exactly — a tick-based throttle is a close enough
+     * approximation for this cosmetic effect.
+     */
+    private void trySpawnSprintDust() {
+        if (!(this.tamable.level() instanceof ServerLevel serverLevel)) return;
+
+        if (this.sprintDustCooldown > 0) {
+            this.sprintDustCooldown--;
+            return;
+        }
+        this.sprintDustCooldown = SPRINT_DUST_INTERVAL_TICKS;
+
+        Services.NETWORK.sendToClientsTracking(
+                serverLevel,
+                this.tamable.blockPosition(),
+                new ClientBoundEntitySpawnSprintingDustCloudsPacket(this.tamable.getId())
+        );
     }
 
     /**
