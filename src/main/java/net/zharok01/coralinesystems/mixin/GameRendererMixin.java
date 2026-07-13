@@ -1,8 +1,14 @@
 package net.zharok01.coralinesystems.mixin;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.server.IntegratedServer;
+import net.zharok01.coralinesystems.mixin.accessors.LightTextureAccessor;
+import net.zharok01.coralinesystems.world.TrueDarkness;
 import org.objectweb.asm.Opcodes;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -70,5 +76,33 @@ public abstract class GameRendererMixin {
     )
     private void onResetData(CallbackInfo ci) {
         this.coralineSystems$hasUpdatedScreenshot = false;
+    }
+
+    /**
+     * Recomputes the True Darkness luminance target table once per frame, before the
+     * (possibly dirty) light texture re-uploads this frame.
+     */
+    @Shadow
+    @Final
+    @javax.annotation.Nullable
+    Minecraft minecraft;
+
+    @Inject(method = "renderLevel", at = @At("HEAD"))
+    private void coralineSystems$updateDarknessLuminance(float partialTicks, long finishTimeNano, PoseStack poseStack, CallbackInfo ci) {
+        GameRenderer self = (GameRenderer) (Object) this;
+        LightTexture lightTexture = self.lightTexture();
+        LightTextureAccessor accessor = (LightTextureAccessor) lightTexture;
+
+        if (!accessor.coralineSystems$isLightTextureDirty()) {
+            return;
+        }
+
+        assert this.minecraft != null;
+        TrueDarkness.updateLuminance(
+            partialTicks,
+            this.minecraft,
+            self,
+            accessor.coralineSystems$getBlockLightRedFlicker()
+        );
     }
 }
