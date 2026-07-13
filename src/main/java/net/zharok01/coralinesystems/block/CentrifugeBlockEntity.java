@@ -49,7 +49,22 @@ public class CentrifugeBlockEntity extends BlockEntity {
     private final ItemStackHandler itemHandler = new ItemStackHandler(1) {
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return stack.getItem() instanceof OrbItem && canAcceptOrb();
+            if (!(stack.getItem() instanceof OrbItem)) {
+                return false;
+            }
+
+            if (canAcceptOrb()) {
+                return true;
+            }
+
+            // Automation (Hopper/Dropper/future pipes) tried to feed an Orb
+            // into a Redstone-locked Centrifuge — same "blank shot" cue as
+            // the hand-driven rejection path, so the feedback is consistent
+            // regardless of how the insertion was attempted.
+            if (isRedstoneLocked()) {
+                playBlankShotEffect();
+            }
+            return false;
         }
 
         @Override
@@ -83,6 +98,14 @@ public class CentrifugeBlockEntity extends BlockEntity {
         // a session is already running/stopping here, or the block is
         // currently Redstone-locked.
         if (!canAcceptOrb()) {
+            // Only the LOCKED case gets the "blank shot" effect — a refusal
+            // because a session is already active/stopping isn't a
+            // rejection in the same sense (there's nothing wrong with the
+            // attempt, the machine's just busy) and already has its own
+            // silence-on-no-op behavior via attemptStart().
+            if (isRedstoneLocked()) {
+                playBlankShotEffect();
+            }
             return false;
         }
 
@@ -161,6 +184,76 @@ public class CentrifugeBlockEntity extends BlockEntity {
         }
 
         return true;
+    }
+
+    /** @return true if this Centrifuge is currently refusing Orbs specifically due to Redstone power. */
+    private boolean isRedstoneLocked() {
+        return level != null && level.hasNeighborSignal(worldPosition);
+    }
+
+    /**
+     * "Blank shot" feedback — fires when a player or automation attempts to
+     * insert an Orb into a Redstone-locked Centrifuge. No item is lost;
+     * this is purely a rejection cue so the attempt doesn't read as silently
+     * swallowed. Placeholder vanilla sound/particles until custom assets
+     * are registered.
+     */
+    void playBlankShotEffect() {
+        if (level == null || level.isClientSide()) {
+            return;
+        }
+
+        level.playSound(
+                null,
+                worldPosition,
+                SoundEvents.ITEM_BREAK, // TODO: CoralineSounds.CENTRIFUGE_BLANK_SHOT
+                SoundSource.BLOCKS,
+                0.8f,
+                1.4f
+        );
+
+        ((ServerLevel) level).sendParticles(
+                net.minecraft.core.particles.ParticleTypes.SMOKE,
+                worldPosition.getX() + 0.5,
+                worldPosition.getY() + 1.0,
+                worldPosition.getZ() + 0.5,
+                8,
+                0.2, 0.1, 0.2,
+                0.02
+        );
+    }
+
+    /**
+     * "Locked" feedback — fires when this Centrifuge transitions into the
+     * LOCKED state (Redstone-powered) while it was idle/deactivated.
+     * Deliberately distinct from the ABORT effect (played by
+     * TimeAccelerationManager.requestStop) which only fires when a
+     * Centrifuge gets locked mid-session. Placeholder vanilla sound/
+     * particles until custom assets are registered.
+     */
+    void playLockedEffect() {
+        if (level == null || level.isClientSide()) {
+            return;
+        }
+
+        level.playSound(
+                null,
+                worldPosition,
+                SoundEvents.BEACON_DEACTIVATE, // TODO: CoralineSounds.CENTRIFUGE_LOCKED
+                SoundSource.BLOCKS,
+                0.6f,
+                0.6f
+        );
+
+        ((ServerLevel) level).sendParticles(
+                net.minecraft.core.particles.ParticleTypes.SMOKE,
+                worldPosition.getX() + 0.5,
+                worldPosition.getY() + 1.0,
+                worldPosition.getZ() + 0.5,
+                12,
+                0.3, 0.15, 0.3,
+                0.01
+        );
     }
 
     /**

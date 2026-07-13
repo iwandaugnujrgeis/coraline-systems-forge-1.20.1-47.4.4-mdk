@@ -101,13 +101,20 @@ public class CentrifugeBlock extends BaseEntityBlock {
         return InteractionResult.PASS;
     }
 
-    // ── Redstone abort ───────────────────────────────────────────────────
+    // ── Redstone abort / lock ────────────────────────────────────────────
 
     /**
      * Vanilla hook fired whenever a neighboring block change could affect
      * this block's Redstone signal. We check if we're now powered and, if
      * so, abort any running session at this position with the "aborted"
      * (alarming) sound/particle variant rather than the calm natural-stop one.
+     *
+     * Also drives the LOCKED blockstate, and — when the Centrifuge becomes
+     * LOCKED while it was NOT running (ACTIVATED == false) — fires a
+     * distinct "locked" sound/particle effect. This is deliberately
+     * separate from the ABORT effect below: ABORT means "mid-use, now
+     * being forcibly stopped"; LOCKED-while-idle means "you can't use this
+     * right now," a much calmer/administrative cue.
      */
     @Override
     public void neighborChanged(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
@@ -120,16 +127,29 @@ public class CentrifugeBlock extends BaseEntityBlock {
         }
 
         boolean powered = level.hasNeighborSignal(pos);
+        boolean wasLocked = state.hasProperty(LOCKED) && state.getValue(LOCKED);
+        boolean activated = state.hasProperty(ACTIVATED) && state.getValue(ACTIVATED);
 
         // Keep the LOCKED blockstate (blocked texture + dim glow) in sync
         // with the actual Redstone-power condition that CentrifugeBlockEntity
         // .canAcceptOrb() checks — every neighbor change re-evaluates this,
         // so the visual never drifts from the real insertion-lock state.
-        if (state.hasProperty(LOCKED) && state.getValue(LOCKED) != powered) {
+        if (state.hasProperty(LOCKED) && wasLocked != powered) {
             level.setBlock(pos, state.setValue(LOCKED, powered), 3);
         }
 
         if (!powered) {
+            return;
+        }
+
+        // Newly locked (wasn't locked a moment ago) while sitting idle:
+        // this is the calm "locked" cue, not the alarming abort one.
+        if (!wasLocked && !activated && level instanceof ServerLevel
+                && level.getBlockEntity(pos) instanceof CentrifugeBlockEntity centrifuge) {
+            centrifuge.playLockedEffect();
+        }
+
+        if (!activated) {
             return;
         }
 
@@ -139,6 +159,84 @@ public class CentrifugeBlock extends BaseEntityBlock {
         }
 
         manager.requestStop(serverLevel, pos, true);
+    }
+
+    // ── Explosion on breaking an active, unpowered Centrifuge ───────────
+
+    /**
+     * Fired whenever this block's BlockState is replaced (broken, or
+     * silently swapped for another CentrifugeBlock state via setBlock).
+     * We only care about a genuine removal — i.e. the new block is no
+     * longer a CentrifugeBlock — and only explode if the Centrifuge was
+     * actively speeding up time and NOT Redstone-locked (a locked
+     * Centrifuge can't have an active session in the first place, but we
+     * check explicitly for clarity/future-proofing).
+     *
+     * The running session is explicitly stopped BEFORE the explosion
+     * fires, per design: requestStop plays the abort sound/particles as
+     * the "moment it's being killed," and the explosion follows as the
+     * physical consequence of breaking it while under load.
+     */
+    @Override
+    public void onRemove(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
+                         @NotNull BlockState newState, boolean isMoving) {
+        boolean genuinelyRemoved = !state.is(newState.getBlock());
+
+        if (genuinelyRemoved && !level.isClientSide()
+                && level instanceof ServerLevel serverLevel
+                && state.hasProperty(ACTIVATED) && state.getValue(ACTIVATED)
+                && state.hasProperty(LOCKED) && !state.getValue(LOCKED)) {
+
+            TimeAccelerationManager manager = CentrifugeEvent.getManager();
+            if (manager != null) {
+                manager.requestStop(serverLevel, pos, true);
+            }
+
+            explodeCentrifuge(serverLevel, pos);
+        }
+
+        super.onRemove(state, level, pos, newState, isMoving);
+    }
+
+    /**
+     * TNT-style block-damaging explosion, contained (power 2.25 — between
+     * a fireball and a full TNT charge), with mob-griefing fire enabled
+     * exactly like TNTBlock's own explosion. Uses SoundEvents.GENERIC_EXPLODE
+     * as a placeholder until CoralineSounds.CENTRIFUGE_EXPLODE is registered.
+     */
+    private static void explodeCentrifuge(ServerLevel level, BlockPos pos) {
+        double cx = pos.getX() + 0.5;
+        double cy = pos.getY() + 0.5;
+        double cz = pos.getZ() + 0.5;
+
+        // TODO: swap for CoralineSounds.CENTRIFUGE_EXPLODE.get() once registered.
+        level.playSound(
+                null,
+                pos,
+                SoundEvents.GENERIC_EXPLODE, // TODO: CoralineSounds.CENTRIFUGE_EXPLODE
+                SoundSource.BLOCKS,
+                4.0f,
+                (level.random.nextFloat() - level.random.nextFloat()) * 0.2f + 1.0f
+        );
+
+        level.sendParticles(
+                ParticleTypes.EXPLOSION,
+                cx, cy, cz,
+                1, 0.0, 0.0, 0.0, 0.0
+        );
+        level.sendParticles(
+                ParticleTypes.LARGE_SMOKE,
+                cx, cy, cz,
+                30, 0.4, 0.4, 0.4, 0.05
+        );
+
+        level.explode(
+                null,               // no entity source
+                cx, cy, cz,
+                2.25f,               // contained blast radius (between 2.0-2.5)
+                true,                // setFire — mob-griefing fire like TNT
+                Level.ExplosionInteraction.TNT
+        );
     }
 
     // ── Client-side ambient effects (Furnace pattern) ─────────────────────
