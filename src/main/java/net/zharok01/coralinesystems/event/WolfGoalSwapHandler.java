@@ -8,8 +8,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.zharok01.coralinesystems.CoralineSystems;
 import net.zharok01.coralinesystems.entity.ai.SprintingFollowOwnerGoal;
-import net.zharok01.coralinesystems.entity.ai.WolfDistressRoamGoal;
-import net.zharok01.coralinesystems.entity.ai.WolfFleeGoal;
+import net.zharok01.coralinesystems.entity.ai.WolfSurvivalPanicGoal;
 
 @Mod.EventBusSubscriber(modid = CoralineSystems.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class WolfGoalSwapHandler {
@@ -49,9 +48,8 @@ public class WolfGoalSwapHandler {
             wolf.goalSelector.addGoal(priority, new SprintingFollowOwnerGoal(wolf));
         }
 
-        // Fight-or-flight: flee at low HP while in combat, then roam +
-        // howl until healed. Both registered above sit/follow priority.
-        wolf.goalSelector.addGoal(FIGHT_OR_FLIGHT_PRIORITY, new WolfFleeGoal(wolf));
-        wolf.goalSelector.addGoal(FIGHT_OR_FLIGHT_PRIORITY, new WolfDistressRoamGoal(wolf));
+        // WolfSurvivalPanicGoal(wolf, healthThreshold, safeDistance, fleeSpeed, roamSpeed)
+        // HP threshold: 10.0F (5 hearts). Safe distance: 40.0F (Beats Zombie tracking).
+        wolf.goalSelector.addGoal(FIGHT_OR_FLIGHT_PRIORITY, new WolfSurvivalPanicGoal(wolf, 10.0F, 40.0F, 1.3, 1.0));
     }
 }
