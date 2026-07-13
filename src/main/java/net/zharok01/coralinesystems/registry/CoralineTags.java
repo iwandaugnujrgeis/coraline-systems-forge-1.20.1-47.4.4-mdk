@@ -26,4 +26,10 @@ public class CoralineTags {
 
     public static final TagKey<Item> PIG_FOOD_DROPPED = TagKey.create(Registries.ITEM,
             new ResourceLocation(CoralineSystems.MOD_ID, "pig_food_dropped"));
+
+    public static final TagKey<Item> BEAR_TAMEABLES = TagKey.create(Registries.ITEM,
+            new ResourceLocation(CoralineSystems.MOD_ID, "bear_tameables"));
+
+    public static final TagKey<Item> BEAR_HEALABLES = TagKey.create(Registries.ITEM,
+            new ResourceLocation(CoralineSystems.MOD_ID, "bear_healables"));
 }
