@@ -60,6 +60,8 @@ public class CoralineSounds {
 
     public static final RegistryObject<SoundEvent> PET_TELEPORT = createSoundEvent("pet_teleport");
     public static final RegistryObject<SoundEvent> DOG_HOWL = createSoundEvent("dog_howl");
+    public static final RegistryObject<SoundEvent> BEAR_DISMOUNT = createSoundEvent("bear_dismount");
+
 
     public static final RegistryObject<SoundEvent> MUSHROOM_BREAK = createSoundEvent("mushroom_break");
     public static final RegistryObject<SoundEvent> MUSHROOM_STEP = createSoundEvent("mushroom_step");

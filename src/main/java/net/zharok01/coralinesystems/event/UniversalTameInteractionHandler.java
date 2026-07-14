@@ -26,7 +26,7 @@ public class UniversalTameInteractionHandler {
 
         if (event.getTarget() instanceof EntityGrizzlyBear bear) {
 
-            // 1. Untamed: Right-Click to Tame
+            // 1. Untamed: Right-Click to Tame (Applies Honey Timer Immediately!)
             if (!bear.isTame() && stack.is(CoralineTags.BEAR_TAMEABLES)) {
                 event.setCanceled(true);
                 event.setCancellationResult(InteractionResult.sidedSuccess(player.level().isClientSide()));
@@ -34,6 +34,11 @@ public class UniversalTameInteractionHandler {
                 if (!player.level().isClientSide()) {
                     if (!player.getAbilities().instabuild) stack.shrink(1);
 
+                    // Requirement 1: Apply visual Honey Smudge & 35-second timer immediately on taming attempt!
+                    bear.setHoneyed(true);
+                    ((EntityGrizzlyBearAccessor) bear).coraline$setHoneyedTime(700);
+
+                    // Proceed with standard 33% taming roll
                     if (bear.getRandom().nextInt(3) == 0 && !ForgeEventFactory.onAnimalTame(bear, player)) {
                         bear.tame(player);
                         bear.getNavigation().stop();
@@ -48,18 +53,16 @@ public class UniversalTameInteractionHandler {
                 return;
             }
 
-            // 2. Tamed: Right-Click to Feed Honey (Enables Riding Overlay)
-            if (bear.isTame() && stack.is(CoralineTags.BEAR_TAMEABLES)) {
+            // 2. Tamed: Right-Click to Feed Honey (Only while NOT already honeyed —
+            //    prevents infinite stacking/refreshing of the riding timer)
+            if (bear.isTame() && !bear.isHoneyed() && stack.is(CoralineTags.BEAR_TAMEABLES)) {
                 event.setCanceled(true);
                 event.setCancellationResult(InteractionResult.sidedSuccess(player.level().isClientSide()));
 
                 if (!player.level().isClientSide()) {
                     if (!player.getAbilities().instabuild) stack.shrink(1);
 
-                    // Triggers the visual "Honey Smudged" AM overlay
                     bear.setHoneyed(true);
-
-                    // Sets the timer for 35 seconds (700 ticks) of riding
                     ((EntityGrizzlyBearAccessor) bear).coraline$setHoneyedTime(700);
 
                     bear.gameEvent(GameEvent.EAT, bear);
@@ -84,7 +87,6 @@ public class UniversalTameInteractionHandler {
                     bear.playSound(SoundEvents.GENERIC_EAT, 1.0F, 1.0F);
                     bear.level().broadcastEntityEvent(bear, (byte) 7);
                 }
-                // Removed `return;` as it's the end of the block anyway, but good practice.
             }
         }
     }

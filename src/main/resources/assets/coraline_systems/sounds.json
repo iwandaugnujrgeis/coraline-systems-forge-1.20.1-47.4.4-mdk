@@ -704,9 +704,19 @@
     ]
   },
   "dog_howl": {
+    "subtitle": "coraline_systems.sound.subtitle.dog_howl",
     "sounds": [
       "mob/wolf/howl1",
       "mob/wolf/howl2"
+    ]
+  },
+  "bear_dismount": {
+    "subtitle": "coraline_systems.sound.subtitle.bear_dismount",
+    "sounds": [
+      {
+        "name": "alexsmobs:grizzly_bear_hurt",
+        "type": "event"
+      }
     ]
   }
 }

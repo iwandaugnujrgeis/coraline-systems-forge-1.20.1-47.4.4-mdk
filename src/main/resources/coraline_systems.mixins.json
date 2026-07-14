@@ -90,6 +90,7 @@
     "ZombiePigmanConversionMixin",
     "accessors.BlockBehaviourAccessor",
     "accessors.CandleCakeBlockAccessor",
+    "accessors.EntityAccessor",
     "accessors.EntityGrizzlyBearAccessor",
     "advancements.PlayerAdvancementsMixin",
     "alexsmobs.EntityBaldEagleMixin",
