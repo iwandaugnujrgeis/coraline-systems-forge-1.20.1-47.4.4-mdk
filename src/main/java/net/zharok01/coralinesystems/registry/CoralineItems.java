@@ -48,6 +48,31 @@ public class CoralineItems {
 			() -> new OrbItem(new Item.Properties().stacksTo(16))
 	);
 
+	public static final RegistryObject<Item> MULBERRIES = register("mulberries",
+			() -> new Item(new Item.Properties()));
+
+	public static final RegistryObject<Item> YEAST = register("yeast",
+			() -> new Item(new Item.Properties()));
+
+	public static final RegistryObject<Item> TEA_LEAVES = register("tea_leaves",
+			() -> new Item(new Item.Properties()));
+
+	/**
+	 * The product of a spoiled Wine batch (design doc Section 3, "Failure
+	 * State — Spoiling") and the required culture input for Kombucha (Section
+	 * 4, step 3). Named "Dregs" per creative direction — deliberately avoids
+	 * "SCOBY" or other real-world fermentation science terminology per the
+	 * design doc's explicit naming constraint (Section 6).
+	 */
+	public static final RegistryObject<Item> DREGS = register("dregs",
+			() -> new Item(new Item.Properties()));
+
+	public static final RegistryObject<Item> WINE = register("wine",
+			() -> new Item(new Item.Properties()));
+
+	public static final RegistryObject<Item> KOMBUCHA = register("kombucha",
+			() -> new Item(new Item.Properties()));
+
 	private static <T extends Item> RegistryObject<T> register(String name, Supplier<T> supplier) {
 		return REGISTRY.register(name, supplier);
 	}

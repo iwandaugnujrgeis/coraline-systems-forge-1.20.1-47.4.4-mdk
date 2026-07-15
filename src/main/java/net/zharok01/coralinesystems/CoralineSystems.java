@@ -18,6 +18,7 @@ import net.zharok01.coralinesystems.client.ClientStaticPortalEffect;
 import net.zharok01.coralinesystems.client.TranscendingPortalOverlay;
 import net.zharok01.coralinesystems.registry.CoralinePacketHandler;
 import net.zharok01.coralinesystems.registry.*;
+
 import org.slf4j.Logger;
 
 @Mod(CoralineSystems.MOD_ID)
@@ -52,6 +53,8 @@ public class CoralineSystems {
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(CoralineTriggers::init);
         CoralinePacketHandler.register();
+        event.enqueueWork(net.zharok01.coralinesystems.util.BrewingCauldronInteractions::bootstrap);
+
 
         CoralineStats.STATS.getEntries().forEach(stat ->
                 net.minecraft.stats.Stats.CUSTOM.get(stat.get(), net.minecraft.stats.StatFormatter.DEFAULT)

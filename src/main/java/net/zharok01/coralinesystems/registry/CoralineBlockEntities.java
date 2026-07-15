@@ -39,6 +39,14 @@ public class CoralineBlockEntities {
                             .build(null)
             );
 
+    public static final RegistryObject<BlockEntityType<net.zharok01.coralinesystems.block.BrewingCauldronBlockEntity>> BREWING_CAULDRON =
+            BLOCK_ENTITIES.register(
+                    "brewing_cauldron",
+                    () -> BlockEntityType.Builder
+                            .of(net.zharok01.coralinesystems.block.BrewingCauldronBlockEntity::new, CoralineBlocks.BREWING_CAULDRON.get())
+                            .build(null)
+            );
+
     public static void register(IEventBus eventBus) {
         BLOCK_ENTITIES.register(eventBus);
     }

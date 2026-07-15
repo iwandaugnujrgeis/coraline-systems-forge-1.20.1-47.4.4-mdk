@@ -211,6 +211,16 @@ public class CoralineBlocks {
 			)
 	);
 
+	public static final RegistryObject<Block> BREWING_CAULDRON = register("brewing_cauldron",
+			() -> new net.zharok01.coralinesystems.block.BrewingCauldronBlock(
+					BlockBehaviour.Properties.of()
+							.mapColor(MapColor.METAL)
+							.strength(2.0F)
+							.sound(SoundType.METAL)
+							.noOcclusion()
+			)
+	);
+
 	//---
 
 	private static <T extends Block> RegistryObject<T> register(String name, Supplier<T> supplier) {
