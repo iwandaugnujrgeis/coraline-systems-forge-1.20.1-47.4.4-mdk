@@ -29,10 +29,37 @@ import org.jetbrains.annotations.NotNull;
 public class BrewingCauldronBlockEntity extends BlockEntity {
 
     private static final String TAG_CULTURE = "Culture";
+    private static final String TAG_IMPLIED_CULTURE = "ImpliedCulture";
     private static final String TAG_PROGRESS = "BrewProgress";
 
     /** Which recipe branch (if any) this cauldron is committed to. */
     private CultureType culture = CultureType.NONE;
+
+    /**
+     * Which recipe branch this cauldron's SOLID ingredients have committed
+     * to -- set the moment the first Mulberry or Tea Leaf is added (or, for
+     * the very first solid, at the WATER_CAULDRON -&gt; BrewingCauldronBlock
+     * conversion moment), independent of and prior to {@link #culture} being
+     * set by an actual Yeast/Dregs addition.
+     * <p>
+     * Deliberately a SEPARATE field from {@code culture} rather than
+     * overloading culture's meaning across two phases (solid-branch-lock vs.
+     * actual-committed-culture) -- the roadmap handoff flagged this as an
+     * open question and recommended deciding explicitly rather than
+     * guessing. Keeping them separate means every existing
+     * {@code getCulture() != NONE} check (which means "Yeast/Dregs has
+     * already been added, brewing may be underway") keeps meaning exactly
+     * that, with no risk of it silently starting to mean "a solid has been
+     * added" instead.
+     * <p>
+     * NONE means no solid has been added yet -- the cauldron (or, prior to
+     * conversion, the plain water cauldron) will accept either Mulberries
+     * or Tea Leaves as its first solid. Once set to WINE or KOMBUCHA, only
+     * the matching solid may be added further, and only the matching
+     * culture item (Yeast for WINE, Dregs for KOMBUCHA) may be used to
+     * start the brew.
+     */
+    private CultureType impliedCulture = CultureType.NONE;
 
     /**
      * Accumulated brew progress, in ticks. Advances via random tick once a
@@ -57,6 +84,25 @@ public class BrewingCauldronBlockEntity extends BlockEntity {
 
     public CultureType getCulture() {
         return culture;
+    }
+
+    public CultureType getImpliedCulture() {
+        return impliedCulture;
+    }
+
+    /**
+     * Locks this cauldron's solid-ingredient branch. Called exactly once,
+     * at the first solid addition (either the WATER_CAULDRON conversion
+     * entry point, or the first BREWING-map addSolidInteraction call on an
+     * already-converted cauldron with impliedCulture still NONE). Callers
+     * are responsible for only invoking this when impliedCulture is
+     * actually still NONE -- mirrors setCulture's own "no validation here"
+     * contract, since the calling CauldronInteraction already has the
+     * context needed to decide legality.
+     */
+    public void setImpliedCulture(CultureType impliedCulture) {
+        this.impliedCulture = impliedCulture;
+        setChanged();
     }
 
     /**
@@ -99,6 +145,7 @@ public class BrewingCauldronBlockEntity extends BlockEntity {
      */
     public void reset() {
         this.culture = CultureType.NONE;
+        this.impliedCulture = CultureType.NONE;
         this.brewProgress = 0L;
         setChanged();
     }
@@ -119,6 +166,14 @@ public class BrewingCauldronBlockEntity extends BlockEntity {
                 culture = CultureType.NONE;
             }
         }
+        if (tag.contains(TAG_IMPLIED_CULTURE)) {
+            try {
+                impliedCulture = CultureType.valueOf(tag.getString(TAG_IMPLIED_CULTURE));
+            } catch (IllegalArgumentException e) {
+                // Same fail-safe rationale as TAG_CULTURE above.
+                impliedCulture = CultureType.NONE;
+            }
+        }
         if (tag.contains(TAG_PROGRESS)) {
             brewProgress = tag.getLong(TAG_PROGRESS);
         }
@@ -128,6 +183,7 @@ public class BrewingCauldronBlockEntity extends BlockEntity {
     protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putString(TAG_CULTURE, culture.name());
+        tag.putString(TAG_IMPLIED_CULTURE, impliedCulture.name());
         tag.putLong(TAG_PROGRESS, brewProgress);
     }
 }

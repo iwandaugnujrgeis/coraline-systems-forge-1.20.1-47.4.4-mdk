@@ -4,6 +4,8 @@ import net.minecraft.core.cauldron.CauldronInteraction;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LayeredCauldronBlock;
 import net.zharok01.coralinesystems.block.BrewingCauldronBlock;
 import net.zharok01.coralinesystems.block.BrewingCauldronBlockEntity;
 import net.zharok01.coralinesystems.block.CultureType;
@@ -23,12 +25,48 @@ import java.util.Map;
  * is what makes an unmapped item resolve to a harmless PASS instead of an
  * NPE. Confirmed by inspection of AbstractCauldronBlock.java Session 1.
  * <p>
- * Session 1 scope: fill (via vanilla bucket interactions, reused as-is),
- * add-solid (Mulberries / Tea Leaves, level 1-5 with max-level rejection
- * cue), and add-culture (Yeast -> WINE / Dregs -> KOMBUCHA, brew start).
- * Sound/particle feedback beyond placeholders, and the actual random-tick
- * brewing math, are Sessions 2-3. Collection (Bottle/Bucket of finished
- * drink) is Session 4.
+ * Session 1 scope: add-solid (Mulberries / Tea Leaves, level 1-5 with
+ * max-level rejection cue) and add-culture (Yeast -> WINE / Dregs ->
+ * KOMBUCHA, brew start). Sound/particle feedback beyond placeholders, and
+ * the actual random-tick brewing math, are Sessions 2-3. Collection
+ * (Bottle/Bucket of finished drink) is Session 4.
+ * <p>
+ * POST-SESSION-1 FIX: bucket-based fill interactions (WATER_BUCKET,
+ * LAVA_BUCKET, POWDER_SNOW_BUCKET) are explicitly registered as REJECT in
+ * this map rather than reused from vanilla via addDefaultInteractions --
+ * see bootstrap()'s inline comment and REJECT's javadoc below for why
+ * (bug #1: a Water Bucket would otherwise silently revert a
+ * BrewingCauldronBlock back to a plain vanilla water cauldron, destroying
+ * all BE state). A Glass Bottle of Water was never mapped in BREWING to
+ * begin with (WATER.put(Items.GLASS_BOTTLE, ...) is vanilla's own
+ * WATER_CAULDRON-only entry and was never copied into BREWING), so it
+ * already correctly falls through to PASS via the map's default return
+ * value -- no separate fix needed for that specific item.
+ * <p>
+ * CONVERSION ENTRY POINT (added post-Session-1, fixing a Session 1 gap):
+ * a player always starts from a plain vanilla WATER_CAULDRON (filled via
+ * vanilla's own bucket/bottle interactions) -- BrewingCauldronBlock is
+ * never placed directly. That means the very first Mulberry/Tea Leaves
+ * right-click actually dispatches through {@code CauldronInteraction.WATER}
+ * (vanilla's own map, see CauldronInteraction.java), NOT our BREWING map,
+ * since AbstractCauldronBlock.use() reads whichever interactions map the
+ * block instance was constructed with. Our BREWING map is unreachable
+ * until a BrewingCauldronBlock already exists in the world -- nothing
+ * previously created one, so solids silently no-op'd via WATER's default
+ * PASS return.
+ * <p>
+ * Fix: register Mulberries/Tea Leaves into {@code CauldronInteraction.WATER}
+ * too (mirroring exactly how vanilla's own DYED_ITEM/BANNER/SHULKER_BOX
+ * entries sit in that same map -- see CauldronInteraction.bootStrap()).
+ * This entry gates on full water (LEVEL 3, same predicate vanilla's own
+ * Bucket-fill interaction uses), swaps the block from WATER_CAULDRON to
+ * BrewingCauldronBlock, and performs the level-1 increment inline (it
+ * cannot simply re-delegate to addSolidInteraction's lambda, because that
+ * lambda expects a BrewingCauldronBlockEntity to already exist at pos --
+ * which it won't, until this exact conversion creates one). Every
+ * subsequent Mulberry/Tea Leaves addition goes through the normal BREWING
+ * map afterward, since the block is BrewingCauldronBlock from that point
+ * on.
  */
 public final class BrewingCauldronInteractions {
 
@@ -38,24 +76,144 @@ public final class BrewingCauldronInteractions {
     public static final Map<Item, CauldronInteraction> BREWING = CauldronInteraction.newInteractionMap();
 
     /**
+     * Shared no-op interaction that always returns PASS. Used both as an
+     * explicit map entry (see the WATER_BUCKET/LAVA_BUCKET/POWDER_SNOW_BUCKET
+     * registrations below) and as the return value of every "wrong branch"
+     * rejection inside addSolidInteraction/addCultureInteraction.
+     * <p>
+     * IMPORTANT (bug #4 fix): PASS is not just "no effect" -- it's what
+     * suppresses the player's arm-swing animation. AbstractCauldronBlock.use()
+     * returns whatever this interact() call returns directly, and
+     * InteractionResult.PASS reads to the client as "nothing happened here,
+     * let vanilla continue its own logic" (no swing). InteractionResult
+     * .sidedSuccess(...) -- used by every ACCEPTED interaction below -- is
+     * what triggers the swing. The MAX_SOLID_LEVEL rejection already
+     * returned PASS correctly; the fix for Dregs-on-Mulberries /
+     * Yeast-on-Tea-Leaves (and the reverse) is simply routing those same
+     * wrong-branch cases through PASS instead of falling into the
+     * sidedSuccess branch, which is what CultureType-branch gating below
+     * now guarantees.
+     */
+    private static final CauldronInteraction REJECT = (state, level, pos, player, hand, itemStack) -> InteractionResult.PASS;
+
+    /**
      * Called once from CoralineSystems' constructor (see registration-order
      * convention in Section 2.4/3.4 of the roadmap handoff), mirroring
      * CauldronInteraction.bootStrap()'s own static-init call pattern.
      */
     public static void bootstrap() {
-        // Reuse vanilla's default fill interactions (empty bucket of
-        // water/lava/powder snow) so a BrewingCauldronBlock placed at
-        // solid-level 1 with a Bucket in hand behaves identically to a
-        // plain vanilla cauldron for that specific interaction. Wine/
-        // Kombucha only care about what happens AFTER water is already
-        // present, so we don't need to reimplement the fill step.
-        CauldronInteraction.addDefaultInteractions(BREWING);
+        // NOTE: we deliberately do NOT call
+        // CauldronInteraction.addDefaultInteractions(BREWING) here anymore.
+        // That call seeds Items.WATER_BUCKET -> FILL_WATER (and LAVA_BUCKET/
+        // POWDER_SNOW_BUCKET), and FILL_WATER's vanilla implementation
+        // unconditionally emptyBucket()'s a hardcoded
+        // Blocks.WATER_CAULDRON.defaultBlockState() over whatever block is
+        // here -- silently reverting a BrewingCauldronBlock back to a plain
+        // vanilla water cauldron and destroying the BE (and all solid/
+        // culture/progress state with it) in the process. A brewing
+        // cauldron must never be re-fillable via vanilla fluid interactions
+        // once conversion has happened, full stop, regardless of solid/
+        // culture state -- see class javadoc bug #1.
+        //
+        // Explicitly registering these three as REJECT (below) rather than
+        // just leaving them unmapped is intentional, not just defensive:
+        // it documents that this is a deliberate design decision (not an
+        // oversight to "fix later"), and it protects us if a future session
+        // ever DOES call addDefaultInteractions(BREWING) again by habit --
+        // an explicit REJECT entry always wins over one added earlier in
+        // the same put() sequence, whereas an absent entry would silently
+        // start working (i.e. silently start reverting the cauldron again)
+        // the moment addDefaultInteractions was reintroduced.
+        BREWING.put(net.minecraft.world.item.Items.WATER_BUCKET, REJECT);
+        BREWING.put(net.minecraft.world.item.Items.LAVA_BUCKET, REJECT);
+        BREWING.put(net.minecraft.world.item.Items.POWDER_SNOW_BUCKET, REJECT);
 
         BREWING.put(CoralineItems.MULBERRIES.get(), addSolidInteraction(CultureType.WINE, CoralineItems.MULBERRIES.get()));
         BREWING.put(CoralineItems.TEA_LEAVES.get(), addSolidInteraction(CultureType.KOMBUCHA, CoralineItems.TEA_LEAVES.get()));
 
         BREWING.put(CoralineItems.YEAST.get(), addCultureInteraction(CultureType.WINE, CoralineItems.YEAST.get()));
         BREWING.put(CoralineItems.DREGS.get(), addCultureInteraction(CultureType.KOMBUCHA, CoralineItems.DREGS.get()));
+
+        // Conversion entry point -- see class javadoc "CONVERSION ENTRY
+        // POINT" section above for why this is required. Registered into
+        // vanilla's own WATER map (not BREWING), since that's what a
+        // plain WATER_CAULDRON actually dispatches through. Safe to
+        // mutate here: CauldronInteraction.WATER is a plain static Map
+        // populated by CauldronInteraction.bootStrap() at game bootstrap
+        // (well before FMLCommonSetupEvent, when this bootstrap() runs),
+        // and vanilla itself populates it the same way (WATER.put(...)
+        // calls in CauldronInteraction.bootStrap()) -- we're not
+        // replacing or racing anything, just adding two more entries
+        // after vanilla's own are already in place.
+        CauldronInteraction.WATER.put(CoralineItems.MULBERRIES.get(), convertToBrewingCauldron(CultureType.WINE, CoralineItems.MULBERRIES.get()));
+        CauldronInteraction.WATER.put(CoralineItems.TEA_LEAVES.get(), convertToBrewingCauldron(CultureType.KOMBUCHA, CoralineItems.TEA_LEAVES.get()));
+    }
+
+    /**
+     * Builds the one-shot conversion interaction that turns a full vanilla
+     * WATER_CAULDRON into a BrewingCauldronBlock at solid-level
+     * MIN_SOLID_LEVEL, consuming the triggering Mulberry/Tea Leaves item
+     * as that first solid addition in the same interaction. Registered
+     * into {@code CauldronInteraction.WATER}, NOT {@code BREWING} -- see
+     * class javadoc.
+     * <p>
+     * Gate mirrors vanilla's own full-cauldron predicate (the same
+     * {@code LEVEL == 3} check WATER's Bucket-fill entry uses) rather
+     * than allowing partial fills, per the confirmed design decision to
+     * treat "full" the same way vanilla treats "enough water to matter."
+     * <p>
+     * impliesCulture locks this cauldron's solid-ingredient branch the
+     * moment it's created -- this IS the first solid addition, so it's
+     * exactly the right place to set impliedCulture, mirroring what
+     * addSolidInteraction now does for every subsequent addition. Fixes
+     * bugs #2/#3: without this, a freshly-converted cauldron had no record
+     * of which solid started it, so nothing could reject a mismatched
+     * second solid or a mismatched culture item later.
+     */
+    private static CauldronInteraction convertToBrewingCauldron(CultureType impliesCulture, Item solidItem) {
+        return (state, level, pos, player, hand, itemStack) -> {
+            if (!state.is(Blocks.WATER_CAULDRON)) {
+                return InteractionResult.PASS;
+            }
+
+            if (state.getValue(LayeredCauldronBlock.LEVEL) != 3) {
+                return InteractionResult.PASS;
+            }
+
+            if (!level.isClientSide) {
+                if (!player.getAbilities().instabuild) {
+                    itemStack.shrink(1);
+                }
+                player.awardStat(Stats.ITEM_USED.get(solidItem));
+
+                // BrewingCauldronBlock.registerDefaultState() already sets
+                // LEVEL to MIN_SOLID_LEVEL (1) -- confirmed in
+                // BrewingCauldronBlock.java's constructor -- so this
+                // single setBlockAndUpdate both performs the block swap
+                // AND represents the level-1 solid addition in one step;
+                // no separate .setValue(LEVEL, ...) call is needed here.
+                level.setBlockAndUpdate(pos, net.zharok01.coralinesystems.registry.CoralineBlocks.BREWING_CAULDRON.get().defaultBlockState());
+
+                // setBlockAndUpdate above causes EntityBlock.newBlockEntity()
+                // to run, creating a fresh BrewingCauldronBlockEntity at pos.
+                // We DO need to touch it now (unlike the old Session 1
+                // comment claimed) to record which branch this cauldron just
+                // committed to -- culture itself correctly stays NONE (no
+                // Yeast/Dregs has been added), but impliedCulture must be
+                // set here or the very first solid addition would be
+                // unrecorded and bugs #2/#3 would remain exploitable via
+                // the conversion path specifically.
+                if (level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be) {
+                    be.setImpliedCulture(impliesCulture);
+                }
+
+                // TODO (Session 3): same "first solid added" SFX/particle
+                // cue addSolidInteraction will eventually get -- left
+                // silent for now rather than guessing a placeholder.
+            }
+
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        };
     }
 
     /**
@@ -89,6 +247,20 @@ public final class BrewingCauldronInteractions {
                 return InteractionResult.PASS;
             }
 
+            // Bug #2 fix: reject a solid that doesn't match the branch this
+            // cauldron already committed to. impliedCulture is always
+            // non-NONE by this point in practice (the conversion entry
+            // point sets it the instant the block becomes a
+            // BrewingCauldronBlock -- there's no code path where a
+            // BrewingCauldronBlockEntity exists with impliedCulture still
+            // NONE), but we check defensively rather than assume: if it
+            // somehow is NONE, we set it here instead of rejecting, so a
+            // legitimate first addition is never accidentally blocked.
+            CultureType existingBranch = be.getImpliedCulture();
+            if (existingBranch != CultureType.NONE && existingBranch != impliesCulture) {
+                return InteractionResult.PASS;
+            }
+
             int currentLevel = state.getValue(BrewingCauldronBlock.LEVEL);
 
             if (currentLevel >= BrewingCauldronBlock.MAX_SOLID_LEVEL) {
@@ -104,6 +276,9 @@ public final class BrewingCauldronInteractions {
                     itemStack.shrink(1);
                 }
                 player.awardStat(Stats.ITEM_USED.get(solidItem));
+                if (existingBranch == CultureType.NONE) {
+                    be.setImpliedCulture(impliesCulture);
+                }
                 level.setBlockAndUpdate(pos, state.setValue(BrewingCauldronBlock.LEVEL, currentLevel + 1));
             }
 
@@ -114,22 +289,22 @@ public final class BrewingCauldronInteractions {
     /**
      * Builds the CauldronInteraction for adding a culture item (Yeast or
      * Dregs), which commits the cauldron to a recipe branch and starts
-     * the brew. Refuses if a culture has already been set, or if no
-     * solids have been added yet (level starts at MIN_SOLID_LEVEL == 1
-     * by default state, so "no solids added" and "one solid added" are
-     * presently indistinguishable at the blockstate level -- flagging
-     * this as a Session 2 consideration below rather than silently
-     * guessing a fix here).
+     * the brew. Refuses if a culture has already been set, or if this
+     * culture item doesn't match the solid-ingredient branch already
+     * committed to (Yeast requires impliedCulture == WINE, i.e. a
+     * Mulberries cauldron; Dregs requires impliedCulture == KOMBUCHA, i.e.
+     * a Tea Leaves cauldron) -- fixes bug #3.
      * <p>
-     * TODO (Session 2): BrewingCauldronBlock currently defaults LEVEL to
-     * MIN_SOLID_LEVEL (1) rather than 0, matching LayeredCauldronBlock's
-     * own convention of starting at 1 rather than "empty". This means we
-     * cannot yet distinguish "cauldron has water only, zero solids added"
-     * from "one Mulberry has been added" purely via LEVEL. For Session 1
-     * this is harmless (culture-add doesn't currently check solid count),
-     * but if a future rule needs "at least one solid must be added before
-     * culture," this needs an explicit BE-side hasAddedSolid flag rather
-     * than inferring it from LEVEL. Left as a flagged gap, not guessed at.
+     * The old Session 1 TODO here about "no solids added yet" being
+     * indistinguishable from "one solid added" (via LEVEL alone) is now
+     * moot: a BrewingCauldronBlockEntity is only ever created by the
+     * conversion entry point, which sets impliedCulture in the very same
+     * setBlockAndUpdate call that creates the BE (see
+     * convertToBrewingCauldron) -- there is no reachable state where a
+     * BrewingCauldronBlockEntity exists with impliedCulture still NONE.
+     * "At least one solid must already be present before culture can be
+     * added" is therefore guaranteed structurally, with no separate flag
+     * needed.
      */
     private static CauldronInteraction addCultureInteraction(CultureType culture, Item cultureItem) {
         return (state, level, pos, player, hand, itemStack) -> {
@@ -138,6 +313,17 @@ public final class BrewingCauldronInteractions {
             }
 
             if (be.getCulture() != CultureType.NONE) {
+                return InteractionResult.PASS;
+            }
+
+            // Bug #3 fix: Yeast is only valid on a Mulberry (WINE) branch,
+            // Dregs only valid on a Tea Leaves (KOMBUCHA) branch. Falling
+            // through to PASS here is also what fixes bug #4 for this
+            // interaction -- PASS is what suppresses the arm swing (see
+            // REJECT's javadoc above); previously this branch mismatch was
+            // never checked at all, so execution always reached
+            // sidedSuccess regardless of which solid was actually present.
+            if (be.getImpliedCulture() != culture) {
                 return InteractionResult.PASS;
             }
 

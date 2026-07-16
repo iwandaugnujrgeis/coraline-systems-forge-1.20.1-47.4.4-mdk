@@ -18,13 +18,13 @@ import java.util.function.Supplier;
 public class CoralineItems {
 
 	public static final DeferredRegister<Item> REGISTRY =
-		DeferredRegister.create(ForgeRegistries.ITEMS, CoralineSystems.MOD_ID);
+			DeferredRegister.create(ForgeRegistries.ITEMS, CoralineSystems.MOD_ID);
 
 	public static final RegistryObject<Item> TORCH = register("torch", () -> new StandingAndWallBlockItem(
-		CoralineBlocks.TORCH.get(),
-		CoralineBlocks.WALL_TORCH.get(),
-		new Item.Properties(),
-		Direction.DOWN
+			CoralineBlocks.TORCH.get(),
+			CoralineBlocks.WALL_TORCH.get(),
+			new Item.Properties(),
+			Direction.DOWN
 	));
 
 	public static final RegistryObject<Item> DIMENSIONAL_SHARD = REGISTRY.register("dimensional_shard",
@@ -67,11 +67,45 @@ public class CoralineItems {
 	public static final RegistryObject<Item> DREGS = register("dregs",
 			() -> new Item(new Item.Properties()));
 
-	public static final RegistryObject<Item> WINE = register("wine",
-			() -> new Item(new Item.Properties()));
+	// ── Session 1.6: Bottle/Bucket drink items ──────────────────────────
+	// Replaces the old placeholder WINE/KOMBUCHA plain-Item entries (never
+	// had real behavior). No Fluid/FluidType registration anywhere here —
+	// see WineBucketItem's javadoc for why the capability is deliberately
+	// skipped. stacksTo(1) matches vanilla Potion/Milk Bucket stacking.
+	// craftRemainder handles "filled -> empty container" for free, no
+	// capability needed.
 
-	public static final RegistryObject<Item> KOMBUCHA = register("kombucha",
-			() -> new Item(new Item.Properties()));
+	public static final RegistryObject<Item> WINE_BOTTLE = register("wine_bottle",
+			() -> new net.zharok01.coralinesystems.item.WineBottleItem(
+					new Item.Properties().stacksTo(1).craftRemainder(net.minecraft.world.item.Items.GLASS_BOTTLE)));
+
+	public static final RegistryObject<Item> WINE_BUCKET = register("wine_bucket",
+			() -> new net.zharok01.coralinesystems.item.WineBucketItem(
+					new Item.Properties().stacksTo(1).craftRemainder(net.minecraft.world.item.Items.BUCKET)));
+
+	public static final RegistryObject<Item> KOMBUCHA_BOTTLE = register("kombucha_bottle",
+			() -> new net.zharok01.coralinesystems.item.KombuchaBottleItem(
+					new Item.Properties().stacksTo(1).craftRemainder(net.minecraft.world.item.Items.GLASS_BOTTLE)));
+
+	public static final RegistryObject<Item> KOMBUCHA_BUCKET = register("kombucha_bucket",
+			() -> new net.zharok01.coralinesystems.item.KombuchaBucketItem(
+					new Item.Properties().stacksTo(1).craftRemainder(net.minecraft.world.item.Items.BUCKET)));
+
+	public static final RegistryObject<Item> TEA_BOTTLE = register("tea_bottle",
+			() -> new net.zharok01.coralinesystems.item.TeaBottleItem(
+					new Item.Properties().stacksTo(1).craftRemainder(net.minecraft.world.item.Items.GLASS_BOTTLE)));
+
+	public static final RegistryObject<Item> TEA_BUCKET = register("tea_bucket",
+			() -> new net.zharok01.coralinesystems.item.TeaBucketItem(
+					new Item.Properties().stacksTo(1).craftRemainder(net.minecraft.world.item.Items.BUCKET)));
+
+	public static final RegistryObject<Item> DREGS_BOTTLE = register("dregs_bottle",
+			() -> new net.zharok01.coralinesystems.item.DregsBottleItem(
+					new Item.Properties().stacksTo(1).craftRemainder(net.minecraft.world.item.Items.GLASS_BOTTLE)));
+
+	public static final RegistryObject<Item> DREGS_BUCKET = register("dregs_bucket",
+			() -> new net.zharok01.coralinesystems.item.DregsBucketItem(
+					new Item.Properties().stacksTo(1).craftRemainder(net.minecraft.world.item.Items.BUCKET)));
 
 	private static <T extends Item> RegistryObject<T> register(String name, Supplier<T> supplier) {
 		return REGISTRY.register(name, supplier);
