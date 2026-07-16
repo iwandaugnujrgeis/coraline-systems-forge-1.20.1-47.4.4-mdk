@@ -28,8 +28,19 @@ import java.util.Map;
  * Session 1 scope: add-solid (Mulberries / Tea Leaves, level 1-5 with
  * max-level rejection cue) and add-culture (Yeast -> WINE / Dregs ->
  * KOMBUCHA, brew start). Sound/particle feedback beyond placeholders, and
- * the actual random-tick brewing math, are Sessions 2-3. Collection
- * (Bottle/Bucket of finished drink) is Session 4.
+ * the actual random-tick brewing math, are Sessions 2-3. Wine/Kombucha
+ * finished-drink collection (Bottle/Bucket of a completed brew) is Session
+ * 4.
+ * <p>
+ * SESSION 1.7 ADDITION: Tea collection is implemented here, NOT deferred
+ * to Session 4 -- per the confirmed Session 1.7 design decision (see
+ * roadmap Section 1e), Tea Leaves + Water is itself the finished Tea, with
+ * no culture item or brew-progress step, so its collection interaction
+ * ({@link #teaCollectInteraction}) could be wired immediately rather than
+ * waiting on Session 2's brew-progress machinery. This also supersedes the
+ * original roadmap's "Session 5" (deferred Tea recipe) -- there is no
+ * further Tea recipe work pending. See {@link #teaCollectInteraction}'s
+ * javadoc for the full mechanics and gating rationale.
  * <p>
  * POST-SESSION-1 FIX: bucket-based fill interactions (WATER_BUCKET,
  * LAVA_BUCKET, POWDER_SNOW_BUCKET) are explicitly registered as REJECT in
@@ -133,6 +144,18 @@ public final class BrewingCauldronInteractions {
 
         BREWING.put(CoralineItems.YEAST.get(), addCultureInteraction(CultureType.WINE, CoralineItems.YEAST.get()));
         BREWING.put(CoralineItems.DREGS.get(), addCultureInteraction(CultureType.KOMBUCHA, CoralineItems.DREGS.get()));
+
+        // Session 1.7: Tea collection. Tea Leaves + Water IS finished Tea --
+        // no culture item, no brew-progress wait (see class-level Session
+        // 1.7 note below and roadmap Section 1e). Gated inside
+        // teaCollectInteraction() to only fire on the Tea-Leaves branch
+        // (impliedCulture == KOMBUCHA) with no culture committed yet
+        // (culture == NONE) -- see that method's javadoc for why the
+        // second check matters.
+        BREWING.put(net.minecraft.world.item.Items.GLASS_BOTTLE,
+                teaCollectInteraction(CoralineItems.TEA_BOTTLE.get(), net.minecraft.world.item.Items.GLASS_BOTTLE, net.minecraft.sounds.SoundEvents.BOTTLE_FILL));
+        BREWING.put(net.minecraft.world.item.Items.BUCKET,
+                teaCollectInteraction(CoralineItems.TEA_BUCKET.get(), net.minecraft.world.item.Items.BUCKET, net.minecraft.sounds.SoundEvents.BUCKET_FILL));
 
         // Conversion entry point -- see class javadoc "CONVERSION ENTRY
         // POINT" section above for why this is required. Registered into
@@ -338,6 +361,94 @@ public final class BrewingCauldronInteractions {
                 // TODO (Session 3): "Shh" fizzle SFX + Yeast/Dregs particle
                 // burst, per design doc Section 3 step 3 / Section 4 step 3.
                 // Deliberately not guessing a placeholder SoundEvent here.
+            }
+
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        };
+    }
+
+    /**
+     * Session 1.7. Builds the CauldronInteraction for collecting Tea via an
+     * empty Glass Bottle or Bucket. Per the confirmed Session 1.7 design
+     * decision (roadmap Section 1e), Tea Leaves + Water is itself the
+     * finished product -- no culture item, no brew-progress wait. This
+     * supersedes the original roadmap's "Session 5" plan for a separate,
+     * more involved Tea recipe; there is no further Tea recipe design work
+     * pending.
+     * <p>
+     * Gating (see roadmap Section 1e.1 for the full rationale): fires only
+     * when {@code impliedCulture == KOMBUCHA} (this cauldron's committed
+     * solid branch is Tea Leaves, not Mulberries) AND {@code culture ==
+     * NONE} (Dregs has not been added -- no real Kombucha brew is
+     * underway). The second check is required because impliedCulture does
+     * NOT change when Dregs converts a cauldron into an actual Kombucha
+     * brew (it is set once at first-solid and only cleared by reset()) --
+     * without checking culture too, a player could keep draining free Tea
+     * out of a cauldron that's mid-Kombucha-ferment.
+     * <p>
+     * Mechanics: stamps the resulting container with
+     * CoralineFluidUtils.setStrength(stack, currentLevel) using the
+     * cauldron's LEVEL at the moment of collection, then decrements LEVEL
+     * by 1 -- mirroring LayeredCauldronBlock.lowerFillLevel's progressive-
+     * drain pattern rather than resetting the whole cauldron in one pull.
+     * BrewingCauldronBlock.LEVEL's declared range is 1-5 with no valid 0
+     * state, so collecting from LEVEL == MIN_SOLID_LEVEL (1) instead
+     * reverts the block fully to a full vanilla Blocks.WATER_CAULDRON
+     * (LEVEL 3) -- exactly mirroring how lowerFillLevel reverts
+     * Blocks.CAULDRON (empty) at underflow. This destroys the BE (standard
+     * vanilla behavior on a block swap away from an EntityBlock), which
+     * implicitly clears impliedCulture/culture/brewProgress since there's
+     * nothing left to explicitly reset.
+     * <p>
+     * Sound reuse: SoundEvents.BOTTLE_FILL/BUCKET_FILL, the same sounds
+     * vanilla's own WATER map uses for plain water -- filling a container
+     * from a cauldron is conceptually identical regardless of contents, so
+     * this is a permanent choice, not a Session-3 placeholder.
+     *
+     * @param resultItem the Tea Bottle or Tea Bucket item to hand back
+     * @param emptyItem  the triggering empty container (Items.GLASS_BOTTLE
+     *                   or Items.BUCKET), used both to build the fallback
+     *                   "no room in inventory" empty stack via
+     *                   ItemUtils.createFilledResult and for the
+     *                   ITEM_USED stat
+     * @param fillSound  the vanilla fill sound to reuse (BOTTLE_FILL or
+     *                   BUCKET_FILL)
+     */
+    private static CauldronInteraction teaCollectInteraction(Item resultItem, Item emptyItem, net.minecraft.sounds.SoundEvent fillSound) {
+        return (state, level, pos, player, hand, itemStack) -> {
+            if (!(level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be)) {
+                return InteractionResult.PASS;
+            }
+
+            if (be.getImpliedCulture() != CultureType.KOMBUCHA) {
+                return InteractionResult.PASS;
+            }
+
+            if (be.getCulture() != CultureType.NONE) {
+                return InteractionResult.PASS;
+            }
+
+            int currentLevel = state.getValue(BrewingCauldronBlock.LEVEL);
+
+            if (!level.isClientSide) {
+                net.minecraft.world.item.ItemStack filledStack = net.zharok01.coralinesystems.item.CoralineFluidUtils.setStrength(
+                        new net.minecraft.world.item.ItemStack(resultItem), currentLevel);
+
+                player.setItemInHand(hand, net.minecraft.world.item.ItemUtils.createFilledResult(itemStack, player, filledStack));
+                player.awardStat(Stats.USE_CAULDRON);
+                player.awardStat(Stats.ITEM_USED.get(emptyItem));
+
+                if (currentLevel <= BrewingCauldronBlock.MIN_SOLID_LEVEL) {
+                    // Underflow -- mirror LayeredCauldronBlock.lowerFillLevel's
+                    // revert-to-base-block pattern. Destroys the BE, which
+                    // implicitly clears impliedCulture/culture/brewProgress.
+                    level.setBlockAndUpdate(pos, Blocks.WATER_CAULDRON.defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, 3));
+                } else {
+                    level.setBlockAndUpdate(pos, state.setValue(BrewingCauldronBlock.LEVEL, currentLevel - 1));
+                }
+
+                level.playSound(null, pos, fillSound, net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
+                level.gameEvent(null, net.minecraft.world.level.gameevent.GameEvent.FLUID_PICKUP, pos);
             }
 
             return InteractionResult.sidedSuccess(level.isClientSide);
