@@ -1,6 +1,8 @@
 package net.zharok01.coralinesystems.util;
 
 import net.minecraft.core.cauldron.CauldronInteraction;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -13,6 +15,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LayeredCauldronBlock;
 import net.minecraft.world.level.gameevent.GameEvent;
+import net.zharok01.coralinesystems.block.BrewState;
 import net.zharok01.coralinesystems.block.BrewingCauldronBlock;
 import net.zharok01.coralinesystems.block.BrewingCauldronBlockEntity;
 import net.zharok01.coralinesystems.block.CultureType;
@@ -153,6 +156,21 @@ public final class BrewingCauldronInteractions {
                 if (!player.getAbilities().instabuild) itemStack.shrink(1);
                 player.awardStat(Stats.ITEM_USED.get(cultureItem));
                 be.setCulture(culture);
+
+                // PLACEHOLDER (Session 2, temp for testing -- Session 3 owns
+                // real SFX/particles per design doc Section 3/4: "Triggers a
+                // 'shh' fizzle sound effect and particle burst" on culture
+                // add for both Wine and Kombucha). Reusing vanilla brewing
+                // stand's own fizzle sound since it's the closest existing
+                // asset to "shh" in vanilla's library, and SPLASH particles
+                // as a generic "something happened here" burst.
+                level.playSound(null, pos, net.minecraft.sounds.SoundEvents.BREWING_STAND_BREW,
+                        SoundSource.BLOCKS, 1.0F, 1.0F);
+                if (level instanceof ServerLevel serverLevel) {
+                    serverLevel.sendParticles(ParticleTypes.SPLASH,
+                            pos.getX() + 0.5, pos.getY() + 0.4, pos.getZ() + 0.5,
+                            12, 0.25, 0.1, 0.25, 0.0);
+                }
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         };
@@ -160,16 +178,12 @@ public final class BrewingCauldronInteractions {
 
     // ── Universal DRAIN (Bottle/Bucket <- BrewingCauldronBlock) ─────────────
 
-    /**
-     * Unified DRAIN logic for the Glass Bottle: pulls exactly ONE unit of
-     * {@link BrewingCauldronBlockEntity#getWaterLevel()} per draw (mirrors
-     * vanilla's own water cauldron, which always yields exactly 3 Bottles
-     * from a full cauldron regardless of contents), stamping the resulting
-     * drink's strength from the UNTOUCHED solid {@code BrewingCauldronBlock.LEVEL}.
-     * Water volume and solid strength are read/written completely
-     * independently -- this is the fix for the strength/volume conflation
-     * bug (see class javadoc, item 1).
-     */
+    // net.zharok01.coralinesystems.util.BrewingCauldronInteractions
+// Replace the `else` branch (currently a TODO + PASS) in BOTH
+// universalCollectBottleInteraction and universalCollectBucketInteraction
+// with the logic below. Shown here as the two full updated methods so the
+// surrounding context is unambiguous; nothing else in the class changes.
+
     private static CauldronInteraction universalCollectBottleInteraction(SoundEvent fillSound) {
         return (state, level, pos, player, hand, itemStack) -> {
             if (!(level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be)) return InteractionResult.PASS;
@@ -185,12 +199,25 @@ public final class BrewingCauldronInteractions {
                     resultItem = CoralineItems.MULBERRY_JUICE_BOTTLE.get();
                     appliesStrength = true;
                 }
+            } else if (be.getBrewState() == BrewState.FINISHED) {
+                // Session 2: resolved brew, ready for collection. Wine
+                // carries its strength (solid LEVEL at time of collection,
+                // per design doc); Kombucha does not -- confirmed the
+                // Tea Leaf count only ever affected pre-culture Tea's
+                // strength, never Kombucha's.
+                if (be.getCulture() == CultureType.WINE) {
+                    resultItem = CoralineItems.WINE_BOTTLE.get();
+                    appliesStrength = true;
+                } else if (be.getCulture() == CultureType.KOMBUCHA) {
+                    resultItem = CoralineItems.KOMBUCHA_BOTTLE.get();
+                }
+            } else if (be.getBrewState() == BrewState.SPOILED) {
+                // Wine-only path (Kombucha never spoils). Dregs carries no
+                // strength value.
+                resultItem = CoralineItems.DREGS_BOTTLE.get();
             } else {
-                // TODO (Session 2/4): once brewProgress/finished-state checks
-                // exist, branch here: finished Wine -> WINE_BOTTLE, spoiled
-                // Wine -> DREGS_BOTTLE, finished Kombucha -> KOMBUCHA_BOTTLE.
-                // Blocked for now so players can't instantly harvest a
-                // still-brewing batch.
+                // Still actively BREWING -- block collection so a Player
+                // can't instantly harvest a still-fermenting batch.
                 return InteractionResult.PASS;
             }
 
@@ -213,17 +240,9 @@ public final class BrewingCauldronInteractions {
 
                 int newWaterLevel = be.getWaterLevel() - 1;
                 if (newWaterLevel <= BrewingCauldronBlockEntity.MIN_WATER_LEVEL) {
-                    // Cauldron is out of liquid -- revert fully, same as
-                    // vanilla reverting LayeredCauldronBlock to plain
-                    // Blocks.CAULDRON on underflow. This destroys the BE
-                    // (standard onRemove behavior for an EntityBlock swap
-                    // away), implicitly clearing culture/impliedCulture/
-                    // progress/waterLevel with it -- nothing left to brew.
                     level.setBlockAndUpdate(pos, Blocks.CAULDRON.defaultBlockState());
                 } else {
                     be.setWaterLevel(newWaterLevel);
-                    // Solid LEVEL blockstate is untouched -- strength for
-                    // the NEXT draw stays exactly what it was.
                 }
 
                 level.playSound(null, pos, fillSound, SoundSource.BLOCKS, 1.0F, 1.0F);
@@ -233,12 +252,6 @@ public final class BrewingCauldronInteractions {
         };
     }
 
-    /**
-     * Unified DRAIN logic for the Bucket: always drains the ENTIRE
-     * cauldron in one go (mirrors vanilla -- a Bucket never partially
-     * empties a cauldron), reverting to a plain empty {@code CAULDRON}
-     * unconditionally.
-     */
     private static CauldronInteraction universalCollectBucketInteraction(SoundEvent fillSound) {
         return (state, level, pos, player, hand, itemStack) -> {
             if (!(level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be)) return InteractionResult.PASS;
@@ -254,14 +267,22 @@ public final class BrewingCauldronInteractions {
                     resultItem = CoralineItems.MULBERRY_JUICE_BUCKET.get();
                     appliesStrength = true;
                 }
+            } else if (be.getBrewState() == BrewState.FINISHED) {
+                if (be.getCulture() == CultureType.WINE) {
+                    resultItem = CoralineItems.WINE_BUCKET.get();
+                    appliesStrength = true;
+                } else if (be.getCulture() == CultureType.KOMBUCHA) {
+                    resultItem = CoralineItems.KOMBUCHA_BUCKET.get();
+                }
+            } else if (be.getBrewState() == BrewState.SPOILED) {
+                resultItem = CoralineItems.DREGS_BUCKET.get();
             } else {
-                // TODO (Session 2/4): fermented progress checks go here.
                 return InteractionResult.PASS;
             }
 
             if (resultItem == null) return InteractionResult.PASS;
 
-            // FIX: Buckets strictly require the cauldron to be filled to the brim!
+            // Buckets strictly require the cauldron to be filled to the brim.
             if (be.getWaterLevel() != BrewingCauldronBlockEntity.MAX_WATER_LEVEL) return InteractionResult.PASS;
 
             int strengthLevel = state.getValue(BrewingCauldronBlock.LEVEL);
@@ -276,7 +297,6 @@ public final class BrewingCauldronInteractions {
                 player.awardStat(Stats.USE_CAULDRON);
                 player.awardStat(Stats.ITEM_USED.get(Items.BUCKET));
 
-                // Buckets always take everything, same as vanilla.
                 level.setBlockAndUpdate(pos, Blocks.CAULDRON.defaultBlockState());
 
                 level.playSound(null, pos, fillSound, SoundSource.BLOCKS, 1.0F, 1.0F);

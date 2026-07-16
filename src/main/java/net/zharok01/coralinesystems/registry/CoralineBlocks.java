@@ -218,6 +218,7 @@ public class CoralineBlocks {
 							.strength(2.0F)
 							.sound(SoundType.METAL)
 							.noOcclusion()
+							.randomTicks() // Session 2: required for BrewingCauldronBlock#randomTick to ever fire
 			)
 	);
 

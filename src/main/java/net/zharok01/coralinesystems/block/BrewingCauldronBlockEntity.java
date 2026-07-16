@@ -14,6 +14,14 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Holds all state for an in-progress brew (Wine or Kombucha) beyond what
  * lives in the blockstate.
+ * <p>
+ * Session 2 additions: {@link #brewState} (BREWING/FINISHED/SPOILED —
+ * see {@link BrewState}'s javadoc for why there's no separate "stalled"
+ * value) and {@link #brewProgress}'s semantics are now pinned down:
+ * progress accrues in variable-size chunks added by
+ * {@link BrewingCauldronBlock#randomTick}, NOT once per elapsed game
+ * tick — this was an existing field from Session 1 whose accrual model
+ * simply hadn't been wired up yet.
  */
 public class BrewingCauldronBlockEntity extends BlockEntity {
 
@@ -21,6 +29,7 @@ public class BrewingCauldronBlockEntity extends BlockEntity {
     private static final String TAG_IMPLIED_CULTURE = "ImpliedCulture";
     private static final String TAG_PROGRESS = "BrewProgress";
     private static final String TAG_WATER_LEVEL = "WaterLevel";
+    private static final String TAG_BREW_STATE = "BrewState";
 
     public static final int MAX_WATER_LEVEL = 3;
     public static final int MIN_WATER_LEVEL = 0;
@@ -29,6 +38,7 @@ public class BrewingCauldronBlockEntity extends BlockEntity {
     private CultureType impliedCulture = CultureType.NONE;
     private long brewProgress = 0L;
     private int waterLevel = MAX_WATER_LEVEL;
+    private BrewState brewState = BrewState.BREWING;
 
     public BrewingCauldronBlockEntity(BlockPos pos, BlockState state) {
         super(CoralineBlockEntities.BREWING_CAULDRON.get(), pos, state);
@@ -101,11 +111,21 @@ public class BrewingCauldronBlockEntity extends BlockEntity {
         this.sync();
     }
 
+    public BrewState getBrewState() {
+        return brewState;
+    }
+
+    public void setBrewState(BrewState brewState) {
+        this.brewState = brewState;
+        this.sync();
+    }
+
     public void reset() {
         this.culture = CultureType.NONE;
         this.impliedCulture = CultureType.NONE;
         this.brewProgress = 0L;
         this.waterLevel = MAX_WATER_LEVEL;
+        this.brewState = BrewState.BREWING;
         this.sync();
     }
 
@@ -134,6 +154,13 @@ public class BrewingCauldronBlockEntity extends BlockEntity {
         if (tag.contains(TAG_WATER_LEVEL)) {
             waterLevel = tag.getInt(TAG_WATER_LEVEL);
         }
+        if (tag.contains(TAG_BREW_STATE)) {
+            try {
+                brewState = BrewState.valueOf(tag.getString(TAG_BREW_STATE));
+            } catch (IllegalArgumentException e) {
+                brewState = BrewState.BREWING;
+            }
+        }
     }
 
     @Override
@@ -143,5 +170,6 @@ public class BrewingCauldronBlockEntity extends BlockEntity {
         tag.putString(TAG_IMPLIED_CULTURE, impliedCulture.name());
         tag.putLong(TAG_PROGRESS, brewProgress);
         tag.putInt(TAG_WATER_LEVEL, waterLevel);
+        tag.putString(TAG_BREW_STATE, brewState.name());
     }
 }
