@@ -1,8 +1,6 @@
 package net.zharok01.coralinesystems.util;
 
 import net.minecraft.core.cauldron.CauldronInteraction;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -28,33 +26,52 @@ import java.util.function.Supplier;
 
 /**
  * Central registration point for every {@code CauldronInteraction} our
- * brewing system needs: adding solids/cultures, and now (Session 1.8)
- * universal DRAIN (Bottle/Bucket collection) and FILL (pouring a finished
- * drink back into an empty cauldron) for all five collectible substances --
- * Mulberry Juice, Tea, Kombucha, Wine, Dregs.
+ * brewing system needs: adding solids/cultures, universal DRAIN (Bottle/
+ * Bucket collection) and FILL (pouring a finished drink back into an
+ * empty cauldron) for all five collectible substances -- Mulberry Juice,
+ * Tea, Kombucha, Wine, Dregs.
  * <p>
  * <b>Session 1.8 changes -- fixing two confirmed playtesting bugs:</b>
  * <ol>
  *   <li><b>Strength/volume conflation (fixed):</b> collection previously
  *   read and drained {@code BrewingCauldronBlock.LEVEL} (the 1-5
- *   solid-ingredient strength) as if it were also a volume counter. This
- *   meant a cauldron with only 1 Tea Leaf yielded exactly 1 Tea Bottle
- *   (draining the solid level down to 0/reverting the block), while a
- *   5-Tea-Leaf cauldron yielded 5. Vanilla's own water cauldron always
- *   yields exactly 3 Bottles regardless of what's dissolved in it --
- *   volume and strength are different axes and were wrongly sharing one
- *   number. Fixed by introducing {@link BrewingCauldronBlockEntity#getWaterLevel()}
+ *   solid-ingredient strength) as if it were also a volume counter.
+ *   Fixed by introducing {@link BrewingCauldronBlockEntity#getWaterLevel()}
  *   (1-3, independent of the solid LEVEL), which collection now drains
  *   instead. The solid LEVEL is read once per draw (to stamp strength) and
  *   is never modified by collection.</li>
  *   <li><b>No fill path (fixed):</b> previously only drain (Bottle/Bucket
- *   -&gt; player) was wired. Pouring a filled Wine/Tea/Kombucha/Mulberry-Juice/
- *   Dregs Bottle or Bucket INTO an empty vanilla {@code CAULDRON} did
- *   nothing. Fixed via {@code universalFillInteraction}, registered on
- *   {@code CauldronInteraction.EMPTY} (the interaction map a plain empty
- *   cauldron actually dispatches through) for all ten container items,
- *   mirroring vanilla's own {@code FILL_WATER}/{@code FILL_LAVA} shape.</li>
+ *   -&gt; player) was wired. Fixed via {@code universalFillInteraction},
+ *   registered on {@code CauldronInteraction.EMPTY} for all ten container
+ *   items, mirroring vanilla's own {@code FILL_WATER}/{@code FILL_LAVA}
+ *   shape.</li>
  * </ol>
+ * <p>
+ * <b>Session 2 changes:</b>
+ * <ul>
+ *   <li>Drain interactions now branch on {@link BrewingCauldronBlockEntity#getBrewState()}
+ *   once a culture is set: {@code FINISHED} yields the real Wine/Kombucha,
+ *   {@code SPOILED} (Wine only) yields Dregs, and still-{@code BREWING}
+ *   cauldrons refuse collection outright so a Player can't harvest a
+ *   still-fermenting batch early. Wine carries its strength through to
+ *   collection; Kombucha does not (Tea Leaf count only ever affected
+ *   pre-culture Tea's strength, never Kombucha's -- confirmed by design).</li>
+ *   <li><b>Round-trip pour-back bug (fixed):</b> playtesting found that
+ *   collecting a finished Wine/Kombucha/Dregs and pouring it straight back
+ *   into an empty cauldron, then collecting again, silently returned
+ *   Mulberry Juice/Tea instead of the substance actually poured in. Root
+ *   cause: {@code universalFillInteraction} only ever set the BE's
+ *   {@code impliedCulture}, never its actual {@code culture} or
+ *   {@code brewState} -- so a poured-back Wine landed in a BE with
+ *   {@code culture == NONE}, which is exactly the state the drain
+ *   interactions read as "pre-culture, hand back the unfermented drink."
+ *   Fixed by giving {@link FillSpec} an explicit {@code resultCulture}/
+ *   {@code resultState} pair: Mulberry Juice/Tea (genuinely pre-culture)
+ *   still leave culture at NONE, but Wine/Kombucha/Dregs now restore both
+ *   {@code culture} and {@code brewState} on pour-back, making them
+ *   immediately re-collectible as themselves rather than needing to
+ *   re-brew from scratch.</li>
+ * </ul>
  * <p>
  * Water volume is deliberately independent of the solid-ingredient LEVEL by
  * design decision -- adding a Mulberry/Tea Leaf must never change how much
@@ -95,9 +112,9 @@ public final class BrewingCauldronInteractions {
         // Universal FILL: filled drink Bottle/Bucket -> empty vanilla
         // CAULDRON, converting it into a fresh BrewingCauldronBlock seeded
         // with the poured drink's implied culture, strength (as solid
-        // LEVEL), and full water volume. Registered on EMPTY, the map a
-        // plain, empty cauldron actually dispatches through -- mirrors
-        // vanilla's own FILL_WATER/FILL_LAVA/FILL_POWDER_SNOW slot.
+        // LEVEL), full water volume, and (Session 2) actual culture/
+        // brewState for finished/spoiled drinks -- see class javadoc,
+        // "Round-trip pour-back bug" entry.
         registerFillInteractions();
     }
 
@@ -161,13 +178,11 @@ public final class BrewingCauldronInteractions {
                 // real SFX/particles per design doc Section 3/4: "Triggers a
                 // 'shh' fizzle sound effect and particle burst" on culture
                 // add for both Wine and Kombucha). Reusing vanilla brewing
-                // stand's own fizzle sound since it's the closest existing
-                // asset to "shh" in vanilla's library, and SPLASH particles
-                // as a generic "something happened here" burst.
-                level.playSound(null, pos, net.minecraft.sounds.SoundEvents.BREWING_STAND_BREW,
-                        SoundSource.BLOCKS, 1.0F, 1.0F);
-                if (level instanceof ServerLevel serverLevel) {
-                    serverLevel.sendParticles(ParticleTypes.SPLASH,
+                // stand's own fizzle sound as the closest existing asset to
+                // "shh," and SPLASH particles as a generic burst.
+                level.playSound(null, pos, SoundEvents.BREWING_STAND_BREW, SoundSource.BLOCKS, 1.0F, 1.0F);
+                if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                    serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.SPLASH,
                             pos.getX() + 0.5, pos.getY() + 0.4, pos.getZ() + 0.5,
                             12, 0.25, 0.1, 0.25, 0.0);
                 }
@@ -178,12 +193,19 @@ public final class BrewingCauldronInteractions {
 
     // ── Universal DRAIN (Bottle/Bucket <- BrewingCauldronBlock) ─────────────
 
-    // net.zharok01.coralinesystems.util.BrewingCauldronInteractions
-// Replace the `else` branch (currently a TODO + PASS) in BOTH
-// universalCollectBottleInteraction and universalCollectBucketInteraction
-// with the logic below. Shown here as the two full updated methods so the
-// surrounding context is unambiguous; nothing else in the class changes.
-
+    /**
+     * Unified DRAIN logic for the Glass Bottle: pulls exactly ONE unit of
+     * {@link BrewingCauldronBlockEntity#getWaterLevel()} per draw, stamping
+     * the resulting drink's strength from the UNTOUCHED solid
+     * {@code BrewingCauldronBlock.LEVEL}. Water volume and solid strength
+     * are read/written completely independently.
+     * <p>
+     * Session 2: once a culture is set, branches on
+     * {@link BrewingCauldronBlockEntity#getBrewState()} -- FINISHED yields
+     * the real drink (Wine keeps its strength; Kombucha doesn't), SPOILED
+     * (Wine only) yields Dregs, and still-BREWING cauldrons refuse
+     * collection so a Player can't harvest a still-fermenting batch.
+     */
     private static CauldronInteraction universalCollectBottleInteraction(SoundEvent fillSound) {
         return (state, level, pos, player, hand, itemStack) -> {
             if (!(level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be)) return InteractionResult.PASS;
@@ -200,11 +222,6 @@ public final class BrewingCauldronInteractions {
                     appliesStrength = true;
                 }
             } else if (be.getBrewState() == BrewState.FINISHED) {
-                // Session 2: resolved brew, ready for collection. Wine
-                // carries its strength (solid LEVEL at time of collection,
-                // per design doc); Kombucha does not -- confirmed the
-                // Tea Leaf count only ever affected pre-culture Tea's
-                // strength, never Kombucha's.
                 if (be.getCulture() == CultureType.WINE) {
                     resultItem = CoralineItems.WINE_BOTTLE.get();
                     appliesStrength = true;
@@ -212,8 +229,6 @@ public final class BrewingCauldronInteractions {
                     resultItem = CoralineItems.KOMBUCHA_BOTTLE.get();
                 }
             } else if (be.getBrewState() == BrewState.SPOILED) {
-                // Wine-only path (Kombucha never spoils). Dregs carries no
-                // strength value.
                 resultItem = CoralineItems.DREGS_BOTTLE.get();
             } else {
                 // Still actively BREWING -- block collection so a Player
@@ -240,9 +255,16 @@ public final class BrewingCauldronInteractions {
 
                 int newWaterLevel = be.getWaterLevel() - 1;
                 if (newWaterLevel <= BrewingCauldronBlockEntity.MIN_WATER_LEVEL) {
+                    // Cauldron is out of liquid -- revert fully, same as
+                    // vanilla reverting LayeredCauldronBlock to plain
+                    // Blocks.CAULDRON on underflow. This destroys the BE,
+                    // implicitly clearing culture/impliedCulture/progress/
+                    // brewState/waterLevel with it -- nothing left to brew.
                     level.setBlockAndUpdate(pos, Blocks.CAULDRON.defaultBlockState());
                 } else {
                     be.setWaterLevel(newWaterLevel);
+                    // Solid LEVEL blockstate is untouched -- strength for
+                    // the NEXT draw stays exactly what it was.
                 }
 
                 level.playSound(null, pos, fillSound, SoundSource.BLOCKS, 1.0F, 1.0F);
@@ -252,6 +274,12 @@ public final class BrewingCauldronInteractions {
         };
     }
 
+    /**
+     * Unified DRAIN logic for the Bucket: always drains the ENTIRE
+     * cauldron in one go (mirrors vanilla -- a Bucket never partially
+     * empties a cauldron), reverting to a plain empty {@code CAULDRON}
+     * unconditionally. Session 2 branching mirrors the Bottle path above.
+     */
     private static CauldronInteraction universalCollectBucketInteraction(SoundEvent fillSound) {
         return (state, level, pos, player, hand, itemStack) -> {
             if (!(level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be)) return InteractionResult.PASS;
@@ -282,7 +310,8 @@ public final class BrewingCauldronInteractions {
 
             if (resultItem == null) return InteractionResult.PASS;
 
-            // Buckets strictly require the cauldron to be filled to the brim.
+            // FIX (Session 1.8): Buckets strictly require the cauldron to
+            // be filled to the brim!
             if (be.getWaterLevel() != BrewingCauldronBlockEntity.MAX_WATER_LEVEL) return InteractionResult.PASS;
 
             int strengthLevel = state.getValue(BrewingCauldronBlock.LEVEL);
@@ -297,6 +326,7 @@ public final class BrewingCauldronInteractions {
                 player.awardStat(Stats.USE_CAULDRON);
                 player.awardStat(Stats.ITEM_USED.get(Items.BUCKET));
 
+                // Buckets always take everything, same as vanilla.
                 level.setBlockAndUpdate(pos, Blocks.CAULDRON.defaultBlockState());
 
                 level.playSound(null, pos, fillSound, SoundSource.BLOCKS, 1.0F, 1.0F);
@@ -309,43 +339,58 @@ public final class BrewingCauldronInteractions {
     // ── Universal FILL (Bottle/Bucket of a finished drink -> empty CAULDRON) ──
 
     /**
-     * Describes one drink's fill behavior: which implied culture it
-     * converts an empty cauldron into, and whether the poured item carries
-     * a strength value that should seed the new cauldron's solid LEVEL.
+     * Describes one drink's fill behavior. {@code impliesCulture} is the
+     * branch an empty cauldron gets seeded into either way (via
+     * {@code impliedCulture}, mirroring what dropping the loose solid
+     * ingredient would have produced). {@code hasStrength} controls
+     * whether the poured item's strength value seeds the new solid LEVEL.
+     * <p>
+     * {@code resultCulture}/{@code resultState} are the Session 2 fix for
+     * the round-trip pour-back bug (see class javadoc): a finished/spoiled
+     * drink poured back in must restore BOTH the BE's actual
+     * {@code culture} (not just {@code impliedCulture}) AND
+     * {@code brewState}, or the universal drain interactions -- which
+     * branch on {@code culture == NONE} to decide "give the pre-culture
+     * unfermented drink" -- silently misread the freshly-poured cauldron
+     * as still pre-culture. {@code null resultCulture} means "leave
+     * culture at NONE," which is correct for Mulberry Juice/Tea (they
+     * really are pre-culture drinks, so misreading them as pre-culture
+     * isn't a bug).
      */
-    private record FillSpec(CultureType impliesCulture, boolean hasStrength) {
+    private record FillSpec(CultureType impliesCulture, boolean hasStrength,
+                            CultureType resultCulture, BrewState resultState) {
     }
 
     private static void registerFillInteractions() {
-        // Mulberry Juice and Tea both pour into a cauldron the same way a
-        // partially-brewed pre-culture drink would -- they seed the solid
-        // LEVEL from the poured strength and set impliedCulture, exactly
-        // mirroring what dropping loose Mulberries/Tea Leaves into a fresh
-        // water cauldron would have produced.
+        // Mulberry Juice and Tea are genuinely pre-culture -- pouring them
+        // back in leaves the cauldron exactly where dropping loose
+        // Mulberries/Tea Leaves into a fresh water cauldron would: culture
+        // stays NONE, only impliedCulture is set. resultCulture is null,
+        // so the round-trip fix below is a no-op for these two (correctly
+        // -- there's nothing to fix here, culture==NONE is the right read).
         registerFillPair(CoralineItems.MULBERRY_JUICE_BOTTLE, CoralineItems.MULBERRY_JUICE_BUCKET,
-                new FillSpec(CultureType.WINE, true));
+                new FillSpec(CultureType.WINE, true, null, BrewState.BREWING));
         registerFillPair(CoralineItems.TEA_BOTTLE, CoralineItems.TEA_BUCKET,
-                new FillSpec(CultureType.KOMBUCHA, true));
+                new FillSpec(CultureType.KOMBUCHA, true, null, BrewState.BREWING));
 
-        // Kombucha and Wine are FINISHED, fermented drinks. Session 2/4 own
-        // the actual "sits there finished, ready to re-collect" BE state;
-        // for now, pouring these back just seeds the branch (no strength
-        // concept re-applies the same way, since a finished drink's
-        // strength was already baked in at brew start) -- Session 2/4
-        // should revisit whether re-pouring a finished drink should be
-        // legal at all once brewProgress/finished-state exists. Left as a
-        // straightforward implied-culture seed for now so the fill/drain
-        // symmetry described in this session's task is complete.
+        // Wine and Kombucha are FINISHED, fermented drinks. Pouring one
+        // back in restores culture AND marks the BE FINISHED, making it
+        // immediately re-collectible as itself rather than being
+        // misclassified as pre-culture. Strength re-applies for Wine
+        // (still carries its 1-5 level); Kombucha has no strength concept
+        // per design, so its solid LEVEL seed is inert either way.
         registerFillPair(CoralineItems.WINE_BOTTLE, CoralineItems.WINE_BUCKET,
-                new FillSpec(CultureType.WINE, true));
+                new FillSpec(CultureType.WINE, true, CultureType.WINE, BrewState.FINISHED));
         registerFillPair(CoralineItems.KOMBUCHA_BOTTLE, CoralineItems.KOMBUCHA_BUCKET,
-                new FillSpec(CultureType.KOMBUCHA, false));
+                new FillSpec(CultureType.KOMBUCHA, false, CultureType.KOMBUCHA, BrewState.FINISHED));
 
-        // Dregs pours back in as the CULTURE item's implied branch
-        // (Kombucha), matching its role as Kombucha's required culture
-        // input. No strength concept.
+        // Dregs is the SPOILED product of a Wine batch (and separately
+        // doubles as Kombucha's required culture INPUT item -- those are
+        // different roles). Poured back in, it's the spoiled substance
+        // itself, so it restores as a spoiled Wine-branch cauldron, not as
+        // some half-finished Kombucha state. No strength concept.
         registerFillPair(CoralineItems.DREGS_BOTTLE, CoralineItems.DREGS_BUCKET,
-                new FillSpec(CultureType.KOMBUCHA, false));
+                new FillSpec(CultureType.WINE, false, CultureType.WINE, BrewState.SPOILED));
     }
 
     private static void registerFillPair(Supplier<? extends Item> bottleItem, Supplier<? extends Item> bucketItem, FillSpec spec) {
@@ -362,10 +407,14 @@ public final class BrewingCauldronInteractions {
      * {@code FILL_POWDER_SNOW} live.
      * <p>
      * Bottle pours seed water volume at 1 (matching vanilla's own
-     * Bottle-of-water-into-empty-cauldron behavior, which only ever raises
-     * {@code LayeredCauldronBlock.LEVEL} by 1 per Bottle); Bucket pours
-     * always seed a FULL cauldron (3), matching vanilla's Bucket-fill
-     * behavior.
+     * Bottle-of-water-into-empty-cauldron behavior); Bucket pours always
+     * seed a FULL cauldron (3), matching vanilla's Bucket-fill behavior.
+     * <p>
+     * Session 2: also restores {@code culture}/{@code brewState} from
+     * {@link FillSpec} when the poured drink is a finished/spoiled result
+     * rather than a pre-culture drink -- see {@link FillSpec}'s javadoc
+     * and the class-level "Round-trip pour-back bug" note for why this is
+     * necessary.
      */
     private static CauldronInteraction universalFillInteraction(FillSpec spec, Item emptyResult, SoundEvent emptySound) {
         return (state, level, pos, player, hand, itemStack) -> {
@@ -385,6 +434,15 @@ public final class BrewingCauldronInteractions {
                 if (level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be) {
                     be.setImpliedCulture(spec.impliesCulture());
                     be.setWaterLevel(isBucket ? BrewingCauldronBlockEntity.MAX_WATER_LEVEL : 1);
+
+                    // THE FIX: restore actual culture + brewState for
+                    // finished/spoiled drinks, so the drain interactions'
+                    // culture==NONE check doesn't misclassify them as
+                    // pre-culture on the very next collection attempt.
+                    if (spec.resultCulture() != null) {
+                        be.setCulture(spec.resultCulture());
+                        be.setBrewState(spec.resultState());
+                    }
                 }
 
                 level.playSound(null, pos, emptySound, SoundSource.BLOCKS, 1.0F, 1.0F);
