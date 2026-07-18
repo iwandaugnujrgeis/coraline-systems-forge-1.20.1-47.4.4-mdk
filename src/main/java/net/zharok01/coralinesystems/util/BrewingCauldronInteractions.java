@@ -81,6 +81,18 @@ public final class BrewingCauldronInteractions {
             if (!level.isClientSide) {
                 if (!player.getAbilities().instabuild) itemStack.shrink(1);
                 player.awardStat(Stats.ITEM_USED.get(solidItem));
+
+                // Insertion FX -- previously missing on this specific path
+                // (the very first solid added to a Water Cauldron, which is
+                // also the block-conversion step). addSolidInteraction below
+                // already plays this for the 2nd-5th additions; this closes
+                // the gap so the very first addition is no longer silent.
+                level.playSound(null, pos, CoralineSounds.CAULDRON_ADD_SOLID.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
+                if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                    serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.COMPOSTER,
+                            pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                            8, 0.25, 0.15, 0.25, 0.0);
+                }
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         };
