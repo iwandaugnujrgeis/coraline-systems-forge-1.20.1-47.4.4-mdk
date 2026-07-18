@@ -44,21 +44,13 @@ public final class BrewingCauldronInteractions {
         BREWING.put(CoralineItems.YEAST.get(), addCultureInteraction(CultureType.WINE, CoralineItems.YEAST.get()));
         BREWING.put(CoralineItems.DREGS.get(), addCultureInteraction(CultureType.KOMBUCHA, CoralineItems.DREGS.get()));
 
-        // Universal DRAIN: empty Bottle/Bucket -> filled drink container,
-        // pulled FROM a BrewingCauldronBlock.
         BREWING.put(Items.GLASS_BOTTLE, universalCollectBottleInteraction(SoundEvents.BOTTLE_FILL));
         BREWING.put(Items.BUCKET, universalCollectBucketInteraction(SoundEvents.BUCKET_FILL));
 
         CauldronInteraction.WATER.put(CoralineItems.MULBERRIES.get(), convertToBrewingCauldron(CultureType.WINE, CoralineItems.MULBERRIES.get()));
         CauldronInteraction.WATER.put(CoralineItems.TEA_LEAVES.get(), convertToBrewingCauldron(CultureType.KOMBUCHA, CoralineItems.TEA_LEAVES.get()));
 
-        // Universal FILL: filled drink Bottle/Bucket -> empty vanilla
-        // CAULDRON, converting it into a fresh BrewingCauldronBlock.
         registerFillInteractions();
-
-        // Universal TOP-UP: filled drink Bottle/Bucket -> an ALREADY-
-        // converted BrewingCauldronBlock holding the same substance.
-        // Fixes the bottle-restacking bug -- see class javadoc.
         registerTopUpInteractions();
     }
 
@@ -70,31 +62,24 @@ public final class BrewingCauldronInteractions {
                 return InteractionResult.PASS;
             }
 
+            // Client-side prediction! Setting the block and BE data on BOTH sides.
+            // This eliminates the split-packet visual delay entirely.
+            level.setBlockAndUpdate(pos, CoralineBlocks.BREWING_CAULDRON.get().defaultBlockState());
+
+            if (level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be) {
+                be.initializeVisualsSilently(
+                        CultureType.NONE, impliesCulture,
+                        BrewingCauldronBlockEntity.MIN_SOLID_STRENGTH,
+                        BrewState.BREWING, 0L);
+                if (!level.isClientSide) {
+                    be.syncToClient();
+                }
+            }
+
+            // Item modifications and stats remain strictly Server-side to prevent ghost items.
             if (!level.isClientSide) {
                 if (!player.getAbilities().instabuild) itemStack.shrink(1);
                 player.awardStat(Stats.ITEM_USED.get(solidItem));
-
-                // New BrewingCauldronBlock defaults to LEVEL=3 (full water)
-                // via its registerDefaultState -- correct here since we only
-                // ever convert from an already-full water cauldron.
-                level.setBlockAndUpdate(pos, CoralineBlocks.BREWING_CAULDRON.get().defaultBlockState());
-
-                // setBlockAndUpdate above already fires the placement's own
-                // block-update/render pass with a freshly-constructed BE that
-                // still holds Java-default fields (culture=NONE, strength=1
-                // as a coincidence, not a guarantee). Setting fields via the
-                // normal syncVisuals()-triggering setters here would only add
-                // a SECOND update after that first (wrong-looking) one --
-                // which is exactly the white/untinted flash. Instead, set
-                // every field silently in one shot, then send exactly one
-                // correct sync ourselves.
-                if (level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be) {
-                    be.initializeVisualsSilently(
-                            CultureType.NONE, impliesCulture,
-                            BrewingCauldronBlockEntity.MIN_SOLID_STRENGTH,
-                            BrewState.BREWING, 0L);
-                    be.syncToClient();
-                }
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         };
@@ -111,14 +96,13 @@ public final class BrewingCauldronInteractions {
             int currentStrength = be.getSolidStrength();
             if (currentStrength >= BrewingCauldronBlockEntity.MAX_SOLID_STRENGTH) return InteractionResult.PASS;
 
+            // Client-side prediction for BE fields!
+            if (existingBranch == CultureType.NONE) be.setImpliedCulture(impliesCulture);
+            be.setSolidStrength(currentStrength + 1);
+
             if (!level.isClientSide) {
                 if (!player.getAbilities().instabuild) itemStack.shrink(1);
                 player.awardStat(Stats.ITEM_USED.get(solidItem));
-
-                if (existingBranch == CultureType.NONE) be.setImpliedCulture(impliesCulture);
-                // Solid strength only -- blockstate LEVEL (water volume) is
-                // untouched, by design.
-                be.setSolidStrength(currentStrength + 1);
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         };
@@ -129,10 +113,12 @@ public final class BrewingCauldronInteractions {
             if (!(level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be)) return InteractionResult.PASS;
             if (be.getCulture() != CultureType.NONE || be.getImpliedCulture() != culture) return InteractionResult.PASS;
 
+            // Predict on BOTH sides
+            be.setCulture(culture);
+
             if (!level.isClientSide) {
                 if (!player.getAbilities().instabuild) itemStack.shrink(1);
                 player.awardStat(Stats.ITEM_USED.get(cultureItem));
-                be.setCulture(culture);
 
                 level.playSound(null, pos, SoundEvents.BREWING_STAND_BREW, SoundSource.BLOCKS, 1.0F, 1.0F);
                 if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
@@ -180,8 +166,15 @@ public final class BrewingCauldronInteractions {
             int currentWaterLevel = state.getValue(BrewingCauldronBlock.LEVEL);
             if (currentWaterLevel <= 0) return InteractionResult.PASS;
 
-            // Strength comes from the BE, which this interaction never modifies.
             int strengthLevel = be.getSolidStrength();
+
+            // Predict block state update
+            int newWaterLevel = currentWaterLevel - 1;
+            if (newWaterLevel <= 0) {
+                level.setBlockAndUpdate(pos, Blocks.CAULDRON.defaultBlockState());
+            } else {
+                level.setBlockAndUpdate(pos, state.setValue(BrewingCauldronBlock.LEVEL, newWaterLevel));
+            }
 
             if (!level.isClientSide) {
                 ItemStack filledStack = new ItemStack(resultItem);
@@ -192,20 +185,6 @@ public final class BrewingCauldronInteractions {
                 player.setItemInHand(hand, ItemUtils.createFilledResult(itemStack, player, filledStack));
                 player.awardStat(Stats.USE_CAULDRON);
                 player.awardStat(Stats.ITEM_USED.get(Items.GLASS_BOTTLE));
-
-                int newWaterLevel = currentWaterLevel - 1;
-                if (newWaterLevel <= 0) {
-                    // Cauldron is out of liquid -- revert fully, same as
-                    // vanilla reverting LayeredCauldronBlock to plain
-                    // Blocks.CAULDRON on underflow. This destroys the BE,
-                    // implicitly clearing culture/impliedCulture/progress/
-                    // brewState/solidStrength with it -- nothing left to brew.
-                    level.setBlockAndUpdate(pos, Blocks.CAULDRON.defaultBlockState());
-                } else {
-                    level.setBlockAndUpdate(pos, state.setValue(BrewingCauldronBlock.LEVEL, newWaterLevel));
-                    // Solid strength on the BE is untouched -- strength for
-                    // the NEXT draw stays exactly what it was.
-                }
 
                 level.playSound(null, pos, fillSound, SoundSource.BLOCKS, 1.0F, 1.0F);
                 level.gameEvent(null, GameEvent.FLUID_PICKUP, pos);
@@ -243,11 +222,12 @@ public final class BrewingCauldronInteractions {
             }
 
             if (resultItem == null) return InteractionResult.PASS;
-
-            // Buckets strictly require the cauldron to be filled to the brim.
             if (state.getValue(BrewingCauldronBlock.LEVEL) != 3) return InteractionResult.PASS;
 
             int strengthLevel = be.getSolidStrength();
+
+            // Predict full wipe
+            level.setBlockAndUpdate(pos, Blocks.CAULDRON.defaultBlockState());
 
             if (!level.isClientSide) {
                 ItemStack filledStack = new ItemStack(resultItem);
@@ -258,9 +238,6 @@ public final class BrewingCauldronInteractions {
                 player.setItemInHand(hand, ItemUtils.createFilledResult(itemStack, player, filledStack));
                 player.awardStat(Stats.USE_CAULDRON);
                 player.awardStat(Stats.ITEM_USED.get(Items.BUCKET));
-
-                // Buckets always take everything, same as vanilla.
-                level.setBlockAndUpdate(pos, Blocks.CAULDRON.defaultBlockState());
 
                 level.playSound(null, pos, fillSound, SoundSource.BLOCKS, 1.0F, 1.0F);
                 level.gameEvent(null, GameEvent.FLUID_PICKUP, pos);
@@ -296,35 +273,30 @@ public final class BrewingCauldronInteractions {
     private static CauldronInteraction universalFillInteraction(FillSpec spec, Item emptyResult, SoundEvent emptySound) {
         return (state, level, pos, player, hand, itemStack) -> {
             boolean isBucket = emptyResult == Items.BUCKET;
+            Item poured = itemStack.getItem();
+            int strength = spec.hasStrength() ? CoralineFluidUtils.getStrength(itemStack) : BrewingCauldronBlockEntity.MIN_SOLID_STRENGTH;
+
+            // Prediction on BOTH sides!
+            int seededWaterLevel = isBucket ? 3 : 1;
+            level.setBlockAndUpdate(pos, CoralineBlocks.BREWING_CAULDRON.get().defaultBlockState()
+                    .setValue(BrewingCauldronBlock.LEVEL, seededWaterLevel));
+
+            if (level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be) {
+                CultureType finalCulture = spec.resultCulture() != null ? spec.resultCulture() : CultureType.NONE;
+                BrewState finalState = spec.resultCulture() != null ? spec.resultState() : BrewState.BREWING;
+                int clampedStrength = Math.max(BrewingCauldronBlockEntity.MIN_SOLID_STRENGTH,
+                        Math.min(BrewingCauldronBlockEntity.MAX_SOLID_STRENGTH, strength));
+
+                be.initializeVisualsSilently(finalCulture, spec.impliesCulture(), clampedStrength, finalState, 0L);
+                if (!level.isClientSide) {
+                    be.syncToClient();
+                }
+            }
 
             if (!level.isClientSide) {
-                Item poured = itemStack.getItem();
-                int strength = spec.hasStrength() ? CoralineFluidUtils.getStrength(itemStack) : BrewingCauldronBlockEntity.MIN_SOLID_STRENGTH;
-
                 player.setItemInHand(hand, ItemUtils.createFilledResult(itemStack, player, new ItemStack(emptyResult)));
                 player.awardStat(Stats.FILL_CAULDRON);
                 player.awardStat(Stats.ITEM_USED.get(poured));
-
-                int seededWaterLevel = isBucket ? 3 : 1;
-                level.setBlockAndUpdate(pos, CoralineBlocks.BREWING_CAULDRON.get().defaultBlockState()
-                        .setValue(BrewingCauldronBlock.LEVEL, seededWaterLevel));
-
-                // As with convertToBrewingCauldron: the block placement above
-                // already renders once using a freshly-constructed BE with
-                // default fields. Previously this used 3-4 chained setters,
-                // each firing its own syncVisuals() -- i.e. several extra
-                // renders on top of the placement's own, each one a chance
-                // for a stale/untinted frame to slip through. Set everything
-                // silently in one shot instead, then sync exactly once.
-                if (level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be) {
-                    CultureType finalCulture = spec.resultCulture() != null ? spec.resultCulture() : CultureType.NONE;
-                    BrewState finalState = spec.resultCulture() != null ? spec.resultState() : BrewState.BREWING;
-                    int clampedStrength = Math.max(BrewingCauldronBlockEntity.MIN_SOLID_STRENGTH,
-                            Math.min(BrewingCauldronBlockEntity.MAX_SOLID_STRENGTH, strength));
-
-                    be.initializeVisualsSilently(finalCulture, spec.impliesCulture(), clampedStrength, finalState, 0L);
-                    be.syncToClient();
-                }
 
                 level.playSound(null, pos, emptySound, SoundSource.BLOCKS, 1.0F, 1.0F);
                 level.gameEvent(null, GameEvent.FLUID_PLACE, pos);
@@ -333,9 +305,7 @@ public final class BrewingCauldronInteractions {
         };
     }
 
-    // ── Universal TOP-UP (Bottle/Bucket of a drink -> an already-brewing
-    //     BrewingCauldronBlock holding the SAME substance) ──────────────────
-    //     Fixes the bottle-restacking bug -- see class javadoc.
+    // ── Universal TOP-UP ───────────────────────────────────────────────────────
 
     private static void registerTopUpInteractions() {
         registerTopUpPair(CoralineItems.MULBERRY_JUICE_BOTTLE, CoralineItems.MULBERRY_JUICE_BUCKET,
@@ -366,15 +336,12 @@ public final class BrewingCauldronInteractions {
     private static CauldronInteraction topUpInteraction(FillSpec spec, boolean isBucket, SoundEvent emptySound) {
         return (state, level, pos, player, hand, itemStack) -> {
             if (!(level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be)) return InteractionResult.PASS;
-
-            // 1. Check if the substance (Culture/State) matches.
             if (!matchesExistingContents(be, spec)) return InteractionResult.PASS;
 
-            // 2. Exploit Fix: Check if the strength perfectly matches!
             if (spec.hasStrength()) {
                 int pouredStrength = CoralineFluidUtils.getStrength(itemStack);
                 if (pouredStrength != be.getSolidStrength()) {
-                    return InteractionResult.PASS; // Refuse dilution/cheap top-ups!
+                    return InteractionResult.PASS;
                 }
             }
 
@@ -386,6 +353,10 @@ public final class BrewingCauldronInteractions {
                 if (currentWaterLevel >= 3) return InteractionResult.PASS;
             }
 
+            // Predict block state update
+            int newWaterLevel = isBucket ? 3 : currentWaterLevel + 1;
+            level.setBlockAndUpdate(pos, state.setValue(BrewingCauldronBlock.LEVEL, newWaterLevel));
+
             if (!level.isClientSide) {
                 Item poured = itemStack.getItem();
                 Item emptyResult = isBucket ? Items.BUCKET : Items.GLASS_BOTTLE;
@@ -393,9 +364,6 @@ public final class BrewingCauldronInteractions {
                 player.setItemInHand(hand, ItemUtils.createFilledResult(itemStack, player, new ItemStack(emptyResult)));
                 player.awardStat(Stats.FILL_CAULDRON);
                 player.awardStat(Stats.ITEM_USED.get(poured));
-
-                int newWaterLevel = isBucket ? 3 : currentWaterLevel + 1;
-                level.setBlockAndUpdate(pos, state.setValue(BrewingCauldronBlock.LEVEL, newWaterLevel));
 
                 level.playSound(null, pos, emptySound, SoundSource.BLOCKS, 1.0F, 1.0F);
                 level.gameEvent(null, GameEvent.FLUID_PLACE, pos);
