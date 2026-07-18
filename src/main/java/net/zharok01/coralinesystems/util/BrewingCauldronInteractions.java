@@ -79,14 +79,21 @@ public final class BrewingCauldronInteractions {
                 // ever convert from an already-full water cauldron.
                 level.setBlockAndUpdate(pos, CoralineBlocks.BREWING_CAULDRON.get().defaultBlockState());
 
+                // setBlockAndUpdate above already fires the placement's own
+                // block-update/render pass with a freshly-constructed BE that
+                // still holds Java-default fields (culture=NONE, strength=1
+                // as a coincidence, not a guarantee). Setting fields via the
+                // normal syncVisuals()-triggering setters here would only add
+                // a SECOND update after that first (wrong-looking) one --
+                // which is exactly the white/untinted flash. Instead, set
+                // every field silently in one shot, then send exactly one
+                // correct sync ourselves.
                 if (level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be) {
-                    be.setImpliedCulture(impliesCulture);
-                    // solidStrength stays at its default (1) -- addSolidInteraction
-                    // bumps it to 1 properly below on the actual first add call
-                    // in the general case, but this initial conversion call IS
-                    // that first add, so set it explicitly to avoid relying on
-                    // field-default coincidence.
-                    be.setSolidStrength(BrewingCauldronBlockEntity.MIN_SOLID_STRENGTH);
+                    be.initializeVisualsSilently(
+                            CultureType.NONE, impliesCulture,
+                            BrewingCauldronBlockEntity.MIN_SOLID_STRENGTH,
+                            BrewState.BREWING, 0L);
+                    be.syncToClient();
                 }
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
@@ -302,15 +309,21 @@ public final class BrewingCauldronInteractions {
                 level.setBlockAndUpdate(pos, CoralineBlocks.BREWING_CAULDRON.get().defaultBlockState()
                         .setValue(BrewingCauldronBlock.LEVEL, seededWaterLevel));
 
+                // As with convertToBrewingCauldron: the block placement above
+                // already renders once using a freshly-constructed BE with
+                // default fields. Previously this used 3-4 chained setters,
+                // each firing its own syncVisuals() -- i.e. several extra
+                // renders on top of the placement's own, each one a chance
+                // for a stale/untinted frame to slip through. Set everything
+                // silently in one shot instead, then sync exactly once.
                 if (level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be) {
-                    be.setImpliedCulture(spec.impliesCulture());
-                    be.setSolidStrength(Math.max(BrewingCauldronBlockEntity.MIN_SOLID_STRENGTH,
-                            Math.min(BrewingCauldronBlockEntity.MAX_SOLID_STRENGTH, strength)));
+                    CultureType finalCulture = spec.resultCulture() != null ? spec.resultCulture() : CultureType.NONE;
+                    BrewState finalState = spec.resultCulture() != null ? spec.resultState() : BrewState.BREWING;
+                    int clampedStrength = Math.max(BrewingCauldronBlockEntity.MIN_SOLID_STRENGTH,
+                            Math.min(BrewingCauldronBlockEntity.MAX_SOLID_STRENGTH, strength));
 
-                    if (spec.resultCulture() != null) {
-                        be.setCulture(spec.resultCulture());
-                        be.setBrewState(spec.resultState());
-                    }
+                    be.initializeVisualsSilently(finalCulture, spec.impliesCulture(), clampedStrength, finalState, 0L);
+                    be.syncToClient();
                 }
 
                 level.playSound(null, pos, emptySound, SoundSource.BLOCKS, 1.0F, 1.0F);
