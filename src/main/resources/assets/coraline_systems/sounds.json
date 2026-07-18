@@ -503,6 +503,47 @@
       "coraline_systems:block/mushroom_break3"
     ]
   },
+  "cauldron_add_solid": {
+    "category": "block",
+    "subtitle": "coraline_systems.sound.subtitle.add_berry",
+    "sounds": [
+      "block/composter/fill_success1",
+      "block/composter/fill_success2",
+      "block/composter/fill_success3",
+      "block/composter/fill_success4"
+    ]
+  },
+  "cauldron_add_culture": {
+    "category": "block",
+    "subtitle": "coraline_systems.sound.subtitle.add_culture_fizz",
+    "sounds": [
+      "block/brewing_stand/brew1",
+      "block/brewing_stand/brew2"
+    ]
+  },
+  "cauldron_bubbling": {
+    "category": "block",
+    "subtitle": "coraline_systems.sound.subtitle.cauldron_bubble_ambient",
+    "sounds": [
+      "block/brewing_stand/brew1",
+      "block/brewing_stand/brew2"
+    ]
+  },
+  "cauldron_brew_success": {
+    "category": "block",
+    "subtitle": "coraline_systems.sound.subtitle.brew_success",
+    "sounds": [
+      "block/honey_block/place1",
+      "block/honey_block/place2"
+    ]
+  },
+  "cauldron_brew_spoiled": {
+    "category": "block",
+    "subtitle": "coraline_systems.sound.subtitle.brew_fail",
+    "sounds": [
+      "random/fizz"
+    ]
+  },
   "leaves_break": {
     "category": "block",
     "subtitle": "subtitles.block.generic.break",
