@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.zharok01.coralinesystems.registry.CoralineSounds;
 import net.zharok01.coralinesystems.util.BrewingCauldronInteractions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -101,7 +102,7 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
     private void tickWine(BrewingCauldronBlockEntity be, ServerLevel level, BlockPos pos, int light) {
         if (light >= KOMBUCHA_MIN_CORRECT_LIGHT) {
             be.setBrewState(BrewState.SPOILED);
-            level.playSound(null, pos, SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 1.0F, 0.7F);
+            level.playSound(null, pos, CoralineSounds.CAULDRON_BREW_SPOILED.get(), SoundSource.BLOCKS, 1.0F, 0.7F);
             level.sendParticles(ParticleTypes.LARGE_SMOKE,
                     pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
                     10, 0.3, 0.2, 0.3, 0.02);
@@ -140,7 +141,7 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
     }
 
     private static void fireFinishedCue(ServerLevel level, BlockPos pos) {
-        level.playSound(null, pos, SoundEvents.HONEY_BLOCK_PLACE, SoundSource.BLOCKS, 1.0F, 1.2F);
+        level.playSound(null, pos, CoralineSounds.CAULDRON_BREW_SUCCESS.get(), SoundSource.BLOCKS, 1.0F, 1.2F);
         level.sendParticles(ParticleTypes.HAPPY_VILLAGER,
                 pos.getX() + 0.5, pos.getY() + 0.6, pos.getZ() + 0.5,
                 8, 0.25, 0.2, 0.25, 0.0);
@@ -164,7 +165,7 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
         }
         if (random.nextInt(20) == 0) {
             level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                    SoundEvents.FIRE_AMBIENT, SoundSource.BLOCKS,
+                    CoralineSounds.CAULDRON_BUBBLING.get(), SoundSource.BLOCKS,
                     0.3F, 0.6F + random.nextFloat() * 0.2F, false);
         }
     }

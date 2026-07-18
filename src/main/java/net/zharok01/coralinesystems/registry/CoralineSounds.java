@@ -69,11 +69,19 @@ public class CoralineSounds {
     public static final RegistryObject<SoundEvent> MUSHROOM_HIT = createSoundEvent("mushroom_hit");
     public static final RegistryObject<SoundEvent> MUSHROOM_FALL = createSoundEvent("mushroom_fall");
 
+    public static final RegistryObject<SoundEvent> CAULDRON_ADD_SOLID = createSoundEvent("cauldron_add_solid");
+    public static final RegistryObject<SoundEvent> CAULDRON_ADD_CULTURE = createSoundEvent("cauldron_add_culture");
+    public static final RegistryObject<SoundEvent> CAULDRON_BUBBLING = createSoundEvent("cauldron_bubbling");
+    public static final RegistryObject<SoundEvent> CAULDRON_BREW_SUCCESS = createSoundEvent("cauldron_brew_success");
+    public static final RegistryObject<SoundEvent> CAULDRON_BREW_SPOILED = createSoundEvent("cauldron_brew_spoiled");
+
     public static final RegistryObject<SoundEvent> LEAVES_BREAK = createSoundEvent("leaves_break");
     public static final RegistryObject<SoundEvent> LEAVES_STEP = createSoundEvent("leaves_step");
     public static final RegistryObject<SoundEvent> LEAVES_PLACE = createSoundEvent("leaves_place");
     public static final RegistryObject<SoundEvent> LEAVES_HIT = createSoundEvent("leaves_hit");
     public static final RegistryObject<SoundEvent> LEAVES_FALL = createSoundEvent("leaves_fall");
+
+    // ---
 
     private static RegistryObject<SoundEvent> createSoundEvent(final String soundName) {
         return SOUND_EVENTS.register(soundName, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(CoralineSystems.MOD_ID, soundName)));

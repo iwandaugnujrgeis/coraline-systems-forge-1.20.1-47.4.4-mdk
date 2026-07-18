@@ -20,6 +20,7 @@ import net.zharok01.coralinesystems.block.CultureType;
 import net.zharok01.coralinesystems.item.CoralineFluidUtils;
 import net.zharok01.coralinesystems.registry.CoralineBlocks;
 import net.zharok01.coralinesystems.registry.CoralineItems;
+import net.zharok01.coralinesystems.registry.CoralineSounds;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -103,6 +104,17 @@ public final class BrewingCauldronInteractions {
             if (!level.isClientSide) {
                 if (!player.getAbilities().instabuild) itemStack.shrink(1);
                 player.awardStat(Stats.ITEM_USED.get(solidItem));
+
+                // Insertion FX: previously silent -- now gives the player
+                // audible/visual confirmation every time a solid ingredient
+                // lands in the cauldron, matching the "shh" fizzle cue
+                // addCultureInteraction already gets on the culture step.
+                level.playSound(null, pos, CoralineSounds.CAULDRON_ADD_SOLID.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
+                if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                    serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.COMPOSTER,
+                            pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                            8, 0.25, 0.15, 0.25, 0.0);
+                }
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         };
@@ -120,7 +132,7 @@ public final class BrewingCauldronInteractions {
                 if (!player.getAbilities().instabuild) itemStack.shrink(1);
                 player.awardStat(Stats.ITEM_USED.get(cultureItem));
 
-                level.playSound(null, pos, SoundEvents.BREWING_STAND_BREW, SoundSource.BLOCKS, 1.0F, 1.0F);
+                level.playSound(null, pos, CoralineSounds.CAULDRON_ADD_CULTURE.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
                 if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
                     serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.SPLASH,
                             pos.getX() + 0.5, pos.getY() + 0.4, pos.getZ() + 0.5,
