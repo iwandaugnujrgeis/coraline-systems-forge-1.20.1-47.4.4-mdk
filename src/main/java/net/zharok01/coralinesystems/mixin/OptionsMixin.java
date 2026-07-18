@@ -3,9 +3,14 @@ package net.zharok01.coralinesystems.mixin;
 import net.minecraft.client.GraphicsStatus;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.Options;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Arrays;
 
@@ -25,36 +30,45 @@ public class OptionsMixin {
 	}
 
 	/**
-	 * Intercepts ALL IntRange constructions inside Options.<init> and selectively
-	 * caps the render distance one.
-	 *
-	 * Why no ordinal?
-	 *   Options.<init> creates many IntRange sliders (simulation distance, mipmap
-	 *   levels, framerate cap, etc.). The render distance one is NOT necessarily
-	 *   ordinal 0, and the exact position can differ between Vanilla and modded
-	 *   environments. Using a fixed ordinal is therefore fragile.
-	 *
-	 * How we identify the render distance IntRange:
-	 *   Vanilla constructs it as new IntRange(2, minecraft.is64Bit() ? 32 : 16).
-	 *   No other vanilla Options slider shares min=2 with max=16 or max=32, so
-	 *   this check uniquely targets that one call and leaves every other slider
-	 *   completely untouched.
+	 * Intercepts ALL IntRange constructions inside Options.<init> to selectively
+	 * cap the Render Distance and FOV sliders without touching others.
 	 */
 	@Redirect(
 			method = "<init>",
 			at = @At(
 					value = "NEW",
 					target = "net/minecraft/client/OptionInstance$IntRange"
-					// No ordinal — we intercept all of them and filter below
 			)
 	)
-	private OptionInstance.IntRange coraline$limitRenderDistanceSlider(int min, int max) {
-		// Render distance is the only vanilla slider with min=2 and max=16 or 32.
-		// Every other IntRange in this constructor has a different min/max.
+	private OptionInstance.IntRange coraline$limitIntRangeSliders(int min, int max) {
+		// 1. Cap Render Distance (Vanilla: 2 to 16 or 32)
 		if (min == 2 && (max == 16 || max == 32)) {
 			return new OptionInstance.IntRange(2, 10);
 		}
-		// All other sliders are passed through unchanged.
+
+		// 2. Cap FOV (Vanilla: 30 to 110)
+		if (min == 30 && max == 110) {
+			return new OptionInstance.IntRange(30, 80);
+		}
+
 		return new OptionInstance.IntRange(min, max);
+	}
+
+	/**
+	 * Intercepts the label generation for the FOV slider.
+	 */
+	@Inject(
+			method = "genericValueLabel(Lnet/minecraft/network/chat/Component;I)Lnet/minecraft/network/chat/Component;",
+			at = @At("HEAD"),
+			cancellable = true
+	)
+	private static void coraline$customFovLabel(Component text, int value, CallbackInfoReturnable<Component> cir) {
+		if (value == 80 && text instanceof MutableComponent mutable) {
+			if (mutable.getContents() instanceof TranslatableContents translatable) {
+				if ("options.fov".equals(translatable.getKey())) {
+					cir.setReturnValue(Options.genericValueLabel(text, Component.literal("Quake Semi-Pro")));
+				}
+			}
+		}
 	}
 }

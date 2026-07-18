@@ -70,5 +70,26 @@
 	"subtitles.coraline_systems.block.mushroom_step": "Mushroom steps",
 	"subtitles.coraline_systems.block.mushroom_place": "Mushroom placed",
 	"subtitles.coraline_systems.block.mushroom_hit": "Mushroom thuds",
-	"subtitles.coraline_systems.block.mushroom_fall": "Mushroom lands"
+	"subtitles.coraline_systems.block.mushroom_fall": "Mushroom lands",
+
+	"block.coraline_systems.brewing_cauldron": "Brewing Cauldron",
+
+	"item.coraline_systems.wine_bottle": "Bottle of Wine",
+	"item.coraline_systems.wine_bucket": "Bucket of Wine",
+	"item.coraline_systems.tea_bottle": "Bottle of Tea",
+	"item.coraline_systems.tea_bucket": "Bucket of Tea",
+	"item.coraline_systems.kombucha_bottle": "Bottle of Kombucha",
+	"item.coraline_systems.kombucha_bucket": "Bucket of Kombucha",
+	"item.coraline_systems.mulberry_juice_bottle": "Bottle of Mulberry Juice",
+	"item.coraline_systems.mulberry_juice_bucket": "Bucket of Mulberry Juice",
+	"item.coraline_systems.dregs_bottle": "Bottle of Dregs",
+	"item.coraline_systems.dregs_bucket": "Bucket of Dregs",
+
+	"tooltip.coraline_systems.strength": "Strength: Level %s",
+
+	"coraline_systems.sound.subtitle.brew_success": "Cauldron chimes",
+	"coraline_systems.sound.subtitle.brew_fail": "Cauldron sputters",
+	"coraline_systems.sound.subtitle.add_berry": "Berry squishes",
+	"coraline_systems.sound.subtitle.add_culture_fizz": "Culture fizzes",
+	"coraline_systems.sound.subtitle.cauldron_bubble_ambient": "Cauldron bubbles"
 }

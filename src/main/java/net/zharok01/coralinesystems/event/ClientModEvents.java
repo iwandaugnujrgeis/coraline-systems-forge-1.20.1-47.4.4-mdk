@@ -7,6 +7,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.zharok01.coralinesystems.CoralineSystems;
+import net.zharok01.coralinesystems.client.color.CoralineBlockColors;
+import net.zharok01.coralinesystems.client.color.CoralineItemColors;
 import net.zharok01.coralinesystems.client.entity.brume.BrumeRenderer;
 import net.zharok01.coralinesystems.client.entity.helper.HelperRenderer;
 import net.zharok01.coralinesystems.client.entity.monster.MonsterRenderer;
@@ -15,9 +17,7 @@ import net.zharok01.coralinesystems.client.entity.orb.OrbPulseRenderer;
 import net.zharok01.coralinesystems.client.entity.orb.OrbRenderer;
 import net.zharok01.coralinesystems.client.particle.OrbSparkleParticle;
 import net.zharok01.coralinesystems.mixin.accessors.BiomeColorsAccessor;
-import net.zharok01.coralinesystems.registry.CoralineModelLayers;
-import net.zharok01.coralinesystems.registry.CoralineParticles;
-import net.zharok01.coralinesystems.registry.IsotopicEntities;
+import net.zharok01.coralinesystems.registry.*;
 import net.zharok01.coralinesystems.world.CoralineBiomeColors;
 
 @Mod.EventBusSubscriber(modid = CoralineSystems.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -37,18 +37,6 @@ public class ClientModEvents {
         event.registerLayerDefinition(CoralineModelLayers.ORB_LAYER, OrbModel::createBodyLayer);
     }
 
-    /**
-     * Registers the particle factory for ORB_SPARKLE.
-     *
-     * This is the mandatory step that was missing before — without a registered
-     * ParticleProvider the client engine has no factory to instantiate the visual,
-     * so every addParticle() call for ORB_SPARKLE silently does nothing.
-     *
-     * RegisterParticleProvidersEvent fires on the MOD bus during client setup.
-     * event.registerSpriteSet() is the correct overload for SimpleParticleType,
-     * as it passes a SpriteSet to our Factory constructor matching the SparkleParticle
-     * pattern from the reference.
-     */
     @SubscribeEvent
     public static void registerParticleFactories(RegisterParticleProvidersEvent event) {
         event.registerSpriteSet(CoralineParticles.ORB_SPARKLE.get(), OrbSparkleParticle.Factory::new);
@@ -56,14 +44,26 @@ public class ClientModEvents {
 
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
-        // Enqueue work to ensure it safely runs on the main thread during setup
         event.enqueueWork(() -> {
-            // Overwrite Vanilla's static final ColorResolvers with our Bidirectional Noise Engine
             BiomeColorsAccessor.coralineSystems$setGrassColorResolver(CoralineBiomeColors.GRASS_RESOLVER);
             BiomeColorsAccessor.coralineSystems$setFoliageColorResolver(CoralineBiomeColors.FOLIAGE_RESOLVER);
             BiomeColorsAccessor.coralineSystems$setWaterColorResolver(CoralineBiomeColors.WATER_RESOLVER);
 
             CoralineSystems.LOGGER.info("Successfully injected Coraline Systems Bidirectional Biome Color Noise!");
         });
+    }
+
+    @SubscribeEvent
+    public static void onRegisterBlockColorHandlers(net.minecraftforge.client.event.RegisterColorHandlersEvent.Block event) {
+        event.register(CoralineBlockColors.CAULDRON_CONTENT, CoralineBlocks.BREWING_CAULDRON.get());
+    }
+
+    @SubscribeEvent
+    public static void onRegisterItemColorHandlers(net.minecraftforge.client.event.RegisterColorHandlersEvent.Item event) {
+        event.register(CoralineItemColors.MULBERRY_JUICE, CoralineItems.MULBERRY_JUICE_BOTTLE.get(), CoralineItems.MULBERRY_JUICE_BUCKET.get());
+        event.register(CoralineItemColors.WINE, CoralineItems.WINE_BOTTLE.get(), CoralineItems.WINE_BUCKET.get());
+        event.register(CoralineItemColors.TEA, CoralineItems.TEA_BOTTLE.get(), CoralineItems.TEA_BUCKET.get());
+        event.register(CoralineItemColors.KOMBUCHA, CoralineItems.KOMBUCHA_BOTTLE.get(), CoralineItems.KOMBUCHA_BUCKET.get());
+        event.register(CoralineItemColors.DREGS, CoralineItems.DREGS_BOTTLE.get(), CoralineItems.DREGS_BUCKET.get());
     }
 }

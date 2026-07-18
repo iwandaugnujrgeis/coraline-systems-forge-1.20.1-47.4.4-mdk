@@ -24,40 +24,6 @@ import net.zharok01.coralinesystems.registry.CoralineItems;
 import java.util.Map;
 import java.util.function.Supplier;
 
-/**
- * Central registration point for every {@code CauldronInteraction} our
- * brewing system needs.
- * <p>
- * <b>SESSION 2.5 changes -- "Phantom Liquid Trap" fix (per Gemini's
- * diagnosis, confirmed correct on review -- see
- * gemini_additional_input_phantom_liquid_problem.md and
- * BrewingCauldronBlock's class javadoc for the full rationale):</b>
- * <ul>
- * <li>Every read/write of water volume now targets
- * {@code BrewingCauldronBlock.LEVEL} (blockstate, 1-3) instead of
- * {@code BrewingCauldronBlockEntity#getWaterLevel()} (removed).</li>
- * <li>Every read/write of solid strength now targets
- * {@code BrewingCauldronBlockEntity#getSolidStrength()} (BE, 1-5)
- * instead of {@code BrewingCauldronBlock.LEVEL} (which used to mean
- * this).</li>
- * <li><b>Bottle re-stacking bug (fixed):</b> pouring a filled drink
- * Bottle/Bucket back into a cauldron that was ALREADY a
- * {@code BrewingCauldronBlock} (i.e. not empty) previously did nothing
- * -- {@code universalFillInteraction} was only ever registered on
- * {@code CauldronInteraction.EMPTY}, which only a genuinely empty
- * vanilla {@code CAULDRON} dispatches through per the Section 1.2
- * dispatch rule. A {@code BrewingCauldronBlock} dispatches through
- * {@code BREWING} instead, which had no entry at all for filled
- * containers. Fixed by adding {@code registerTopUpInteractions()},
- * registered on {@code BREWING}, which raises blockstate {@code LEVEL}
- * (now volume) by one step per matching-substance pour, refusing
- * cross-substance pours and refusing once already full -- mirroring
- * vanilla's own {@code WATER.put(Items.POTION, ...)} top-up shape.</li>
- * <li><b>Exploit fix:</b> Top-up pours now enforce exact strength
- * matching (e.g. pouring Level 1 Juice into Level 5 Juice is rejected)
- * to prevent cheap dilution/duping.</li>
- * </ul>
- */
 public final class BrewingCauldronInteractions {
 
     private BrewingCauldronInteractions() {
@@ -298,16 +264,6 @@ public final class BrewingCauldronInteractions {
 
     // ── Universal FILL (Bottle/Bucket of a finished drink -> empty CAULDRON) ──
 
-    /**
-     * @param impliesCulture the branch an empty cauldron gets seeded into.
-     * @param hasStrength    whether the poured item's strength value seeds
-     * the BE's solidStrength.
-     * @param resultCulture  null for genuinely pre-culture drinks (Tea,
-     * Mulberry Juice); the BE's actual culture to
-     * restore for finished/spoiled drinks.
-     * @param resultState    the BE's brewState to restore alongside
-     * resultCulture; ignored when resultCulture is null.
-     */
     private record FillSpec(CultureType impliesCulture, boolean hasStrength,
                             CultureType resultCulture, BrewState resultState) {
     }
@@ -330,14 +286,6 @@ public final class BrewingCauldronInteractions {
         CauldronInteraction.EMPTY.put(bucketItem.get(), universalFillInteraction(spec, Items.BUCKET, SoundEvents.BUCKET_EMPTY));
     }
 
-    /**
-     * Pours a filled drink container into a plain, empty vanilla
-     * {@code CAULDRON}. Registered on {@code CauldronInteraction.EMPTY}.
-     * <p>
-     * Bottle pours seed water LEVEL at 1; Bucket pours seed LEVEL at 3,
-     * matching vanilla's own Bottle-of-water / Bucket-fill volume
-     * conventions.
-     */
     private static CauldronInteraction universalFillInteraction(FillSpec spec, Item emptyResult, SoundEvent emptySound) {
         return (state, level, pos, player, hand, itemStack) -> {
             boolean isBucket = emptyResult == Items.BUCKET;
@@ -394,12 +342,6 @@ public final class BrewingCauldronInteractions {
         BREWING.put(bucketItem.get(), topUpInteraction(spec, true, SoundEvents.BUCKET_EMPTY));
     }
 
-    /**
-     * True if the BE's current contents are the SAME substance as what
-     * {@code spec} describes -- refuses cross-substance pours (e.g. Wine
-     * into a cauldron currently holding/brewing Kombucha or Tea) rather
-     * than silently mixing them.
-     */
     private static boolean matchesExistingContents(BrewingCauldronBlockEntity be, FillSpec spec) {
         if (spec.resultCulture() != null) {
             return be.getCulture() == spec.resultCulture() && be.getBrewState() == spec.resultState();

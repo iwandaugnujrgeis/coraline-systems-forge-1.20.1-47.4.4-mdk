@@ -1,30 +1,19 @@
 package net.zharok01.coralinesystems.block;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.zharok01.coralinesystems.registry.CoralineBlockEntities;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Holds all state for an in-progress brew (Wine or Kombucha) beyond what
- * lives in the blockstate.
- * <p>
- * SESSION 2.5 ("Phantom Liquid Trap" fix): {@code waterLevel} is GONE from
- * here -- water volume now lives on {@link BrewingCauldronBlock#LEVEL}
- * (blockstate), matching vanilla LayeredCauldronBlock's own approach, so
- * the liquid plane visually drops per-bottle using vanilla's existing
- * water_cauldron_levelN models. In its place, {@link #solidStrength} (1-5)
- * now lives here -- the Mulberry/Tea Leaf count never affected physical
- * shape, only (eventually) tint, so it belongs on the BE per the
- * blockstate-is-shape / BE-is-data split. See BrewingCauldronBlock's class
- * javadoc for the full rationale.
- */
 public class BrewingCauldronBlockEntity extends BlockEntity {
 
     private static final String TAG_CULTURE = "Culture";
@@ -66,6 +55,35 @@ public class BrewingCauldronBlockEntity extends BlockEntity {
         }
     }
 
+    public void syncToClient() {
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+        }
+    }
+
+    @Override
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
+        CompoundTag tag = pkt.getTag();
+        if (tag != null) {
+            load(tag);
+        }
+        if (level != null && level.isClientSide) {
+            BlockPos pos = this.getBlockPos();
+            Minecraft.getInstance().levelRenderer.setBlocksDirty(
+                    pos.getX(), pos.getY(), pos.getZ(), pos.getX(), pos.getY(), pos.getZ());
+        }
+    }
+
+    private void syncVisuals() {
+        sync();
+        if (this.level != null && this.level.isClientSide) {
+            BlockPos pos = this.getBlockPos();
+            net.minecraft.client.Minecraft.getInstance().levelRenderer.setBlocksDirty(
+                    pos.getX(), pos.getY(), pos.getZ(), pos.getX(), pos.getY(), pos.getZ());
+        }
+    }
+
     // ── Accessors ────────────────────────────────────────────────────────
 
     public CultureType getCulture() {
@@ -78,25 +96,21 @@ public class BrewingCauldronBlockEntity extends BlockEntity {
 
     public void setImpliedCulture(CultureType impliedCulture) {
         this.impliedCulture = impliedCulture;
-        this.sync();
+        this.syncVisuals();
     }
 
     public void setCulture(CultureType culture) {
         this.culture = culture;
-        this.sync();
+        this.syncVisuals();
     }
 
-    /**
-     * Solid-ingredient strength, 1-5. Formerly BrewingCauldronBlock.LEVEL;
-     * moved here in the Phantom Liquid Trap fix -- see class javadoc.
-     */
     public int getSolidStrength() {
         return solidStrength;
     }
 
     public void setSolidStrength(int solidStrength) {
         this.solidStrength = Math.max(MIN_SOLID_STRENGTH, Math.min(MAX_SOLID_STRENGTH, solidStrength));
-        this.sync();
+        this.syncVisuals();
     }
 
     public long getBrewProgress() {
@@ -119,7 +133,7 @@ public class BrewingCauldronBlockEntity extends BlockEntity {
 
     public void setBrewState(BrewState brewState) {
         this.brewState = brewState;
-        this.sync();
+        this.syncVisuals();
     }
 
     public void reset() {
@@ -128,7 +142,7 @@ public class BrewingCauldronBlockEntity extends BlockEntity {
         this.brewProgress = 0L;
         this.solidStrength = MIN_SOLID_STRENGTH;
         this.brewState = BrewState.BREWING;
-        this.sync();
+        this.syncVisuals();
     }
 
     // ── Persistence ──────────────────────────────────────────────────────
