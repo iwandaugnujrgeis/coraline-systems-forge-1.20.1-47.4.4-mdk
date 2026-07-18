@@ -15,6 +15,7 @@ import net.zharok01.coralinesystems.client.entity.monster.MonsterRenderer;
 import net.zharok01.coralinesystems.client.entity.orb.OrbModel;
 import net.zharok01.coralinesystems.client.entity.orb.OrbPulseRenderer;
 import net.zharok01.coralinesystems.client.entity.orb.OrbRenderer;
+import net.zharok01.coralinesystems.client.particle.CauldronSplashParticle;
 import net.zharok01.coralinesystems.client.particle.OrbSparkleParticle;
 import net.zharok01.coralinesystems.mixin.accessors.BiomeColorsAccessor;
 import net.zharok01.coralinesystems.registry.*;
@@ -40,6 +41,10 @@ public class ClientModEvents {
     @SubscribeEvent
     public static void registerParticleFactories(RegisterParticleProvidersEvent event) {
         event.registerSpriteSet(CoralineParticles.ORB_SPARKLE.get(), OrbSparkleParticle.Factory::new);
+        // Tinted splash particle for the Brewing Cauldron entity-inside effect.
+        // The Provider reads r/g/b from the xSpeed/ySpeed/zSpeed slots that
+        // CauldronSplashPacket passes via Level#addParticle.
+        event.registerSpriteSet(CoralineParticles.CAULDRON_SPLASH.get(), CauldronSplashParticle.Provider::new);
     }
 
     @SubscribeEvent
@@ -48,6 +53,11 @@ public class ClientModEvents {
             BiomeColorsAccessor.coralineSystems$setGrassColorResolver(CoralineBiomeColors.GRASS_RESOLVER);
             BiomeColorsAccessor.coralineSystems$setFoliageColorResolver(CoralineBiomeColors.FOLIAGE_RESOLVER);
             BiomeColorsAccessor.coralineSystems$setWaterColorResolver(CoralineBiomeColors.WATER_RESOLVER);
+
+            // Initialise the convenience TYPE reference on CauldronSplashParticle so
+            // CauldronSplashPacket can call level.addParticle(TYPE, ...) directly.
+            // enqueueWork guarantees this runs after all DeferredRegisters have fired.
+            CauldronSplashParticle.TYPE = CoralineParticles.CAULDRON_SPLASH.get();
 
             CoralineSystems.LOGGER.info("Successfully injected Coraline Systems Bidirectional Biome Color Noise!");
         });

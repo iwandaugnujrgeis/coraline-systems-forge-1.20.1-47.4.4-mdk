@@ -25,11 +25,22 @@ public class BrewingCauldronBlockEntity extends BlockEntity {
     public static final int MIN_SOLID_STRENGTH = BrewingCauldronBlock.MIN_SOLID_LEVEL; // 1
     public static final int MAX_SOLID_STRENGTH = BrewingCauldronBlock.MAX_SOLID_LEVEL; // 5
 
+    // Minimum real ticks between splash FX firings for the SAME block entity,
+    // independent of how many ticks an entity's bounding box stays inside the
+    // content (entityInside runs every tick while true). Not persisted -- this
+    // is purely an anti-spam debounce, not brewing-relevant state, so it is
+    // deliberately excluded from load()/saveAdditional() and simply resets to
+    // "always allow" (0L) whenever the BE is (re)loaded, including on chunk
+    // reload -- an extra splash right after a chunk load is harmless.
+    private static final int SPLASH_COOLDOWN_TICKS = 8;
+
     private CultureType culture = CultureType.NONE;
     private CultureType impliedCulture = CultureType.NONE;
     private long brewProgress = 0L;
     private int solidStrength = MIN_SOLID_STRENGTH;
     private BrewState brewState = BrewState.BREWING;
+
+    private long lastSplashGameTime = Long.MIN_VALUE;
 
     public BrewingCauldronBlockEntity(BlockPos pos, BlockState state) {
         super(CoralineBlockEntities.BREWING_CAULDRON.get(), pos, state);
@@ -200,6 +211,30 @@ public class BrewingCauldronBlockEntity extends BlockEntity {
         this.solidStrength = Math.max(MIN_SOLID_STRENGTH, Math.min(MAX_SOLID_STRENGTH, solidStrength));
         this.brewState = brewState;
         this.brewProgress = brewProgress;
+    }
+
+    // ── Splash FX debounce (issue #3) ───────────────────────────────────
+
+    /**
+     * Called from {@link BrewingCauldronBlock#entityInside} every tick an
+     * entity's bounding box overlaps the cauldron's liquid content. Returns
+     * {@code true} at most once per {@link #SPLASH_COOLDOWN_TICKS}, so the
+     * caller gets a single splash "event" per entry instead of a sound/particle
+     * burst repeating on every one of the (many) ticks a player might stand
+     * in the cauldron.
+     * <p>
+     * Deliberately not persisted to NBT (see {@link #lastSplashGameTime}) --
+     * this is pure client/server-session FX debouncing, not brewing state.
+     *
+     * @param currentGameTime the calling level's {@code level.getGameTime()}
+     * @return {@code true} if the caller should play the splash FX now
+     */
+    public boolean tryConsumeSplashCooldown(long currentGameTime) {
+        if (currentGameTime - lastSplashGameTime < SPLASH_COOLDOWN_TICKS) {
+            return false;
+        }
+        lastSplashGameTime = currentGameTime;
+        return true;
     }
 
     // ── Persistence ──────────────────────────────────────────────────────

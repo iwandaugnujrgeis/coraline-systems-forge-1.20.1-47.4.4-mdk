@@ -19,6 +19,12 @@ public class CoralineParticles {
     public static final RegistryObject<SimpleParticleType> ORB_SPARKLE =
             PARTICLE_TYPES.register("orb_sparkle", () -> new SimpleParticleType(false));
 
+    /**
+     * Tinted splash particle for the Brewing Cauldron entity-inside effect.
+     */
+    public static final RegistryObject<SimpleParticleType> CAULDRON_SPLASH =
+            PARTICLE_TYPES.register("cauldron_splash", () -> new SimpleParticleType(false));
+
     public static void register(IEventBus eventBus) {
         PARTICLE_TYPES.register(eventBus);
     }

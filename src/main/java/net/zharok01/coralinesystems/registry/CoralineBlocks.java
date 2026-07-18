@@ -56,6 +56,7 @@ public class CoralineBlocks {
 		ItemBlockRenderTypes.setRenderLayer(MAGLEV_RAIL.get(), RenderType.cutout());
 		ItemBlockRenderTypes.setRenderLayer(POWERED_MAGLEV_RAIL.get(), RenderType.cutout());
 		ItemBlockRenderTypes.setRenderLayer(RADIANT_SAPLING.get(), RenderType.cutout());
+		ItemBlockRenderTypes.setRenderLayer(BREWING_CAULDRON.get(), RenderType.translucent());
 	}
 
 	public static final RegistryObject<Block> STATIC_PORTAL_BLOCK = registerWithoutItem("static_portal_block",

@@ -34,6 +34,10 @@ public final class CoralineBlockColors {
     }
 
     public static final BlockColor CAULDRON_CONTENT = (BlockState state, @Nullable BlockAndTintGetter level, @Nullable BlockPos pos, int tintIndex) -> {
+        // tintIndex 0 is the fluid surface quad (#content element).
+        // Any other index belongs to the cauldron shell and should not be tinted.
+        if (tintIndex != 0) return NO_TINT;
+
         if (level == null || pos == null) {
             return NO_TINT;
         }
@@ -70,9 +74,7 @@ public final class CoralineBlockColors {
             return CoralineTintUtils.lerpStrength(TEA_START, TEA_END, strength);
         }
 
-        // No branch implied yet (shouldn't normally happen -- conversion
-        // always sets impliedCulture atomically -- but fail safe rather
-        // than throw).
+        // No branch implied yet — fail safe.
         return NO_TINT;
     };
 }
