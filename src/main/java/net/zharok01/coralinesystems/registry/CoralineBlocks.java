@@ -56,6 +56,10 @@ public class CoralineBlocks {
 		ItemBlockRenderTypes.setRenderLayer(MAGLEV_RAIL.get(), RenderType.cutout());
 		ItemBlockRenderTypes.setRenderLayer(POWERED_MAGLEV_RAIL.get(), RenderType.cutout());
 		ItemBlockRenderTypes.setRenderLayer(RADIANT_SAPLING.get(), RenderType.cutout());
+		// BREWING_CAULDRON intentionally omitted: BrewingCauldronBakedModel overrides
+		// getRenderTypes() to self-declare both cutout (shell) and translucent (fluid),
+		// which supersedes ItemBlockRenderTypes. Registering it here with a single
+		// RenderType would lock it to one pass and silently suppress the other.
 	}
 
 	public static final RegistryObject<Block> STATIC_PORTAL_BLOCK = registerWithoutItem("static_portal_block",

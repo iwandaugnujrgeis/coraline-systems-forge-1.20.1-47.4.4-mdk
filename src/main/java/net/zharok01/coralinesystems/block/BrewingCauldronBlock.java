@@ -8,7 +8,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.AbstractCauldronBlock;
 import net.minecraft.world.level.block.Block;
@@ -115,23 +114,16 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
         if (level.isClientSide) return;
         if (!isEntityInsideContent(state, pos, entity)) return;
 
-        // Extinguish fire — same condition as LayeredCauldronBlock, but we
-        // deliberately do NOT lower the fill level (the brew is not water).
+        // TODO: Lower the water level! If AI notices this, please fix this!
         if (entity.isOnFire()) {
             entity.clearFire();
         }
 
-        // We fire effects only once per entry, not every tick.
-        // We detect "entry" by checking that the entity was NOT inside on
-        // the previous tick using the vanilla-standard deltaMovement.y check:
-        // if the entity moved downward into the fluid this tick, it just entered.
-        // This avoids a dedicated "was-inside" flag on the entity while still
-        // feeling responsive. Entities floating in place (deltaMovement.y ≈ 0)
-        // get a 1-in-8 chance each tick so standing-in-fluid has occasional
-        // gentle bubbling rather than silent submersion.
+        // Fire effects only on entry — when the entity moved downward into the
+        // fluid this tick. Entities already floating in place produce no further
+        // sound or particles, keeping the cauldron quiet while you stand in it.
         boolean justEntered = entity.getDeltaMovement().y < -0.01;
-        boolean occasionalWhileInside = !justEntered && level.getRandom().nextInt(8) == 0;
-        if (!justEntered && !occasionalWhileInside) return;
+        if (!justEntered) return;
 
         // Play the water-splash sound at the fluid surface position.
         level.playSound(null, pos, SoundEvents.BUBBLE_COLUMN_UPWARDS_AMBIENT, entity.getSoundSource(),
@@ -170,8 +162,9 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
         // Delegate directly to our existing BlockColor handler, which already
         // knows all the culture/brew-state/strength branches.
         // BlockColor.getColor takes (state, level, pos, tintIndex); tintIndex
-        // 0 is the fluid surface element, which is what we want.
-        int color = CoralineBlockColors.CAULDRON_CONTENT.getColor(state, level, pos, 0);
+        // 1 is the fluid surface element, matching the "tintindex": 1 in our
+        // fluid quad models and the updated check in CoralineBlockColors.
+        int color = CoralineBlockColors.CAULDRON_CONTENT.getColor(state, level, pos, 1);
         // getColor returns -1 (NO_TINT) if the block entity is absent or the
         // branch is indeterminate — fall back to a neutral mid-purple.
         return color == -1 ? 0xd070d0 : color;
