@@ -101,9 +101,13 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
     /**
      * Called every tick that an entity overlaps with this block.
      * Mirrors LayeredCauldronBlock.entityInside:
-     * - extinguishes burning entities (server-side only)
-     * - plays a water-splash sound at the fluid surface (server-side)
-     * - sends a tinted splash-particle packet to nearby clients
+     *  - extinguishes burning entities (server-side only)
+     *  - plays a water-splash sound at the fluid surface (server-side)
+     *  - sends a tinted splash-particle packet to nearby clients
+     *
+     * Fire extinguishing does NOT consume a water level here, matching the
+     * design doc's intent that the brew contents are precious and should
+     * not be silently drained by a mob walking through.
      */
     @Override
     public void entityInside(@NotNull BlockState state, @NotNull Level level,
@@ -117,39 +121,37 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
             entity.clearFire();
         }
 
-        // 1. Fetch the BlockEntity to access our anti-spam cooldown logic
-        if (!(level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be)) {
-            return;
-        }
-
-        // 2. Determine if the entity is actually causing a disturbance.
-        // We check if they are actively moving horizontally/vertically, ignoring
-        // the tiny floating jitters (< 0.001) that occur when standing still.
-        double movementSq = entity.getDeltaMovement().horizontalDistanceSqr() + Math.pow(entity.getDeltaMovement().y, 2);
-        boolean isMoving = movementSq > 0.001;
+        // We fire effects only once per entry, not every tick.
+        // We detect "entry" by checking that the entity was NOT inside on
+        // the previous tick using the vanilla-standard deltaMovement.y check:
+        // if the entity moved downward into the fluid this tick, it just entered.
+        // This avoids a dedicated "was-inside" flag on the entity while still
+        // feeling responsive. Entities floating in place (deltaMovement.y ≈ 0)
+        // get a 1-in-8 chance each tick so standing-in-fluid has occasional
+        // gentle bubbling rather than silent submersion.
         boolean justEntered = entity.getDeltaMovement().y < -0.01;
-
-        if (!justEntered && !isMoving) return;
-
-        // 3. Apply the strict 8-tick debounce cooldown from the BlockEntity.
-        // This completely prevents the "machine gun" packet spam.
-        if (!be.tryConsumeSplashCooldown(level.getGameTime())) return;
+        boolean occasionalWhileInside = !justEntered && level.getRandom().nextInt(8) == 0;
+        if (!justEntered && !occasionalWhileInside) return;
 
         // Play the water-splash sound at the fluid surface position.
-        // Reduced the volume to 0.25f so it isn't deafening when bouncing inside.
-        level.playSound(null, pos, SoundEvents.GENERIC_SPLASH, entity.getSoundSource(),
-                0.25f, 0.8f + level.getRandom().nextFloat() * 0.4f);
+        level.playSound(null, pos, SoundEvents.BUBBLE_COLUMN_UPWARDS_AMBIENT, entity.getSoundSource(),
+                0.6f, 0.8f + level.getRandom().nextFloat() * 0.4f);
 
         // Compute the tint color using the same logic as CoralineBlockColors,
-        // but called directly here on the server.
+        // but called directly here on the server so we don't need a client-
+        // side block-entity lookup in the packet handler.
         int color = getFluidColor(level, pos, state);
 
-        // Send tinted splash particles to clients near this chunk.
+        // Send tinted splash particles to clients near this chunk.  We need a
+        // ServerPlayer to use TRACKING_CHUNK; if the triggering entity is not
+        // a player we fall back to sending to all players in the server level
+        // who are tracking this chunk position.
         if (level instanceof ServerLevel serverLevel) {
             if (entity instanceof ServerPlayer serverPlayer) {
                 CoralinePacketHandler.sendCauldronSplash(pos, color, serverPlayer);
             } else {
-                // Non-player entity (mob, item, etc.) — broadcast to all trackers.
+                // Non-player entity (mob, item, etc.) — broadcast to all
+                // players who are tracking the chunk this cauldron lives in.
                 CauldronSplashPacket packet = new CauldronSplashPacket(pos, color);
                 CoralinePacketHandler.INSTANCE.send(
                         net.minecraftforge.network.PacketDistributor.TRACKING_CHUNK.with(
