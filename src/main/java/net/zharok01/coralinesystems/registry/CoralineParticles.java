@@ -20,10 +20,19 @@ public class CoralineParticles {
             PARTICLE_TYPES.register("orb_sparkle", () -> new SimpleParticleType(false));
 
     /**
-     * Tinted splash particle for the Brewing Cauldron entity-inside effect.
+     * Tinted splash particle for the Brewing Cauldron entity-inside effect
+     * and the "brew finished" burst.
      */
     public static final RegistryObject<SimpleParticleType> CAULDRON_SPLASH =
             PARTICLE_TYPES.register("cauldron_splash", () -> new SimpleParticleType(false));
+
+    /**
+     * Tinted rising bubble for the Brewing Cauldron's active-brewing ambient
+     * effect.  Rises slowly from the fluid surface and fades out, giving
+     * the player a continuous visual cue that fermentation is happening.
+     */
+    public static final RegistryObject<SimpleParticleType> CAULDRON_BUBBLE =
+            PARTICLE_TYPES.register("cauldron_bubble", () -> new SimpleParticleType(false));
 
     public static void register(IEventBus eventBus) {
         PARTICLE_TYPES.register(eventBus);

@@ -2,6 +2,7 @@ package net.zharok01.coralinesystems.registry;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
@@ -45,8 +46,8 @@ public class CoralinePacketHandler {
                 .consumerMainThread(OpenInventoryPacket::handle)
                 .add();
 
-        // S2C: tells nearby clients to spawn tinted splash particles when an
-        // entity enters the fluid surface of a Brewing Cauldron.
+        // S2C: tinted splash particles when an entity enters the brewing cauldron's
+        // fluid surface, and for the "brew finished" completion burst.
         INSTANCE.messageBuilder(CauldronSplashPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
                 .decoder(CauldronSplashPacket::decode)
                 .encoder(CauldronSplashPacket::encode)
@@ -67,20 +68,32 @@ public class CoralinePacketHandler {
     }
 
     /**
-     * Sends a CauldronSplashPacket to all clients tracking the chunk that
-     * contains the given cauldron position.  Using NEAR instead of
-     * TRACKING_CHUNK so the effect is visible to the entity itself if it is
-     * a player, without needing to also send to all chunk-trackers.
+     * Sends a CauldronSplashPacket to all players tracking the chunk that
+     * contains the given cauldron, including the triggering player themselves
+     * (TRACKING_CHUNK may exclude the sender on some Forge builds).
      */
     public static void sendCauldronSplash(BlockPos pos, int color, ServerPlayer triggeringPlayer) {
         CauldronSplashPacket packet = new CauldronSplashPacket(pos, color);
-        // Send to every player within normal chunk-tracking distance of pos.
         INSTANCE.send(
                 PacketDistributor.TRACKING_CHUNK.with(
                         () -> triggeringPlayer.level().getChunkAt(pos)),
                 packet);
-        // Also send to the triggering player themselves (they track their own
-        // chunk, but TRACKING_CHUNK excludes the sender on some Forge builds).
+        // Also explicitly send to the triggering player.
         INSTANCE.send(PacketDistributor.PLAYER.with(() -> triggeringPlayer), packet);
+    }
+
+    /**
+     * Broadcasts a CauldronSplashPacket to all players tracking the chunk at
+     * {@code pos}, without requiring a specific triggering player.  Used by
+     * {@code fireFinishedCue} (called from {@code randomTick}, which has no
+     * player reference) to deliver the brew-completion particle burst to every
+     * nearby client.
+     */
+    public static void broadcastCauldronSplash(BlockPos pos, int color, ServerLevel serverLevel) {
+        CauldronSplashPacket packet = new CauldronSplashPacket(pos, color);
+        INSTANCE.send(
+                PacketDistributor.TRACKING_CHUNK.with(
+                        () -> serverLevel.getChunkAt(pos)),
+                packet);
     }
 }
