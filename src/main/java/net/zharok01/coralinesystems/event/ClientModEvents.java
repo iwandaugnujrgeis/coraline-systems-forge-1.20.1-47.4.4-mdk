@@ -2,6 +2,7 @@ package net.zharok01.coralinesystems.event;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -15,6 +16,7 @@ import net.zharok01.coralinesystems.client.entity.monster.MonsterRenderer;
 import net.zharok01.coralinesystems.client.entity.orb.OrbModel;
 import net.zharok01.coralinesystems.client.entity.orb.OrbPulseRenderer;
 import net.zharok01.coralinesystems.client.entity.orb.OrbRenderer;
+import net.zharok01.coralinesystems.client.model.BrewingCauldronGeometry;
 import net.zharok01.coralinesystems.client.particle.CauldronSplashParticle;
 import net.zharok01.coralinesystems.client.particle.OrbSparkleParticle;
 import net.zharok01.coralinesystems.mixin.accessors.BiomeColorsAccessor;
@@ -41,10 +43,19 @@ public class ClientModEvents {
     @SubscribeEvent
     public static void registerParticleFactories(RegisterParticleProvidersEvent event) {
         event.registerSpriteSet(CoralineParticles.ORB_SPARKLE.get(), OrbSparkleParticle.Factory::new);
-        // Tinted splash particle for the Brewing Cauldron entity-inside effect.
-        // The Provider reads r/g/b from the xSpeed/ySpeed/zSpeed slots that
-        // CauldronSplashPacket passes via Level#addParticle.
         event.registerSpriteSet(CoralineParticles.CAULDRON_SPLASH.get(), CauldronSplashParticle.Provider::new);
+    }
+
+    /**
+     * Registers our custom "coraline_systems:brewing_cauldron" geometry loader.
+     *
+     * This must fire on the MOD bus before model baking begins. The loader key
+     * becomes "coraline_systems:brewing_cauldron" because ModelEvent.RegisterGeometryLoaders
+     * automatically prepends the active mod namespace (set by ModLoadingContext).
+     */
+    @SubscribeEvent
+    public static void onRegisterGeometryLoaders(ModelEvent.RegisterGeometryLoaders event) {
+        event.register("brewing_cauldron", BrewingCauldronGeometry.Loader.INSTANCE);
     }
 
     @SubscribeEvent
@@ -54,9 +65,6 @@ public class ClientModEvents {
             BiomeColorsAccessor.coralineSystems$setFoliageColorResolver(CoralineBiomeColors.FOLIAGE_RESOLVER);
             BiomeColorsAccessor.coralineSystems$setWaterColorResolver(CoralineBiomeColors.WATER_RESOLVER);
 
-            // Initialise the convenience TYPE reference on CauldronSplashParticle so
-            // CauldronSplashPacket can call level.addParticle(TYPE, ...) directly.
-            // enqueueWork guarantees this runs after all DeferredRegisters have fired.
             CauldronSplashParticle.TYPE = CoralineParticles.CAULDRON_SPLASH.get();
 
             CoralineSystems.LOGGER.info("Successfully injected Coraline Systems Bidirectional Biome Color Noise!");
