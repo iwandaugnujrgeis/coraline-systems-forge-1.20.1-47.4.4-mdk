@@ -58,10 +58,10 @@ public class CauldronBubbleParticle extends TextureSheetParticle {
         this.friction = 0.92f;
 
         // Short lifetime: fades before it travels far above the surface.
-        this.lifetime = 8 + rand.nextInt(7);
+        this.lifetime = 14 + rand.nextInt(7);
 
-        // Slightly smaller than a splash droplet — it's a bubble, not a drop.
-        this.quadSize = 0.06f + rand.nextFloat() * 0.03f;
+        // Particle size
+        this.quadSize = 0.11f + rand.nextFloat() * 0.03f;
 
         this.setSpriteFromAge(sprites);
     }

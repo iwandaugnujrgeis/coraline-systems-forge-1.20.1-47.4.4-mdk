@@ -59,13 +59,18 @@ public final class BrewingCauldronInteractions {
 
     private static CauldronInteraction convertToBrewingCauldron(CultureType impliesCulture, Item solidItem) {
         return (state, level, pos, player, hand, itemStack) -> {
-            if (!state.is(Blocks.WATER_CAULDRON) || state.getValue(LayeredCauldronBlock.LEVEL) != 3) {
+            // 1. Remove the LEVEL == 3 restriction and only check for the block type
+            if (!state.is(Blocks.WATER_CAULDRON)) {
                 return InteractionResult.PASS;
             }
 
-            // Client-side prediction! Setting the block and BE data on BOTH sides.
-            // This eliminates the split-packet visual delay entirely.
-            level.setBlockAndUpdate(pos, CoralineBlocks.BREWING_CAULDRON.get().defaultBlockState());
+            // 2. Capture the current water level from the Vanilla cauldron
+            int currentLevel = state.getValue(LayeredCauldronBlock.LEVEL);
+
+            // 3. Client-side prediction! Setting the block and BE data on BOTH sides.
+            // Carry over the currentLevel to the new Brewing Cauldron.
+            level.setBlockAndUpdate(pos, CoralineBlocks.BREWING_CAULDRON.get().defaultBlockState()
+                    .setValue(BrewingCauldronBlock.LEVEL, currentLevel));
 
             if (level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be) {
                 be.initializeVisualsSilently(
@@ -82,11 +87,7 @@ public final class BrewingCauldronInteractions {
                 if (!player.getAbilities().instabuild) itemStack.shrink(1);
                 player.awardStat(Stats.ITEM_USED.get(solidItem));
 
-                // Insertion FX -- previously missing on this specific path
-                // (the very first solid added to a Water Cauldron, which is
-                // also the block-conversion step). addSolidInteraction below
-                // already plays this for the 2nd-5th additions; this closes
-                // the gap so the very first addition is no longer silent.
+                // Insertion FX
                 level.playSound(null, pos, CoralineSounds.CAULDRON_ADD_SOLID.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
                 if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
                     serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.COMPOSTER,

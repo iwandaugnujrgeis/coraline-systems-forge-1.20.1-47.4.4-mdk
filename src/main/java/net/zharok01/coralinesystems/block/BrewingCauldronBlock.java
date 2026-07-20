@@ -21,10 +21,11 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.gameevent.GameEvent;
+import net.mehvahdjukaar.amendments.common.block.CommonCauldronCode;
 import net.zharok01.coralinesystems.client.color.CoralineBlockColors;
 import net.zharok01.coralinesystems.network.CauldronSplashPacket;
-import net.zharok01.coralinesystems.registry.CoralineParticles;
 import net.zharok01.coralinesystems.registry.CoralinePacketHandler;
+import net.zharok01.coralinesystems.registry.CoralineParticles;
 import net.zharok01.coralinesystems.registry.CoralineSounds;
 import net.zharok01.coralinesystems.util.BrewingCauldronInteractions;
 import org.jetbrains.annotations.NotNull;
@@ -37,14 +38,7 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
 
     public static final IntegerProperty LEVEL = BlockStateProperties.LEVEL_CAULDRON;
 
-    /**
-     * Wine spoils when light reaches this level or above.  Mirrors the maximum
-     * light level at which mushrooms can grow in Vanilla (light ≤ 12), so Wine
-     * spoils at light ≥ 13, the same threshold that prevents mushroom growth.
-     */
     private static final int WINE_SPOIL_LIGHT = 13;
-
-    /** Minimum light level at which Kombucha brews at full speed. */
     private static final int KOMBUCHA_MIN_CORRECT_LIGHT = 7;
 
     private static final long WINE_TARGET_PROGRESS = 24_000L;
@@ -61,8 +55,6 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
         this.registerDefaultState(this.stateDefinition.any().setValue(LEVEL, 3));
     }
 
-    // ── AbstractCauldronBlock requirements ──────────────────────────────────
-
     @Override
     public boolean isFull(BlockState state) {
         return state.getValue(LEVEL) == 3;
@@ -78,22 +70,10 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
         builder.add(LEVEL);
     }
 
-    /**
-     * Returns the Y-offset of the fluid surface inside the cauldron, in
-     * block-local units (0–1). Matches {@code LayeredCauldronBlock}'s formula
-     * exactly so that {@code isEntityInsideContent()} and splash particles
-     * both use the correct height.
-     *
-     * level=1 → 9/16 ≈ 0.5625
-     * level=2 → 12/16 = 0.75
-     * level=3 → 15/16 = 0.9375
-     */
     @Override
     protected double getContentHeight(BlockState state) {
         return (6.0 + state.getValue(LEVEL) * 3.0) / 16.0;
     }
-
-    // ── EntityBlock wiring ──────────────────────────────────────────────────
 
     @Nullable
     @Override
@@ -106,22 +86,46 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
         return RenderShape.MODEL;
     }
 
+    // ── Entity Impact (The Missing Hook) ────────────────────────────────────
+
+    /**
+     * Intercepts entities jumping or falling into the cauldron to play the initial
+     * splash effects. Mirrors the exact behavior of Amendments' ModCauldronBlock.m_142072_.
+     */
+    @Override
+    public void fallOn(@NotNull Level level, @NotNull BlockState state, @NotNull BlockPos pos, @NotNull Entity entity, float fallDistance) {
+        if (isEntityInsideContent(state, pos, entity)) {
+            if (!level.isClientSide) {
+                // Layer 1: Amendments handles the impact calculation, item pickups, and base sound
+                CommonCauldronCode.onEntityFallOnContent(level, state, entity, getContentHeight(state));
+
+                // Layer 2: Our custom tinted burst
+                int color = getFluidColor(level, pos, state);
+                if (level instanceof ServerLevel serverLevel) {
+                    if (entity instanceof ServerPlayer serverPlayer) {
+                        CoralinePacketHandler.sendCauldronSplash(pos, color, serverPlayer);
+                    } else {
+                        CauldronSplashPacket packet = new CauldronSplashPacket(pos, color);
+                        CoralinePacketHandler.INSTANCE.send(
+                                net.minecraftforge.network.PacketDistributor.TRACKING_CHUNK.with(
+                                        () -> serverLevel.getChunkAt(pos)),
+                                packet);
+                    }
+                }
+            }
+            // Negate fall damage because the player landed in liquid
+            super.fallOn(level, state, pos, entity, 0.0F);
+        } else {
+            // Player landed on the solid iron rim of the cauldron; apply normal fall damage
+            super.fallOn(level, state, pos, entity, fallDistance);
+        }
+    }
+
     // ── Entity-inside handling ──────────────────────────────────────────────
 
     /**
-     * Mirrors {@code LayeredCauldronBlock.entityInside}:
-     * <ul>
-     *   <li>Extinguishes burning entities and consumes one level of liquid
-     *       (reverting to an empty Vanilla cauldron at level 0).</li>
-     *   <li>On entry, plays a water-splash sound and sends a packet to nearby
-     *       clients to spawn tinted splash particles at the fluid surface.</li>
-     * </ul>
-     *
-     * "Entry" is debounced through {@link BrewingCauldronBlockEntity#tryConsumeSplashCooldown}
-     * rather than the fragile {@code getDeltaMovement().y} check used in the
-     * previous version.  This fires the splash FX at most once per
-     * {@code SPLASH_COOLDOWN_TICKS} ticks, which stops the continuous spam
-     * while an entity stands still inside the cauldron.
+     * Handles entities actively standing inside the brewing cauldron's fluid content.
+     * Splash logic has been migrated to fallOn() to match Vanilla/Amendments standards.
      */
     @Override
     public void entityInside(@NotNull BlockState state, @NotNull Level level,
@@ -129,44 +133,17 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
         if (level.isClientSide) return;
         if (!isEntityInsideContent(state, pos, entity)) return;
 
-        // ── Fire extinguish — mirrors LayeredCauldronBlock ──────────────────
+        // ── Fire extinguish ─────────────────────────────────────────────────
         if (entity.isOnFire() && entity.mayInteract(level, pos)) {
+            level.playSound(null, pos, SoundEvents.GENERIC_EXTINGUISH_FIRE,
+                    entity.getSoundSource(), 0.7f, 1.6f);
             entity.clearFire();
             lowerFillLevel(state, level, pos);
             level.gameEvent(null, GameEvent.BLOCK_CHANGE, pos);
-            // Skip splash FX after extinguishing — the fire-out sound is
-            // enough; the splash packet would be redundant noise.
-            return;
         }
-
-        // ── Splash FX — debounced so it fires only on actual entry ───────────
-        if (!(level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be)) return;
-        if (!be.tryConsumeSplashCooldown(level.getGameTime())) return;
-
-        // Play the splash sound at the cauldron position.
-        level.playSound(null, pos, SoundEvents.GENERIC_SPLASH, entity.getSoundSource(),
-                0.5f, 0.8f + level.getRandom().nextFloat() * 0.4f);
-
-        // Send tinted splash particles to nearby clients.
-        int color = getFluidColor(level, pos, state);
-        if (level instanceof ServerLevel serverLevel) {
-            if (entity instanceof ServerPlayer serverPlayer) {
-                CoralinePacketHandler.sendCauldronSplash(pos, color, serverPlayer);
-            } else {
-                CauldronSplashPacket packet = new CauldronSplashPacket(pos, color);
-                CoralinePacketHandler.INSTANCE.send(
-                        net.minecraftforge.network.PacketDistributor.TRACKING_CHUNK.with(
-                                () -> serverLevel.getChunkAt(pos)),
-                        packet);
-            }
-        }
+        // Note: Splash FX debounce removed. Native Cauldrons do not splash repeatedly while walking!
     }
 
-    /**
-     * Decrements the cauldron's LEVEL by one, reverting to an empty Vanilla
-     * cauldron block when the level reaches zero.  Mirrors
-     * {@code LayeredCauldronBlock.lowerFillLevel}.
-     */
     private static void lowerFillLevel(BlockState state, Level level, BlockPos pos) {
         int newLevel = state.getValue(LEVEL) - 1;
         BlockState newState = newLevel == 0
@@ -175,12 +152,6 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
         level.setBlockAndUpdate(pos, newState);
     }
 
-    /**
-     * Derives the packed RGB fluid color from the block entity at {@code pos},
-     * delegating to {@link CoralineBlockColors#CAULDRON_CONTENT} so the color
-     * is always consistent with what the renderer displays.
-     * Returns a neutral mid-purple fallback when the block entity is absent.
-     */
     static int getFluidColor(Level level, BlockPos pos, BlockState state) {
         int color = CoralineBlockColors.CAULDRON_CONTENT.getColor(state, level, pos, 1);
         return color == -1 ? 0xd070d0 : color;
@@ -212,8 +183,6 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
     }
 
     private void tickWine(BrewingCauldronBlockEntity be, ServerLevel level, BlockPos pos, int light) {
-        // Wine spoils at light ≥ 13, matching the light threshold above which
-        // mushrooms cannot grow in Vanilla.
         if (light >= WINE_SPOIL_LIGHT) {
             be.setBrewState(BrewState.SPOILED);
             level.playSound(null, pos, CoralineSounds.CAULDRON_BREW_SPOILED.get(), SoundSource.BLOCKS, 1.0F, 0.7F);
@@ -254,41 +223,17 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
         }
     }
 
-    /**
-     * Plays the brew-completion sound, spawns a HAPPY_VILLAGER burst (the
-     * "success" vanilla cue), and sends a tinted splash-particle packet to
-     * all clients tracking the chunk.  The tinted burst visually distinguishes
-     * a newly-finished brew from an already-finished one that the player just
-     * walked past.
-     */
     private static void fireFinishedCue(BrewingCauldronBlockEntity be, ServerLevel level, BlockPos pos) {
         level.playSound(null, pos, CoralineSounds.CAULDRON_BREW_SUCCESS.get(), SoundSource.BLOCKS, 1.0F, 1.2F);
         level.sendParticles(ParticleTypes.HAPPY_VILLAGER,
                 pos.getX() + 0.5, pos.getY() + 0.6, pos.getZ() + 0.5,
                 8, 0.25, 0.2, 0.25, 0.0);
 
-        // Derive the current fluid color directly from the BE (which has just
-        // been set to FINISHED) so the burst matches the drink's final color.
         BlockState state = level.getBlockState(pos);
         int color = getFluidColor(level, pos, state);
         CoralinePacketHandler.broadcastCauldronSplash(pos, color, level);
     }
 
-    // ── Client-side ambient tick ─────────────────────────────────────────────
-
-    /**
-     * Spawns tinted rising bubble particles and plays the bubbling ambient
-     * sound when the cauldron is actively fermenting.
-     *
-     * <p>Bubble color is read directly from the block entity here on the
-     * client (same as the rendering tint), so no server packet is needed.
-     * The color lookup mirrors {@link #getFluidColor} but runs client-side
-     * where the BE is already loaded.</p>
-     *
-     * <p>Particle density scales with strength (1-5) — stronger brews produce
-     * more vigorous bubbling, giving a visible signal of the ingredient level
-     * without any UI.</p>
-     */
     @Override
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
         if (!(level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be)) {
@@ -298,32 +243,24 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
             return;
         }
 
-        // ── Tinted rising bubbles ────────────────────────────────────────────
-        // Derive the particle color from the same source as the block tint.
         int rgb = CoralineBlockColors.CAULDRON_CONTENT.getColor(state, level, pos, 1);
         if (rgb != -1) {
             float r = ((rgb >> 16) & 0xFF) / 255.0f;
             float g = ((rgb >> 8) & 0xFF) / 255.0f;
             float b = (rgb & 0xFF) / 255.0f;
 
-            // Surface Y — same formula as getContentHeight.
             double surfaceY = pos.getY() + getContentHeight(state);
 
-            // One bubble per animateTick call; occasionally two for higher-
-            // strength brews (strength 4-5 → ~40 % chance of a second bubble).
             int bubbleCount = 1 + (be.getSolidStrength() >= 4 && random.nextInt(5) < 2 ? 1 : 0);
             for (int i = 0; i < bubbleCount; i++) {
                 double bx = pos.getX() + 0.2 + random.nextDouble() * 0.6;
                 double bz = pos.getZ() + 0.2 + random.nextDouble() * 0.6;
-                // Spawn slightly below the surface so the bubble visibly rises.
                 level.addParticle(CoralineParticles.CAULDRON_BUBBLE.get(),
                         bx, surfaceY - 0.05, bz,
-                        // Pack r/g/b into velocity slots — Provider reads them as color.
                         r, g, b);
             }
         }
 
-        // ── Ambient bubbling sound ───────────────────────────────────────────
         if (random.nextInt(20) == 0) {
             level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
                     CoralineSounds.CAULDRON_BUBBLING.get(), SoundSource.BLOCKS,

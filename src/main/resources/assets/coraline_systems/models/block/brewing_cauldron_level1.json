@@ -1,5 +1,6 @@
 {
   "loader": "coraline_systems:brewing_cauldron",
+  "particle": "minecraft:block/cauldron_inner",
   "cauldron": "amendments:block/cauldron",
   "fluid": {
     "parent": "amendments:block/cauldron_level_9",
