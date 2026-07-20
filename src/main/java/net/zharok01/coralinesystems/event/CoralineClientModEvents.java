@@ -7,6 +7,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LayeredCauldronBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
@@ -100,38 +101,6 @@ public class CoralineClientModEvents {
     // Forge-bus gameplay events (client-only)
     // ────────────────────────────────────────────────────────────────────────
 
-    /**
-     * Subscribed to the Forge event bus to listen to block right-click events on
-     * the client. Mirrors Subtle Effects' AbstractCauldronBlockMixin approach:
-     *
-     * <p>We snapshot the cauldron's relevant state (block identity + BE fingerprint)
-     * <em>before</em> the interaction runs, then schedule a 2-tick callback via SE's
-     * TickerManager to inspect the state <em>after</em> the interaction has resolved
-     * on the client. Particles are only spawned if the state actually changed,
-     * which is the precise robustness guarantee SE's mixin achieves via its
-     * {@code @ModifyReturnValue} — we just reach the same "after" moment via delay
-     * rather than a mixin hook.</p>
-     *
-     * <h3>What counts as a "changed" state?</h3>
-     * <ul>
-     *   <li><strong>Brewing Cauldron → Brewing Cauldron</strong> (solid/culture added,
-     *       or liquid topped up): the BE fingerprint changes (solidStrength, culture,
-     *       or impliedCulture). We read the post-interaction color and spawn particles.</li>
-     *   <li><strong>Brewing Cauldron → Brewing Cauldron at a lower LEVEL</strong>
-     *       (bottle/bucket drain): the block state's LEVEL property changes.</li>
-     *   <li><strong>Brewing Cauldron → empty Cauldron</strong> (bucket drain of full
-     *       cauldron): block identity changes away from BrewingCauldronBlock. We use
-     *       the <em>pre</em>-interaction color because the BE is gone.</li>
-     *   <li><strong>Empty Cauldron → Brewing Cauldron</strong> (pouring a custom liquid
-     *       into an empty cauldron): the block was not a BrewingCauldronBlock before,
-     *       but is one after. We use the <em>post</em>-interaction color.</li>
-     * </ul>
-     *
-     * <p>For the "empty cauldron → Brewing Cauldron" case we also listen to
-     * right-clicks on the vanilla empty cauldron block (Blocks.CAULDRON), because
-     * the BREWING map is on the BrewingCauldronBlock — but the conversion interaction
-     * is registered on CauldronInteraction.EMPTY (see BrewingCauldronInteractions).</p>
-     */
     @Mod.EventBusSubscriber(modid = CoralineSystems.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
     public static class ClientForgeEvents {
 
@@ -146,38 +115,30 @@ public class CoralineClientModEvents {
 
             boolean isBrewingCauldron = stateBefore.getBlock() instanceof BrewingCauldronBlock;
             boolean isEmptyCauldron   = stateBefore.is(Blocks.CAULDRON);
+            // Fix 1: also watch water cauldrons — Mulberries/Tea Leaves convert them
+            // into a BrewingCauldron on the very first solid insertion.
+            boolean isWaterCauldron   = stateBefore.is(Blocks.WATER_CAULDRON);
 
-            // Gate 1 — we only care about interactions with a BrewingCauldronBlock
-            // or a vanilla empty cauldron (the conversion target for custom pours).
-            if (!isBrewingCauldron && !isEmptyCauldron) return;
+            // Gate 1 — we only care about these three cauldron types.
+            if (!isBrewingCauldron && !isEmptyCauldron && !isWaterCauldron) return;
 
-            // Gate 2 — the held item must be registered in one of our interaction
-            // maps. For a BrewingCauldronBlock the relevant map is BREWING; for a
-            // vanilla empty cauldron the relevant map is CauldronInteraction.EMPTY —
-            // but rather than importing vanilla internals here, we check BREWING for
-            // the BrewingCauldronBlock case, and for the empty-cauldron case we simply
-            // check whether the item is any of our custom liquid containers (bottle or
-            // bucket), since those are the only items that trigger a conversion there.
+            // Gate 2 — filter to only items we care about for each cauldron type.
+            net.minecraft.world.item.Item heldItem = event.getItemStack().getItem();
             if (isBrewingCauldron) {
-                if (!BrewingCauldronInteractions.BREWING.containsKey(event.getItemStack().getItem())) return;
+                if (!BrewingCauldronInteractions.BREWING.containsKey(heldItem)) return;
+            } else if (isEmptyCauldron) {
+                // Only our custom liquid containers can convert an empty cauldron.
+                if (!isCustomLiquidContainer(heldItem)) return;
             } else {
-                // Empty cauldron: only our custom liquid containers can convert it.
-                if (!isCustomLiquidContainer(event.getItemStack().getItem())) return;
+                // Water cauldron: only solid ingredients trigger a conversion.
+                if (!isSolidIngredient(heldItem)) return;
             }
 
-            // Snapshot the pre-interaction BE fingerprint so we can detect changes
-            // that don't manifest as block-state changes (solid/culture additions).
+            // Snapshot pre-interaction state for change detection.
             int fingerprintBefore = brewingFingerprint(level, pos);
-
-            // Snapshot the pre-interaction LEVEL so we can detect top-up and partial
-            // drain interactions, which change only the block state and leave the BE
-            // fingerprint untouched.
             int levelBefore = isBrewingCauldron
                     ? stateBefore.getValue(BrewingCauldronBlock.LEVEL)
                     : -1;
-
-            // Snapshot the pre-interaction color for the "full drain → empty cauldron"
-            // case, where the BE is gone by the time we check.
             int colorBefore = isBrewingCauldron
                     ? CoralineBlockColors.CAULDRON_CONTENT.getColor(stateBefore, level, pos, 1)
                     : -1;
@@ -191,15 +152,11 @@ public class CoralineClientModEvents {
                 boolean isBrewingAfter = stateAfter.getBlock() instanceof BrewingCauldronBlock;
 
                 // ── Case A: BrewingCauldron → BrewingCauldron ────────────────────
-                // Covers: solid added, culture added, liquid topped up, bottle/bucket
-                // drain that doesn't empty the cauldron completely.
-                // We check BOTH the BE fingerprint (catches solid/culture additions,
-                // which leave LEVEL untouched) AND the LEVEL property (catches top-up
-                // and partial drain interactions, which leave the BE fields untouched).
+                // Covers: solid added, culture added, liquid topped up, partial drain.
                 if (isBrewingCauldron && isBrewingAfter) {
                     int fingerprintAfter = brewingFingerprint(lvl, pos);
                     int levelAfter = stateAfter.getValue(BrewingCauldronBlock.LEVEL);
-                    if (fingerprintAfter == fingerprintBefore && levelAfter == levelBefore) return; // Nothing changed.
+                    if (fingerprintAfter == fingerprintBefore && levelAfter == levelBefore) return;
 
                     int rgb = CoralineBlockColors.CAULDRON_CONTENT.getColor(stateAfter, lvl, pos, 1);
                     if (rgb == -1) return;
@@ -208,8 +165,7 @@ public class CoralineClientModEvents {
                 }
 
                 // ── Case B: BrewingCauldron → empty Cauldron ─────────────────────
-                // Full-bucket drain: the block has been replaced by a vanilla empty
-                // cauldron. Use the pre-interaction color (the BE is gone).
+                // Full-bucket drain: block replaced by vanilla empty cauldron.
                 if (isBrewingCauldron && stateAfter.is(Blocks.CAULDRON)) {
                     if (colorBefore == -1) return;
                     spawnSplash(lvl, pos, stateBefore, colorBefore);
@@ -222,9 +178,20 @@ public class CoralineClientModEvents {
                     int rgb = CoralineBlockColors.CAULDRON_CONTENT.getColor(stateAfter, lvl, pos, 1);
                     if (rgb == -1) return;
                     spawnSplash(lvl, pos, stateAfter, rgb);
+                    return;
                 }
 
-                // Any other outcome (no change, or some other block entirely) → no particles.
+                // ── Case D: Water Cauldron → BrewingCauldron ─────────────────────
+                // First solid ingredient (Mulberries/Tea Leaves) dropped into a water
+                // cauldron, converting it. This was the missing case causing no splash
+                // on the very first interaction before the block type changed.
+                if (isWaterCauldron && isBrewingAfter) {
+                    int rgb = CoralineBlockColors.CAULDRON_CONTENT.getColor(stateAfter, lvl, pos, 1);
+                    if (rgb == -1) return;
+                    spawnSplash(lvl, pos, stateAfter, rgb);
+                }
+
+                // Any other outcome (no change, or some other block) → no particles.
             });
         }
 
@@ -233,11 +200,7 @@ public class CoralineClientModEvents {
         /**
          * Returns a compact integer fingerprint of the brewing-relevant fields of the
          * BrewingCauldronBlockEntity at {@code pos}, or {@code 0} if there is no BE
-         * there. Used to detect additions of solid/culture items, which do not change
-         * the block state but do mutate the BE.
-         *
-         * <p>Fields included: solidStrength (bits 0-2), culture ordinal (bits 3-4),
-         * impliedCulture ordinal (bits 5-6), brewState ordinal (bits 7-8).</p>
+         * there.
          */
         private static int brewingFingerprint(Level level, BlockPos pos) {
             if (!(level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be)) return 0;
@@ -248,10 +211,18 @@ public class CoralineClientModEvents {
         }
 
         /**
+         * Returns {@code true} if the item is a solid brewing ingredient that can be
+         * added to a water cauldron to begin a brew (converting it to a
+         * BrewingCauldronBlock in the process).
+         */
+        private static boolean isSolidIngredient(net.minecraft.world.item.Item item) {
+            return item == CoralineItems.MULBERRIES.get()
+                    || item == CoralineItems.TEA_LEAVES.get();
+        }
+
+        /**
          * Returns {@code true} if the given item is one of the custom liquid
-         * containers that can be poured into a vanilla empty cauldron to produce
-         * a BrewingCauldronBlock. These are the bottle and bucket forms of each
-         * of our five liquid types.
+         * containers that can be poured into a vanilla empty cauldron.
          */
         private static boolean isCustomLiquidContainer(net.minecraft.world.item.Item item) {
             return item == CoralineItems.MULBERRY_JUICE_BOTTLE.get()
@@ -268,24 +239,20 @@ public class CoralineClientModEvents {
 
         /**
          * Spawns a burst of tinted {@link CauldronSplashParticle}s at the fluid
-         * surface of the cauldron at {@code pos}. The surface height is derived
-         * from the block state that was actually active at the time of the splash
-         * (pre for drains, post for fills/additions).
+         * surface of the cauldron at {@code pos}.
          */
         private static void spawnSplash(Level level, BlockPos pos, BlockState stateForHeight, int rgb) {
             float r = ((rgb >> 16) & 0xFF) / 255.0f;
             float g = ((rgb >>  8) & 0xFF) / 255.0f;
             float b = ( rgb        & 0xFF) / 255.0f;
 
-            // Surface Y derived from the cauldron LEVEL property, matching
-            // BrewingCauldronBlock.getContentHeight().
             int cauldronLevel = stateForHeight.getBlock() instanceof BrewingCauldronBlock
                     ? stateForHeight.getValue(BrewingCauldronBlock.LEVEL)
-                    : 3; // Pre-interaction state for full drains was level 3.
+                    : 3;
             double surfaceY = pos.getY() + (6.0 + cauldronLevel * 3.0) / 16.0;
 
             RandomSource rand = level.getRandom();
-            int count = 10 + rand.nextInt(7); // 10–16 particles
+            int count = 10 + rand.nextInt(7);
             for (int i = 0; i < count; i++) {
                 double x = pos.getX() + 0.1875 + rand.nextDouble() * 0.625;
                 double z = pos.getZ() + 0.1875 + rand.nextDouble() * 0.625;

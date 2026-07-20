@@ -13,7 +13,6 @@
 	"block.coraline_systems.powered_maglev_rail": "Powered Maglev Rail",
 	"block.coraline_systems.organic_compost_farmland": "Organic Compost Farmland",
 	"block.coraline_systems.organic_compost": "Organic Compost",
-
 	"entity.coraline_systems.orb": "Orb",
 	"coraline_systems.sound.subtitle.orb_ambient": "Orb breathes",
 	"coraline_systems.sound.subtitle.orb_death": "Orb dies",
@@ -21,36 +20,28 @@
 	"coraline_systems.sound.subtitle.orb_shoot": "Orb shoots",
 	"coraline_systems.sound.subtitle.orb_charge": "Orb charges",
 	"item.coraline_systems.orb_spawn_egg": "Orb Spawn Egg",
-
 	"entity.coraline_systems.brume": "Brume",
 	"coraline_systems.sound.subtitle.brume_ambient": "Brume breathes",
 	"coraline_systems.sound.subtitle.brume_death": "Brume dies",
 	"coraline_systems.sound.subtitle.brume_hurt": "Brume hurt",
 	"item.coraline_systems.brume_spawn_egg": "Brume Spawn Egg",
-
 	"coraline_systems.sound.subtitle.mineshaft_spook": "Long-forgotten rattle...",
-
 	"coraline_systems.sound.subtitle.giant_stomp": "Giant stomps",
 	"coraline_systems.sound.subtitle.giant_ambient": "Giant breathes",
 	"coraline_systems.sound.subtitle.giant_death": "Giant dies",
 	"coraline_systems.sound.subtitle.giant_hurt": "Giant hurt",
-
 	"stat.coraline_systems.portals_corrupted": "Portals Corrupted",
 	"stat.coraline_systems.monster_sightings": "Monster Sightings",
-
 	"coraline_systems.sound.subtitle.static_portal_open": "Static portal opens",
 	"coraline_systems.sound.subtitle.static_portal_ambient": "Static portal wobbles",
-
 	"coraline_systems.sound.subtitle.helper_buzz": "Buzz",
 	"coraline_systems.sound.subtitle.helper_idle": "Ominous presence?",
 	"coraline_systems.sound.subtitle.helper_hurt": "Helper asks",
 	"coraline_systems.sound.subtitle.helper_death": "Helper error",
 	"entity.coraline_systems.helper": "Helper",
 	"item.coraline_systems.helper_spawn_egg": "Helper Spawn Egg",
-
 	"entity.coraline_systems.monster": "Monster",
 	"item.coraline_systems.monster_spawn_egg": "Monster Spawn Egg",
-
 	"coraline_systems.sound.subtitle.monster_idle": "Familiar presence...",
 	"coraline_systems.sound.subtitle.monster_hurt": "Monster weeps",
 	"coraline_systems.sound.subtitle.monster_death": "Monster dies",
@@ -58,22 +49,17 @@
 	"coraline_systems.sound.subtitle.monster_teleport": "Monster teleports",
 	"coraline_systems.sound.subtitle.monster_vanish": "Monster vanishes",
 	"coraline_systems.sound.subtitle.monster_scream": "Monster screams",
-
 	"coraline_systems.sound.subtitle.subwoofer_boom": "Subwoofer woofs",
 	"coraline_systems.sound.subtitle.special_score": "Score dings!",
 	"coraline_systems.sound.subtitle.detector_activated": "Sensor hums",
 	"coraline_systems.sound.subtitle.vibration_sensor_ping": "Sensor pings",
-
 	"coraline_systems.sound.subtitle.pig_eat": "Pig chomps",
-
 	"subtitles.coraline_systems.block.mushroom_break": "Mushroom breaks",
 	"subtitles.coraline_systems.block.mushroom_step": "Mushroom steps",
 	"subtitles.coraline_systems.block.mushroom_place": "Mushroom placed",
 	"subtitles.coraline_systems.block.mushroom_hit": "Mushroom thuds",
 	"subtitles.coraline_systems.block.mushroom_fall": "Mushroom lands",
-
 	"block.coraline_systems.brewing_cauldron": "Brewing Cauldron",
-
 	"item.coraline_systems.wine_bottle": "Bottle of Wine",
 	"item.coraline_systems.wine_bucket": "Bucket of Wine",
 	"item.coraline_systems.tea_bottle": "Bottle of Tea",
@@ -84,18 +70,12 @@
 	"item.coraline_systems.mulberry_juice_bucket": "Bucket of Mulberry Juice",
 	"item.coraline_systems.dregs_bottle": "Bottle of Dregs",
 	"item.coraline_systems.dregs_bucket": "Bucket of Dregs",
-
 	"tooltip.coraline_systems.strength": "Strength: Level %s",
-	"item.coraline_systems.wine_bottle.strength": "Strength: Level %s",
-	"item.coraline_systems.wine_bucket.strength": "Strength: Level %s",
-	"item.coraline_systems.tea_bottle.strength": "Strength: Level %s",
-	"item.coraline_systems.tea_bucket.strength": "Strength: Level %s",
-	"item.coraline_systems.mulberry_juice_bottle.strength": "Strength: Level %s",
-	"item.coraline_systems.mulberry_juice_bucket.strength": "Strength: Level %s",
-
 	"coraline_systems.sound.subtitle.brew_success": "Cauldron chimes",
 	"coraline_systems.sound.subtitle.brew_fail": "Cauldron sputters",
 	"coraline_systems.sound.subtitle.add_berry": "Berry squishes",
 	"coraline_systems.sound.subtitle.add_culture_fizz": "Culture fizzes",
-	"coraline_systems.sound.subtitle.cauldron_bubble_ambient": "Cauldron bubbles"
+	"coraline_systems.sound.subtitle.cauldron_bubble_ambient": "Cauldron bubbles",
+	"coraline_systems.sound.subtitle.cauldron_dregs_ambient": "Dregs gurgles",
+	"coraline_systems.sound.subtitle.cauldron_kombucha_ambient": "Kombucha fizzes"
 }

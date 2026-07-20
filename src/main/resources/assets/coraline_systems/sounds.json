@@ -533,8 +533,7 @@
     "category": "block",
     "subtitle": "coraline_systems.sound.subtitle.brew_success",
     "sounds": [
-      "block/honey_block/place1",
-      "block/honey_block/place2"
+      "note/icechime"
     ]
   },
   "cauldron_brew_spoiled": {
@@ -757,6 +756,46 @@
       {
         "name": "alexsmobs:grizzly_bear_hurt",
         "type": "event"
+      }
+    ]
+  },
+  "cauldron_dregs_ambient": {
+    "category": "block",
+    "subtitle": "coraline_systems.sound.subtitle.cauldron_dregs_ambient",
+    "sounds": [
+      {
+        "name": "mob/frog/tongue1",
+        "volume": 0.6
+      },
+      {
+        "name": "mob/frog/tongue1",
+        "volume": 0.7
+      },
+      {
+        "name": "mob/frog/tongue1",
+        "volume": 0.8
+      },
+      {
+        "name": "mob/frog/tongue1",
+        "volume": 0.9
+      }
+    ]
+  },
+  "cauldron_kombucha_ambient": {
+    "category": "block",
+    "subtitle": "coraline_systems.sound.subtitle.cauldron_kombucha_ambient",
+    "sounds": [
+      {
+        "name": "block/bubble_column/bubble1",
+        "pitch": 0.6
+      },
+      {
+        "name": "block/bubble_column/bubble2",
+        "pitch": 0.7
+      },
+      {
+        "name": "block/bubble_column/bubble3",
+        "pitch": 0.8
       }
     ]
   }

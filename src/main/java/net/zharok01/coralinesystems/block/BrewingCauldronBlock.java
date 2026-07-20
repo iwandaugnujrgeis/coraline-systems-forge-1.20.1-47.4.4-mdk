@@ -86,20 +86,14 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
         return RenderShape.MODEL;
     }
 
-    // ── Entity Impact (The Missing Hook) ────────────────────────────────────
+    // ── Entity Impact ────────────────────────────────────────────────────────
 
-    /**
-     * Intercepts entities jumping or falling into the cauldron to play the initial
-     * splash effects. Mirrors the exact behavior of Amendments' ModCauldronBlock.m_142072_.
-     */
     @Override
     public void fallOn(@NotNull Level level, @NotNull BlockState state, @NotNull BlockPos pos, @NotNull Entity entity, float fallDistance) {
         if (isEntityInsideContent(state, pos, entity)) {
             if (!level.isClientSide) {
-                // Layer 1: Amendments handles the impact calculation, item pickups, and base sound
                 CommonCauldronCode.onEntityFallOnContent(level, state, entity, getContentHeight(state));
 
-                // Layer 2: Our custom tinted burst
                 int color = getFluidColor(level, pos, state);
                 if (level instanceof ServerLevel serverLevel) {
                     if (entity instanceof ServerPlayer serverPlayer) {
@@ -113,27 +107,20 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
                     }
                 }
             }
-            // Negate fall damage because the player landed in liquid
             super.fallOn(level, state, pos, entity, 0.0F);
         } else {
-            // Player landed on the solid iron rim of the cauldron; apply normal fall damage
             super.fallOn(level, state, pos, entity, fallDistance);
         }
     }
 
     // ── Entity-inside handling ──────────────────────────────────────────────
 
-    /**
-     * Handles entities actively standing inside the brewing cauldron's fluid content.
-     * Splash logic has been migrated to fallOn() to match Vanilla/Amendments standards.
-     */
     @Override
     public void entityInside(@NotNull BlockState state, @NotNull Level level,
                              @NotNull BlockPos pos, @NotNull Entity entity) {
         if (level.isClientSide) return;
         if (!isEntityInsideContent(state, pos, entity)) return;
 
-        // ── Fire extinguish ─────────────────────────────────────────────────
         if (entity.isOnFire() && entity.mayInteract(level, pos)) {
             level.playSound(null, pos, SoundEvents.GENERIC_EXTINGUISH_FIRE,
                     entity.getSoundSource(), 0.7f, 1.6f);
@@ -141,7 +128,6 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
             lowerFillLevel(state, level, pos);
             level.gameEvent(null, GameEvent.BLOCK_CHANGE, pos);
         }
-        // Note: Splash FX debounce removed. Native Cauldrons do not splash repeatedly while walking!
     }
 
     private static void lowerFillLevel(BlockState state, Level level, BlockPos pos) {
@@ -225,9 +211,9 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
 
     private static void fireFinishedCue(BrewingCauldronBlockEntity be, ServerLevel level, BlockPos pos) {
         level.playSound(null, pos, CoralineSounds.CAULDRON_BREW_SUCCESS.get(), SoundSource.BLOCKS, 1.0F, 1.2F);
-        level.sendParticles(ParticleTypes.HAPPY_VILLAGER,
+        level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,
                 pos.getX() + 0.5, pos.getY() + 0.6, pos.getZ() + 0.5,
-                8, 0.25, 0.2, 0.25, 0.0);
+                20, 0.3, 0.3, 0.3, 0.1);
 
         BlockState state = level.getBlockState(pos);
         int color = getFluidColor(level, pos, state);
@@ -239,32 +225,85 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
         if (!(level.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity be)) {
             return;
         }
-        if (be.getCulture() == CultureType.NONE || be.getBrewState() != BrewState.BREWING) {
-            return;
-        }
 
-        int rgb = CoralineBlockColors.CAULDRON_CONTENT.getColor(state, level, pos, 1);
-        if (rgb != -1) {
-            float r = ((rgb >> 16) & 0xFF) / 255.0f;
-            float g = ((rgb >> 8) & 0xFF) / 255.0f;
-            float b = (rgb & 0xFF) / 255.0f;
+        CultureType culture  = be.getCulture();
+        BrewState brewState  = be.getBrewState();
 
-            double surfaceY = pos.getY() + getContentHeight(state);
+        // ── Active-brewing ambient (bubbles + sound) ─────────────────────────
+        // Only play when a culture has been set and brewing is in progress.
+        // For Kombucha specifically, also suppress when the light level is too
+        // low to make any progress — this signals to the player that fermentation
+        // has stalled, matching the server-side tickKombucha stall condition.
+        if (culture != CultureType.NONE && brewState == BrewState.BREWING) {
+            boolean shouldShowBrewing = true;
+            if (culture == CultureType.KOMBUCHA) {
+                int light = level.getRawBrightness(pos, 0);
+                if (light <= 0) {
+                    shouldShowBrewing = false;
+                }
+            }
 
-            int bubbleCount = 1 + (be.getSolidStrength() >= 4 && random.nextInt(5) < 2 ? 1 : 0);
-            for (int i = 0; i < bubbleCount; i++) {
-                double bx = pos.getX() + 0.2 + random.nextDouble() * 0.6;
-                double bz = pos.getZ() + 0.2 + random.nextDouble() * 0.6;
-                level.addParticle(CoralineParticles.CAULDRON_BUBBLE.get(),
-                        bx, surfaceY - 0.05, bz,
-                        r, g, b);
+            if (shouldShowBrewing) {
+                int rgb = CoralineBlockColors.CAULDRON_CONTENT.getColor(state, level, pos, 1);
+                if (rgb != -1) {
+                    float r = ((rgb >> 16) & 0xFF) / 255.0f;
+                    float g = ((rgb >> 8) & 0xFF) / 255.0f;
+                    float b = (rgb & 0xFF) / 255.0f;
+
+                    double surfaceY = pos.getY() + getContentHeight(state);
+
+                    int bubbleCount = 1 + (be.getSolidStrength() >= 4 && random.nextInt(5) < 2 ? 1 : 0);
+                    for (int i = 0; i < bubbleCount; i++) {
+                        double bx = pos.getX() + 0.2 + random.nextDouble() * 0.6;
+                        double bz = pos.getZ() + 0.2 + random.nextDouble() * 0.6;
+                        level.addParticle(CoralineParticles.CAULDRON_BUBBLE.get(),
+                                bx, surfaceY - 0.05, bz,
+                                r, g, b);
+                    }
+                }
+
+                if (random.nextInt(20) == 0) {
+                    level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                            CoralineSounds.CAULDRON_BUBBLING.get(), SoundSource.BLOCKS,
+                            0.3F, 0.6F + random.nextFloat() * 0.2F, false);
+                }
             }
         }
 
-        if (random.nextInt(20) == 0) {
-            level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                    CoralineSounds.CAULDRON_BUBBLING.get(), SoundSource.BLOCKS,
-                    0.3F, 0.6F + random.nextFloat() * 0.2F, false);
+        // ── Liquid-specific finished/spoiled ambient effects ─────────────────
+        // These play regardless of culture or brew progression, keyed only on
+        // what's currently sitting in the cauldron.
+
+        double surfaceY = pos.getY() + getContentHeight(state);
+
+        // Dregs: sticky, yucky — slow bubble pops and an occasional "ick" sound.
+        if (brewState == BrewState.SPOILED) {
+            if (random.nextInt(12) == 0) {
+                double bx = pos.getX() + 0.2 + random.nextDouble() * 0.6;
+                double bz = pos.getZ() + 0.2 + random.nextDouble() * 0.6;
+                level.addParticle(ParticleTypes.ITEM_SLIME, bx, surfaceY, bz,
+                        0.0, 0.02, 0.0);
+            }
+            if (random.nextInt(40) == 0) {
+                level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                        CoralineSounds.CAULDRON_DREGS_AMBIENT.get(), SoundSource.BLOCKS,
+                        0.35F, 0.7F + random.nextFloat() * 0.2F, false);
+            }
+        }
+
+        // Kombucha: fresh, fizzy — light bubble pops rising from the surface.
+        if (culture == CultureType.KOMBUCHA && brewState == BrewState.FINISHED) {
+            if (random.nextInt(8) == 0) {
+                double bx = pos.getX() + 0.2 + random.nextDouble() * 0.6;
+                double bz = pos.getZ() + 0.2 + random.nextDouble() * 0.6;
+                level.addParticle(ParticleTypes.BUBBLE_POP, bx, surfaceY - 0.02, bz,
+                        0.0, 0.05, 0.0);
+            }
+            if (random.nextInt(50) == 0) {
+                level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                        CoralineSounds.CAULDRON_KOMBUCHA_AMBIENT.get(), SoundSource.BLOCKS,
+                        0.3F, 1.2F + random.nextFloat() * 0.3F, false);
+            }
         }
     }
 }

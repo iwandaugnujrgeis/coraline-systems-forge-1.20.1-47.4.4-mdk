@@ -75,6 +75,9 @@ public class CoralineSounds {
     public static final RegistryObject<SoundEvent> CAULDRON_BREW_SUCCESS = createSoundEvent("cauldron_brew_success");
     public static final RegistryObject<SoundEvent> CAULDRON_BREW_SPOILED = createSoundEvent("cauldron_brew_spoiled");
 
+    public static final RegistryObject<SoundEvent> CAULDRON_DREGS_AMBIENT = createSoundEvent("cauldron_dregs_ambient");
+    public static final RegistryObject<SoundEvent> CAULDRON_KOMBUCHA_AMBIENT = createSoundEvent("cauldron_kombucha_ambient");
+
     public static final RegistryObject<SoundEvent> LEAVES_BREAK = createSoundEvent("leaves_break");
     public static final RegistryObject<SoundEvent> LEAVES_STEP = createSoundEvent("leaves_step");
     public static final RegistryObject<SoundEvent> LEAVES_PLACE = createSoundEvent("leaves_place");
