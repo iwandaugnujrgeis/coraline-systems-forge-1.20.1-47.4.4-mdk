@@ -11,7 +11,7 @@ import net.minecraft.world.phys.Vec3;
 import net.zharok01.coralinesystems.registry.CoralineSounds;
 
 /**
- * Unified Fight-or-Flight survival goal.
+ * Unified Fight-or-Flight survival animal.
  * Replaces both the old flee and roam goals to prevent stuttering.
  * * If the Wolf's HP drops below a threshold while fighting (or if on fire),
  * it enters a locked panic state. It will continuously path AWAY from the
@@ -59,7 +59,7 @@ public class WolfSurvivalPanicGoal extends Goal {
         }
 
         // 3. If no immediate threat exists, but we are still injured and were previously distressed,
-        // we can start the goal in "roam/recover" mode.
+        // we can start the animal in "roam/recover" mode.
         if (potentialThreat == null && !WolfDistressTracker.isDistressed(this.wolf.getUUID())) {
             return false;
         }

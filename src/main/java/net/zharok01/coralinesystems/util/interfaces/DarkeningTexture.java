@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.util;
+package net.zharok01.coralinesystems.util.interfaces;
 
 /**
  * Mixed into {@link net.minecraft.client.renderer.texture.DynamicTexture} so the

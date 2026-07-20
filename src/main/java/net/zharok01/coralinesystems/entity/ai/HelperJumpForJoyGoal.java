@@ -8,12 +8,12 @@ import java.util.EnumSet;
 /**
  * Makes a jamming Helper randomly hop in place, as if in a moment of joy.
  * Purely cosmetic — does not claim MOVE/LOOK, so it layers on top of
- * whatever movement goal is already running (e.g. the wander goal).
+ * whatever movement animal is already running (e.g. the wander animal).
  */
 public class HelperJumpForJoyGoal extends Goal {
     private final HelperEntity helper;
 
-    // 1-in-N chance per tick this goal is checked to trigger a hop.
+    // 1-in-N chance per tick this animal is checked to trigger a hop.
     private static final int JUMP_CHANCE = 40;
 
     public HelperJumpForJoyGoal(HelperEntity helper) {

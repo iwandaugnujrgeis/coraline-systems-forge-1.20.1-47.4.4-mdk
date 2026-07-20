@@ -14,11 +14,12 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.zharok01.coralinesystems.client.ClientStaticPortalEffect;
-import net.zharok01.coralinesystems.client.TranscendingPortalOverlay;
+import net.zharok01.coralinesystems.client.CoralineClientStaticPortalEffect;
+import net.zharok01.coralinesystems.client.CoralineTranscendingPortalOverlay;
 import net.zharok01.coralinesystems.registry.CoralinePacketHandler;
 import net.zharok01.coralinesystems.registry.*;
 
+import net.zharok01.coralinesystems.util.block.BrewingCauldronInteractions;
 import org.slf4j.Logger;
 
 @Mod(CoralineSystems.MOD_ID)
@@ -53,7 +54,7 @@ public class CoralineSystems {
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(CoralineTriggers::init);
         CoralinePacketHandler.register();
-        event.enqueueWork(net.zharok01.coralinesystems.util.BrewingCauldronInteractions::bootstrap);
+        event.enqueueWork(BrewingCauldronInteractions::bootstrap);
 
 
         CoralineStats.STATS.getEntries().forEach(stat ->
@@ -77,8 +78,8 @@ public class CoralineSystems {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
             CoralineBlocks.registerRenderLayers();
-            ClientStaticPortalEffect.init();
-            TranscendingPortalOverlay.init();
+            CoralineClientStaticPortalEffect.init();
+            CoralineTranscendingPortalOverlay.init();
         }
 
         @SubscribeEvent

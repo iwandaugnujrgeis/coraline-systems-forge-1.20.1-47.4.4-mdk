@@ -19,15 +19,15 @@ import net.zharok01.coralinesystems.block.StaticPortalBlock;
 import net.zharok01.coralinesystems.registry.CoralineBlocks;
 
 @OnlyIn(Dist.CLIENT)
-public class ClientStaticPortalEffect {
+public class CoralineClientStaticPortalEffect {
 
     /** Counts up while the player is inside the portal, counts back down when they leave. */
     private static int staticTicks = 0;
 
     public static void init() {
         // Both the Tick logic AND the Render logic now run on the FORGE event bus
-        MinecraftForge.EVENT_BUS.addListener(ClientStaticPortalEffect::onClientTick);
-        MinecraftForge.EVENT_BUS.addListener(ClientStaticPortalEffect::onPostGameOverlay);
+        MinecraftForge.EVENT_BUS.addListener(CoralineClientStaticPortalEffect::onClientTick);
+        MinecraftForge.EVENT_BUS.addListener(CoralineClientStaticPortalEffect::onPostGameOverlay);
     }
 
     private static void onClientTick(TickEvent.ClientTickEvent event) {

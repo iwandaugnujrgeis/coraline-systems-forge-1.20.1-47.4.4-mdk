@@ -27,7 +27,7 @@ import net.zharok01.coralinesystems.network.CauldronSplashPacket;
 import net.zharok01.coralinesystems.registry.CoralinePacketHandler;
 import net.zharok01.coralinesystems.registry.CoralineParticles;
 import net.zharok01.coralinesystems.registry.CoralineSounds;
-import net.zharok01.coralinesystems.util.BrewingCauldronInteractions;
+import net.zharok01.coralinesystems.util.block.BrewingCauldronInteractions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

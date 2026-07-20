@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.event;
+package net.zharok01.coralinesystems.event.animal;
 
 import net.minecraft.world.entity.ai.goal.FollowOwnerGoal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
@@ -31,7 +31,7 @@ public class WolfGoalSwapHandler {
 
         if (!(event.getEntity() instanceof Wolf wolf)) return;
 
-        // Find the vanilla FollowOwnerGoal entry in the goal selector
+        // Find the vanilla FollowOwnerGoal entry in the animal selector
         WrappedGoal vanillaWrapped = wolf.goalSelector.getAvailableGoals()
                 .stream()
                 .filter(wrapped -> wrapped.getGoal() instanceof FollowOwnerGoal)
@@ -41,7 +41,7 @@ public class WolfGoalSwapHandler {
         if (vanillaWrapped != null) {
             int priority = vanillaWrapped.getPriority(); // preserve vanilla priority (6)
 
-            // Remove the vanilla goal
+            // Remove the vanilla animal
             wolf.goalSelector.removeGoal(vanillaWrapped.getGoal());
 
             // Add our sprinting replacement at the same priority

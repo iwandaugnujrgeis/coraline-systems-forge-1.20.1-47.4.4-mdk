@@ -33,11 +33,11 @@ import net.zharok01.coralinesystems.client.particle.CauldronSplashParticle;
 import net.zharok01.coralinesystems.client.particle.OrbSparkleParticle;
 import net.zharok01.coralinesystems.mixin.accessors.BiomeColorsAccessor;
 import net.zharok01.coralinesystems.registry.*;
-import net.zharok01.coralinesystems.util.BrewingCauldronInteractions;
+import net.zharok01.coralinesystems.util.block.BrewingCauldronInteractions;
 import net.zharok01.coralinesystems.world.CoralineBiomeColors;
 
 @Mod.EventBusSubscriber(modid = CoralineSystems.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-public class ClientModEvents {
+public class CoralineClientModEvents {
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {

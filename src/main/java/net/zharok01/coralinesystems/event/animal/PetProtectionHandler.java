@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.event;
+package net.zharok01.coralinesystems.event.animal;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;

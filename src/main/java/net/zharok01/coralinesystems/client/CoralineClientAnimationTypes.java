@@ -7,7 +7,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class ClientAnimationTypes {
+public class CoralineClientAnimationTypes {
 
     // Forge natively supports creating custom ArmPoses via IExtensibleEnum.
     // We pass a dummy lambda here because we handle the actual mathematical posing inside our HumanoidModel Mixin.

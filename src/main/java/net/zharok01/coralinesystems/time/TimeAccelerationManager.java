@@ -11,15 +11,13 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.state.BlockState;
 import net.zharok01.coralinesystems.block.CentrifugeBlock;
 import net.zharok01.coralinesystems.event.CentrifugeEvent;
-import net.zharok01.coralinesystems.registry.CoralineSounds;
-import net.zharok01.coralinesystems.util.CentrifugeAccelerationData;
+import net.zharok01.coralinesystems.util.data.CentrifugeAccelerationData;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Iterator;
 
 /**
  * Manages ALL concurrently-active Centrifuge time-acceleration sessions in

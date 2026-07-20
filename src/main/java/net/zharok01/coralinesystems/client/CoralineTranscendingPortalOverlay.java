@@ -23,7 +23,7 @@ import net.minecraftforge.event.TickEvent;
 import javax.annotation.Nullable;
 
 @OnlyIn(Dist.CLIENT)
-public final class TranscendingPortalOverlay
+public final class CoralineTranscendingPortalOverlay
 {
     // ── Timing ──────────────────────────────────────────────────────────────
     private static final long FADE_IN_MS  =   500L;
@@ -89,8 +89,8 @@ public final class TranscendingPortalOverlay
 
     public static void init()
     {
-        MinecraftForge.EVENT_BUS.addListener(TranscendingPortalOverlay::onClientTick);
-        MinecraftForge.EVENT_BUS.addListener(TranscendingPortalOverlay::onPostGameOverlay);
+        MinecraftForge.EVENT_BUS.addListener(CoralineTranscendingPortalOverlay::onClientTick);
+        MinecraftForge.EVENT_BUS.addListener(CoralineTranscendingPortalOverlay::onPostGameOverlay);
     }
 
     // ── Tick: drives state transitions ───────────────────────────────────────
@@ -186,7 +186,7 @@ public final class TranscendingPortalOverlay
 
     private static void onPostGameOverlay(RenderGuiOverlayEvent.Post event)
     {
-        // Mirror ClientStaticPortalEffect: hook HELMET slot — fires once per frame
+        // Mirror CoralineClientStaticPortalEffect: hook HELMET slot — fires once per frame
         // at the right point in the vanilla GUI stack.
         if (!event.getOverlay().id().equals(VanillaGuiOverlay.HELMET.id())) return;
         if (state == State.IDLE) return;

@@ -14,14 +14,14 @@ import net.minecraft.client.gui.screens.advancements.AdvancementTab;
 import net.minecraft.client.gui.screens.advancements.AdvancementWidget;
 import net.minecraft.client.gui.screens.advancements.AdvancementWidgetType;
 import net.zharok01.coralinesystems.client.advancements.GridPos;
-import net.zharok01.coralinesystems.util.IAdvancementWidgetCS;
+import net.zharok01.coralinesystems.util.interfaces.IAdvancementWidget;
 import org.spongepowered.asm.mixin.*;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
 @Mixin(AdvancementWidget.class)
-@Implements(@Interface(iface = IAdvancementWidgetCS.class, prefix = "cs$"))
+@Implements(@Interface(iface = IAdvancementWidget.class, prefix = "cs$"))
 public abstract class AdvancementWidgetMixin {
 
     @Mutable @Final @Shadow private int x;
@@ -58,7 +58,7 @@ public abstract class AdvancementWidgetMixin {
     @Unique private static final int CS_SLOT_W = 34;
     @Unique private static final int CS_SLOT_H = 30;
 
-    // ── IAdvancementWidgetCS ──────────────────────────────────────────────────
+    // ── IAdvancementWidget ──────────────────────────────────────────────────
 
     public void cs$setX(int x)                       { this.x = x; }
     public void cs$setY(int y)                       { this.y = y; }
@@ -89,7 +89,7 @@ public abstract class AdvancementWidgetMixin {
         if (parentAdv != null) {
             AdvancementWidget pw = this.tab.getWidget(parentAdv);
             if (pw != null) {
-                AdvancementProgress pp = ((IAdvancementWidgetCS) pw).getProgress();
+                AdvancementProgress pp = ((IAdvancementWidget) pw).getProgress();
                 return pp == null || !pp.isDone();
             }
             return true;
@@ -100,7 +100,7 @@ public abstract class AdvancementWidgetMixin {
     @Unique
     private boolean theCoralineSystems$isGreenEdge() {
         assert this.parent != null;
-        AdvancementProgress pp = ((IAdvancementWidgetCS) this.parent).getProgress();
+        AdvancementProgress pp = ((IAdvancementWidget) this.parent).getProgress();
         return pp != null && pp.isDone() && !this.theCoralineSystems$isObscured();
     }
 
@@ -163,7 +163,7 @@ public abstract class AdvancementWidgetMixin {
             }
         }
         for (AdvancementWidget child : this.children) {
-            ((IAdvancementWidgetCS) child).drawConnectivityCS(
+            ((IAdvancementWidget) child).drawConnectivityCS(
                     guiGraphics, x, y, dropShadow, greenOnly);
         }
     }

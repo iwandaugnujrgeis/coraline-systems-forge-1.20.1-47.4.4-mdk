@@ -12,7 +12,7 @@ public class BreakDoorGoalMixin {
 
     @Inject(method = "isValidDifficulty", at = @At("HEAD"), cancellable = true)
     private void coraline$alwaysValidDifficulty(Difficulty difficulty, CallbackInfoReturnable<Boolean> cir) {
-        // Forces the goal to ignore the Hard difficulty requirement
+        // Forces the animal to ignore the Hard difficulty requirement
         cir.setReturnValue(true);
     }
 }

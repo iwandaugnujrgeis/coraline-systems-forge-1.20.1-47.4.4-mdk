@@ -5,7 +5,7 @@ import net.zharok01.coralinesystems.network.ScoreThresholdPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
-public class CoralineScoreManager {
+public class ScoreManager {
     public static final int REWARD_BLOCK_ACTIVITY = 1;
     public static final int REWARD_HOSTILE_KILL = 15;
 

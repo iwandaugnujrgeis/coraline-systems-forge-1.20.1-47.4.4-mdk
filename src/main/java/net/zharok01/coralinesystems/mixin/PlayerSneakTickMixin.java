@@ -6,7 +6,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import net.zharok01.coralinesystems.util.CoralineSneakAccessor;
+import net.zharok01.coralinesystems.util.interfaces.SneakAccessor;
 
 /**
  * Vanilla exposes only a boolean crouch/sneak state (Player#isCrouching,
@@ -19,7 +19,7 @@ import net.zharok01.coralinesystems.util.CoralineSneakAccessor;
  * even though only the client render path consumes the value.
  */
 @Mixin(Player.class)
-public abstract class PlayerSneakTickMixin implements CoralineSneakAccessor {
+public abstract class PlayerSneakTickMixin implements SneakAccessor {
 
     @Unique
     private float coralinesystems$prevSneakAmount = 0.0F;

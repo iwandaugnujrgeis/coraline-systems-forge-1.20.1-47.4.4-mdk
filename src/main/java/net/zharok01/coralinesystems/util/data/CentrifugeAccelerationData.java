@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.util;
+package net.zharok01.coralinesystems.util.data;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;

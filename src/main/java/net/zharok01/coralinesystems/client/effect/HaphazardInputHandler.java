@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.client;
+package net.zharok01.coralinesystems.client.effect;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;

@@ -12,7 +12,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.zharok01.coralinesystems.CoralineSystems;
 
 @Mod.EventBusSubscriber(modid = CoralineSystems.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-public class CoralineFogEvents {
+public class MorningFogEvents {
 
     /**
      * Tick the morning fog intensity interpolator once per client game tick.

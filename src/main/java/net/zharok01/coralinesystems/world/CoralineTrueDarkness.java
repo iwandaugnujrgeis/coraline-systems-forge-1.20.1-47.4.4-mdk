@@ -25,9 +25,9 @@ import java.util.Objects;
  *     frame, before the (possibly dirty) light texture re-uploads.</li>
  * </ul>
  */
-public final class TrueDarkness {
+public final class CoralineTrueDarkness {
 
-    private TrueDarkness() {
+    private CoralineTrueDarkness() {
     }
 
     // ------------------------------------------------------------------

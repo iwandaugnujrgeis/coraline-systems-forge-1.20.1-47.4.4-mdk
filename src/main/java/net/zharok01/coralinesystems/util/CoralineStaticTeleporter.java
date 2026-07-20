@@ -10,10 +10,11 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.NetherPortalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.zharok01.coralinesystems.registry.CoralineBlocks;
+import net.zharok01.coralinesystems.util.data.StaticPortalLinkData;
 
 import java.util.*;
 
-public class StaticTeleporter {
+public class CoralineStaticTeleporter {
 
     private static final double FARLANDS_EDGE = 6_960_353.0;
     private static final int SEARCH_RADIUS = 16;

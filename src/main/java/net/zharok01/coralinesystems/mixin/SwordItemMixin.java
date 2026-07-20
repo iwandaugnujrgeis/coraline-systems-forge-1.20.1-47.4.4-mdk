@@ -9,7 +9,7 @@ import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
-import net.zharok01.coralinesystems.util.AnimationTypes;
+import net.zharok01.coralinesystems.util.CoralineAnimationTypes;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 
@@ -27,7 +27,7 @@ public abstract class SwordItemMixin extends TieredItem {
 
     @Override
     public @NotNull UseAnim getUseAnimation(@NotNull ItemStack stack) {
-        return AnimationTypes.SWORD_BLOCK;
+        return CoralineAnimationTypes.SWORD_BLOCK;
     }
 
     @Override

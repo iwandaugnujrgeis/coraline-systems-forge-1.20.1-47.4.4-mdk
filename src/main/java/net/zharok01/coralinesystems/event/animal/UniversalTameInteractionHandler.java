@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.event;
+package net.zharok01.coralinesystems.event.animal;
 
 import com.github.alexthe666.alexsmobs.entity.EntityGrizzlyBear;
 import net.minecraft.sounds.SoundEvents;

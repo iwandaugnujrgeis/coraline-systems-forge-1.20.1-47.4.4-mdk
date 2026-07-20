@@ -2,8 +2,8 @@ package net.zharok01.coralinesystems.mixin;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.animal.Animal;
-import net.zharok01.coralinesystems.util.CowEatAnimationDuck;
-import net.zharok01.coralinesystems.util.CowMilkDuck;
+import net.zharok01.coralinesystems.util.interfaces.CowEatAnimationDuck;
+import net.zharok01.coralinesystems.util.interfaces.CowMilkDuck;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

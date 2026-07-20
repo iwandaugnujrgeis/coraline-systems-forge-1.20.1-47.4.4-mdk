@@ -5,7 +5,7 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.zharok01.coralinesystems.client.ClientAnimationTypes;
+import net.zharok01.coralinesystems.client.CoralineClientAnimationTypes;
 import net.zharok01.coralinesystems.zipline.ZiplineHandler;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -54,25 +54,25 @@ public class HumanoidModelMixin<T extends LivingEntity> {
     // --- SWORD BLOCKING LOGIC ---
     @Inject(method = "poseRightArm", at = @At(value = "HEAD"), cancellable = true)
     private void coralinesystems$poseRightBlock(T livingEntity, CallbackInfo info) {
-        if (this.rightArmPose == ClientAnimationTypes.SWORD_BLOCK_POSE) {
-            ClientAnimationTypes.renderSwordBlockArm(livingEntity.getMainArm(), this.rightArm);
+        if (this.rightArmPose == CoralineClientAnimationTypes.SWORD_BLOCK_POSE) {
+            CoralineClientAnimationTypes.renderSwordBlockArm(livingEntity.getMainArm(), this.rightArm);
             info.cancel();
         }
     }
 
     @Inject(method = "poseLeftArm", at = @At(value = "HEAD"), cancellable = true)
     private void coralinesystems$poseLeftBlock(T livingEntity, CallbackInfo info) {
-        if (this.leftArmPose == ClientAnimationTypes.SWORD_BLOCK_POSE) {
-            ClientAnimationTypes.renderSwordBlockArm(livingEntity.getMainArm(), this.leftArm);
+        if (this.leftArmPose == CoralineClientAnimationTypes.SWORD_BLOCK_POSE) {
+            CoralineClientAnimationTypes.renderSwordBlockArm(livingEntity.getMainArm(), this.leftArm);
             info.cancel();
         }
     }
 
     @Inject(method = "setupAttackAnimation", at = @At(value = "HEAD"), cancellable = true)
     private void coralinesystems$cancelAttackAnimWhenBlocking(T livingEntity, float ageInTicks, CallbackInfo info) {
-        if (livingEntity.getMainArm() == HumanoidArm.RIGHT && this.rightArmPose == ClientAnimationTypes.SWORD_BLOCK_POSE) {
+        if (livingEntity.getMainArm() == HumanoidArm.RIGHT && this.rightArmPose == CoralineClientAnimationTypes.SWORD_BLOCK_POSE) {
             info.cancel();
-        } else if (livingEntity.getMainArm() == HumanoidArm.LEFT && this.leftArmPose == ClientAnimationTypes.SWORD_BLOCK_POSE) {
+        } else if (livingEntity.getMainArm() == HumanoidArm.LEFT && this.leftArmPose == CoralineClientAnimationTypes.SWORD_BLOCK_POSE) {
             info.cancel();
         }
     }

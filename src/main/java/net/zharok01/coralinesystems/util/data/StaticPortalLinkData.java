@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.util;
+package net.zharok01.coralinesystems.util.data;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -24,7 +24,7 @@ import java.util.Map;
  * world/data/coraline_portal_links.dat on save and reads it back on load —
  * so links survive server restarts.
  *
- * HOW TO ACCESS (call from StaticTeleporter or anywhere on the server):
+ * HOW TO ACCESS (call from CoralineStaticTeleporter or anywhere on the server):
  *   StaticPortalLinkData data = StaticPortalLinkData.get(serverLevel);
  */
 public class StaticPortalLinkData extends SavedData {

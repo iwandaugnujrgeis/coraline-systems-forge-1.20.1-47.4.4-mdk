@@ -10,7 +10,7 @@ import net.minecraft.network.protocol.game.ClientboundRespawnPacket;
 import net.minecraft.network.protocol.game.ClientboundSetDefaultSpawnPositionPacket;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.zharok01.coralinesystems.client.TranscendingPortalOverlay;
+import net.zharok01.coralinesystems.client.CoralineTranscendingPortalOverlay;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -48,12 +48,12 @@ public abstract class ClientPacketListenerMixin
         if (gelPortal != null)
         {
             // Gel portal (Skylands or any other Structure Gel portal)
-            TranscendingPortalOverlay.beginTransition(gelPortal);
+            CoralineTranscendingPortalOverlay.beginTransition(gelPortal);
         }
         else if (this.minecraft.player.spinningEffectIntensity > 0)
         {
             // Vanilla Nether portal — no GelPortalBlock exists, pass null as sentinel
-            TranscendingPortalOverlay.beginTransition(null);
+            CoralineTranscendingPortalOverlay.beginTransition(null);
         }
         // If neither condition is true this is a death/End respawn — do nothing.
     }
@@ -75,7 +75,7 @@ public abstract class ClientPacketListenerMixin
     )
     private void coraline$suppressReceivingLevelScreen(Minecraft mc, Screen screen)
     {
-        if (TranscendingPortalOverlay.isActive() && screen instanceof ReceivingLevelScreen)
+        if (CoralineTranscendingPortalOverlay.isActive() && screen instanceof ReceivingLevelScreen)
         {
             // Deliberately do nothing — the overlay is handling the visual cover.
             return;
@@ -97,6 +97,6 @@ public abstract class ClientPacketListenerMixin
     private void coraline$notifyOverlayPacketsReceived(
             ClientboundSetDefaultSpawnPositionPacket packet, CallbackInfo ci)
     {
-        TranscendingPortalOverlay.notifyLoadingPacketsReceived();
+        CoralineTranscendingPortalOverlay.notifyLoadingPacketsReceived();
     }
 }

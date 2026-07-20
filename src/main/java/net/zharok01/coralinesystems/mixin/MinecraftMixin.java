@@ -5,7 +5,7 @@ import net.minecraft.client.gui.screens.ProgressScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.zharok01.coralinesystems.client.TranscendingPortalOverlay;
+import net.zharok01.coralinesystems.client.CoralineTranscendingPortalOverlay;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -41,7 +41,7 @@ public abstract class MinecraftMixin
     )
     private void coraline$suppressJoiningWorldScreen(Minecraft mc, Screen screen)
     {
-        if (TranscendingPortalOverlay.isActive() && screen instanceof ProgressScreen)
+        if (CoralineTranscendingPortalOverlay.isActive() && screen instanceof ProgressScreen)
         {
             // Deliberately do nothing — the overlay covers the screen visually
             // and the side-effects we need (soundManager.stop etc.) have already

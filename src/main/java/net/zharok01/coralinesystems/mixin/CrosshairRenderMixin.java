@@ -8,7 +8,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
-import net.zharok01.coralinesystems.util.CoralineSneakAccessor;
+import net.zharok01.coralinesystems.util.interfaces.SneakAccessor;
 import org.joml.Quaternionf;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -72,7 +72,7 @@ public abstract class CrosshairRenderMixin {
         float angleDegrees = 0.0F;
 
         // --- Sneak ---
-        if (player instanceof CoralineSneakAccessor sneakAccessor) {
+        if (player instanceof SneakAccessor sneakAccessor) {
             float sneakAmount = sneakAccessor.coralinesystems$getSneakAmount(partialTick);
             angleDegrees += -sneakAmount * coralinesystems$SNEAK_MAX_DEGREES;
         }

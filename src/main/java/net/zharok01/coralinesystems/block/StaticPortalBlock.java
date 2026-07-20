@@ -16,8 +16,8 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.zharok01.coralinesystems.registry.CoralineSounds;
-import net.zharok01.coralinesystems.util.StaticPortalLinkData;
-import net.zharok01.coralinesystems.util.StaticTeleporter;
+import net.zharok01.coralinesystems.util.CoralineStaticTeleporter;
+import net.zharok01.coralinesystems.util.data.StaticPortalLinkData;
 import com.github.alexthe666.alexsmobs.client.particle.AMParticleRegistry;
 
 import java.util.HashMap;
@@ -31,7 +31,7 @@ public class StaticPortalBlock extends Block {
     protected static final VoxelShape Z_AXIS_AABB = Block.box(6.0D, 0.0D, 0.0D, 10.0D, 16.0D, 16.0D);
 
     /**
-     * STATIC MAP CROSS-WORLD SAFETY — same problem as StaticTeleporter:
+     * STATIC MAP CROSS-WORLD SAFETY — same problem as CoralineStaticTeleporter:
      * These maps persist across world loads in the same JVM session.
      * If lastPortalTick stores a tick from World A, and World B starts at a
      * lower tick, (currentTick - lastTick) becomes negative. Negative is NOT > 1L,
@@ -92,7 +92,7 @@ public class StaticPortalBlock extends Block {
         if (progress >= PORTAL_TICKS_REQUIRED) {
             lastPortalTick.remove(id);
             portalProgress.remove(id);
-            StaticTeleporter.teleportToFarlands(entity, serverLevel, pos);
+            CoralineStaticTeleporter.teleportToFarlands(entity, serverLevel, pos);
             return;
         }
 
@@ -144,13 +144,13 @@ public class StaticPortalBlock extends Block {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
-            Set<BlockPos> group = StaticTeleporter.findPortalGroup(serverLevel, pos);
+            Set<BlockPos> group = CoralineStaticTeleporter.findPortalGroup(serverLevel, pos);
             if (!group.isEmpty()) {
                 StaticPortalLinkData linkData = StaticPortalLinkData.get(serverLevel);
                 if (linkData != null) {
                     BlockPos sisterSpawn = linkData.getLinkedDestination(pos);
                     if (sisterSpawn != null) {
-                        Set<BlockPos> sisterGroup = StaticTeleporter.findPortalGroup(serverLevel, sisterSpawn);
+                        Set<BlockPos> sisterGroup = CoralineStaticTeleporter.findPortalGroup(serverLevel, sisterSpawn);
                         linkData.unlinkGroup(sisterGroup);
                     }
                     linkData.unlinkGroup(group);

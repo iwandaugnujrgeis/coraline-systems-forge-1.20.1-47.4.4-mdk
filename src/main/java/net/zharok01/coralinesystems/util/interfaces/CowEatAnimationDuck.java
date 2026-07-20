@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.util;
+package net.zharok01.coralinesystems.util.interfaces;
 
 /**
  * Exposes the eat-animation scale values from CowMixin to CowModelMixin.

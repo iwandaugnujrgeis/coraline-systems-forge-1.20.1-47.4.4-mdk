@@ -12,7 +12,7 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.zharok01.coralinesystems.client.advancements.GridPos;
 import net.zharok01.coralinesystems.client.advancements.LayoutCandidate;
 import net.zharok01.coralinesystems.client.advancements.RouteNode;
-import net.zharok01.coralinesystems.util.IAdvancementWidgetCS;
+import net.zharok01.coralinesystems.util.interfaces.IAdvancementWidget;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -220,7 +220,7 @@ public abstract class AdvancementTabMixin {
     )
     private void cs$redirectShadowConnectivity(
             AdvancementWidget widget, GuiGraphics graphics, int x, int y, boolean shadow) {
-        IAdvancementWidgetCS api = (IAdvancementWidgetCS) widget;
+        IAdvancementWidget api = (IAdvancementWidget) widget;
         api.drawConnectivityCS(graphics, x, y, true,  false);
         api.drawConnectivityCS(graphics, x, y, true,  true);
     }
@@ -236,7 +236,7 @@ public abstract class AdvancementTabMixin {
     )
     private void cs$redirectColorConnectivity(
             AdvancementWidget widget, GuiGraphics graphics, int x, int y, boolean shadow) {
-        IAdvancementWidgetCS api = (IAdvancementWidgetCS) widget;
+        IAdvancementWidget api = (IAdvancementWidget) widget;
         api.drawConnectivityCS(graphics, x, y, false, false);
         api.drawConnectivityCS(graphics, x, y, false, true);
     }
@@ -302,12 +302,12 @@ public abstract class AdvancementTabMixin {
         positions.put(this.root, rootPos);
         occupied.add(rootPos);
 
-        IAdvancementWidgetCS rootApi = (IAdvancementWidgetCS) this.root;
+        IAdvancementWidget rootApi = (IAdvancementWidget) this.root;
         rootApi.setArrivalDir(-1);
         rootApi.setIncomingRoute(null);
 
         List<AdvancementWidget> children =
-                new ArrayList<>(((IAdvancementWidgetCS) this.root).getChildren());
+                new ArrayList<>(((IAdvancementWidget) this.root).getChildren());
         children.sort((a, b) ->
                 subtreeWeights.getOrDefault(b, 1) - subtreeWeights.getOrDefault(a, 1));
 
@@ -328,7 +328,7 @@ public abstract class AdvancementTabMixin {
             int px = (entry.getValue().x() - minGridX) * CS_SLOT_W;
             int py = (entry.getValue().y() - minGridY) * CS_SLOT_H;
 
-            IAdvancementWidgetCS api = (IAdvancementWidgetCS) entry.getKey();
+            IAdvancementWidget api = (IAdvancementWidget) entry.getKey();
             api.setX(px);
             api.setY(py);
 
@@ -414,7 +414,7 @@ public abstract class AdvancementTabMixin {
                 for (Map.Entry<AdvancementWidget, List<GridPos>> entry : committedRoutes.entrySet()) {
                     AdvancementWidget sibling = entry.getKey();
 
-                    if (((IAdvancementWidgetCS) sibling).getParentWidget() != parent) {
+                    if (((IAdvancementWidget) sibling).getParentWidget() != parent) {
                         continue;
                     }
 
@@ -494,14 +494,14 @@ public abstract class AdvancementTabMixin {
         positions.put(node, bestCandidate.pos());
         occupied.addAll(bestRoute);
 
-        IAdvancementWidgetCS nodeApi = (IAdvancementWidgetCS) node;
+        IAdvancementWidget nodeApi = (IAdvancementWidget) node;
         nodeApi.setArrivalDir(bestCandidate.direction());
         nodeApi.setIncomingRoute(bestRoute);
 
         committedRoutes.put(node, bestRoute);
 
         List<AdvancementWidget> nodeChildren =
-                new ArrayList<>(((IAdvancementWidgetCS) node).getChildren());
+                new ArrayList<>(((IAdvancementWidget) node).getChildren());
         nodeChildren.sort((a, b) ->
                 subtreeWeights.getOrDefault(b, 1) - subtreeWeights.getOrDefault(a, 1));
 
@@ -533,7 +533,7 @@ public abstract class AdvancementTabMixin {
             List<GridPos> newRoute = new ArrayList<>();
 
             // 2a. FIX: Check if the grid splice tore the implicit gap between the parent and the first route node
-            AdvancementWidget parent = ((IAdvancementWidgetCS) widget).getParentWidget();
+            AdvancementWidget parent = ((IAdvancementWidget) widget).getParentWidget();
             if (parent != null) {
                 GridPos parentPos = positions.get(parent); // This is safely already shifted from Step 1
                 if (parentPos != null) {
@@ -699,7 +699,7 @@ public abstract class AdvancementTabMixin {
     private static int cs$computeWeights(
             AdvancementWidget node, Map<AdvancementWidget, Integer> cache) {
         int weight = 1;
-        for (AdvancementWidget child : ((IAdvancementWidgetCS) node).getChildren()) {
+        for (AdvancementWidget child : ((IAdvancementWidget) node).getChildren()) {
             weight += cs$computeWeights(child, cache);
         }
         cache.put(node, weight);

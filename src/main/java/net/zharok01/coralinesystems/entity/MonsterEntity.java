@@ -496,7 +496,7 @@ public class MonsterEntity extends Monster {
                     return false;
                 }
                 // Target equipped plate armor mid-chase — aiStep will call screamAndFlee
-                // on the next tick; we just stop the goal now so the chase ends cleanly.
+                // on the next tick; we just stop the animal now so the chase ends cleanly.
                 if (isWearingPlateArmor(p)) return false;
             }
             return true;

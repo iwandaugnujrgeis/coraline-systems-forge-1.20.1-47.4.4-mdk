@@ -83,7 +83,7 @@ public class OrbSparkleParticle extends TextureSheetParticle {
     }
 
     // ------------------------------------------------------------------
-    // Factory — registered in ClientModEvents via RegisterParticleProvidersEvent
+    // Factory — registered in CoralineClientModEvents via RegisterParticleProvidersEvent
     // ------------------------------------------------------------------
 
     @OnlyIn(Dist.CLIENT)

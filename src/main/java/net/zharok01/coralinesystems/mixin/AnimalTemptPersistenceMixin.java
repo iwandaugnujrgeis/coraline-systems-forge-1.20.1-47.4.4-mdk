@@ -20,7 +20,7 @@ public class AnimalTemptPersistenceMixin {
      * holding a tempting food item.
      *
      * We inject into start() rather than tick() because start() is called
-     * exactly once when the goal activates — the animal has just decided to
+     * exactly once when the animal activates — the animal has just decided to
      * follow — which is the natural point to "tag" it. tick() would set the
      * flag correctly too but fires every single tick for no extra benefit.
      *

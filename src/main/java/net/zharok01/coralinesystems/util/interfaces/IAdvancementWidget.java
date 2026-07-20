@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.util;
+package net.zharok01.coralinesystems.util.interfaces;
 
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.client.gui.GuiGraphics;
@@ -12,7 +12,7 @@ import java.util.List;
  * Coraline Systems — injected into {@link AdvancementWidget} via
  * {@code @Implements} in {@code AdvancementWidgetMixin}.
  */
-public interface IAdvancementWidgetCS {
+public interface IAdvancementWidget {
 
     void setX(int x);
     void setY(int y);

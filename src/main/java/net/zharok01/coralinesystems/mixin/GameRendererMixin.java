@@ -6,7 +6,7 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.server.IntegratedServer;
 import net.zharok01.coralinesystems.mixin.accessors.LightTextureAccessor;
-import net.zharok01.coralinesystems.world.TrueDarkness;
+import net.zharok01.coralinesystems.world.CoralineTrueDarkness;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -98,7 +98,7 @@ public abstract class GameRendererMixin {
         }
 
         assert this.minecraft != null;
-        TrueDarkness.updateLuminance(
+        CoralineTrueDarkness.updateLuminance(
             partialTicks,
             this.minecraft,
             self,

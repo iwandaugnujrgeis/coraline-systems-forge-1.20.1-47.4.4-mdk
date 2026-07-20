@@ -9,8 +9,8 @@ import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
-import net.zharok01.coralinesystems.client.ClientAnimationTypes;
-import net.zharok01.coralinesystems.util.AnimationTypes;
+import net.zharok01.coralinesystems.client.CoralineClientAnimationTypes;
+import net.zharok01.coralinesystems.util.CoralineAnimationTypes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -29,8 +29,8 @@ public abstract class PlayerRendererMixin extends LivingEntityRenderer<AbstractC
             locals = LocalCapture.CAPTURE_FAILSOFT, cancellable = true)
     private static void coralinesystems$renderSwordMain(AbstractClientPlayer player, InteractionHand hand, CallbackInfoReturnable<HumanoidModel.ArmPose> info,
                                                         ItemStack itemstack, UseAnim useanim){
-        if (useanim == AnimationTypes.SWORD_BLOCK && useanim == itemstack.getUseAnimation()) {
-            info.setReturnValue(ClientAnimationTypes.SWORD_BLOCK_POSE);
+        if (useanim == CoralineAnimationTypes.SWORD_BLOCK && useanim == itemstack.getUseAnimation()) {
+            info.setReturnValue(CoralineClientAnimationTypes.SWORD_BLOCK_POSE);
         }
     }
 }

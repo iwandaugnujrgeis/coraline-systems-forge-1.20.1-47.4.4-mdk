@@ -259,7 +259,7 @@ public class HelperEntity extends Monster implements RangedAttackMob {
             @Override
             public boolean canContinueToUse() {
                 if (HelperEntity.this.isJamming()) return false;
-                // Small hysteresis band above the engage range (13 blocks) so the goal
+                // Small hysteresis band above the engage range (13 blocks) so the animal
                 // doesn't flicker in/out right at the 12-block edge.
                 return super.canContinueToUse() &&
                         HelperEntity.this.distanceToSqr(HelperEntity.this.getTarget()) <= 169.0D;

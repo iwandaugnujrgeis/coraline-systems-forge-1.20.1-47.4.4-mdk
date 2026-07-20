@@ -2,8 +2,8 @@ package net.zharok01.coralinesystems.mixin;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.zharok01.coralinesystems.world.TrueDarkness;
-import net.zharok01.coralinesystems.util.DarkeningTexture;
+import net.zharok01.coralinesystems.world.CoralineTrueDarkness;
+import net.zharok01.coralinesystems.util.interfaces.DarkeningTexture;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -39,7 +39,7 @@ public abstract class DynamicTextureMixin implements DarkeningTexture {
 
     @Inject(method = "upload", at = @At("HEAD"))
     private void coralineSystems$darkenBeforeUpload(CallbackInfo ci) {
-        if (!this.coralineSystems$darkeningEnabled || !TrueDarkness.enabled || this.pixels == null) {
+        if (!this.coralineSystems$darkeningEnabled || !CoralineTrueDarkness.enabled || this.pixels == null) {
             return;
         }
 
@@ -50,7 +50,7 @@ public abstract class DynamicTextureMixin implements DarkeningTexture {
         for (int skyIndex = 0; skyIndex < height; skyIndex++) {
             for (int blockIndex = 0; blockIndex < width; blockIndex++) {
                 int color = image.getPixelRGBA(blockIndex, skyIndex);
-                image.setPixelRGBA(blockIndex, skyIndex, TrueDarkness.darken(color, blockIndex, skyIndex));
+                image.setPixelRGBA(blockIndex, skyIndex, CoralineTrueDarkness.darken(color, blockIndex, skyIndex));
             }
         }
     }
