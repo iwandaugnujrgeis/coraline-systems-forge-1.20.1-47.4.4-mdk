@@ -1,22 +1,39 @@
 package net.zharok01.coralinesystems.mixin;
 
+import com.mojang.serialization.Codec;
 import net.minecraft.client.GraphicsStatus;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.Options;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Mutable;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 
 @Mixin(Options.class)
 public class OptionsMixin {
 
+	// Shadow the field we want to replace after <init> runs.
+	@Mutable
+    @Final
+    @Shadow
+	private OptionInstance<Double> entityDistanceScaling;
+
+	// =========================================================================
+	// 1. REMOVE FABULOUS GRAPHICS (unchanged)
+	// =========================================================================
 	@Redirect(
 			method = "<init>",
 			at = @At(
@@ -29,10 +46,9 @@ public class OptionsMixin {
 		return Arrays.copyOfRange(array, 0, array.length - 1);
 	}
 
-	/**
-	 * Intercepts ALL IntRange constructions inside Options.<init> to selectively
-	 * cap the Render Distance and FOV sliders without touching others.
-	 */
+	// =========================================================================
+	// 2. CAP RENDER DISTANCE + FOV SLIDER (unchanged)
+	// =========================================================================
 	@Redirect(
 			method = "<init>",
 			at = @At(
@@ -41,22 +57,20 @@ public class OptionsMixin {
 			)
 	)
 	private OptionInstance.IntRange coraline$limitIntRangeSliders(int min, int max) {
-		// 1. Cap Render Distance (Vanilla: 2 to 16 or 32)
+		// Cap Render Distance (Vanilla: 2 to 16 or 32)
 		if (min == 2 && (max == 16 || max == 32)) {
 			return new OptionInstance.IntRange(2, 10);
 		}
-
-		// 2. Cap FOV (Vanilla: 30 to 110)
+		// Cap FOV (Vanilla: 30 to 110)
 		if (min == 30 && max == 110) {
 			return new OptionInstance.IntRange(30, 80);
 		}
-
 		return new OptionInstance.IntRange(min, max);
 	}
 
-	/**
-	 * Intercepts the label generation for the FOV slider.
-	 */
+	// =========================================================================
+	// 3. FOV LABEL: "Quake Semi-Pro" at max (unchanged, confirmed correct)
+	// =========================================================================
 	@Inject(
 			method = "genericValueLabel(Lnet/minecraft/network/chat/Component;I)Lnet/minecraft/network/chat/Component;",
 			at = @At("HEAD"),
@@ -70,5 +84,32 @@ public class OptionsMixin {
 				}
 			}
 		}
+	}
+
+	// =========================================================================
+	// 4. ENTITY DISTANCE: replace with a 4-step cycle button
+	//    Steps: 0.5 (Tiny), 1.0 (Short), 1.5 (Decent), 2.0 (Default)
+	// =========================================================================
+	@Inject(method = "<init>", at = @At("TAIL"))
+	private void coraline$replaceEntityDistance(Minecraft minecraft, File gameDirectory, CallbackInfo ci) {
+		// Entity Distance as a 4-step cycle button.
+		// The CaptionBasedToString lambda must return ONLY the value portion —
+		// the OptionInstance rendering prepends the caption automatically.
+		this.entityDistanceScaling = new OptionInstance<>(
+				"options.entityDistanceScaling",
+				OptionInstance.noTooltip(),
+				(caption, value) -> {
+					if (value == 0.5) return Component.literal("Tiny (50%)");
+					if (value == 1.0) return Component.literal("Short (100%)");
+					if (value == 1.5) return Component.literal("Decent (150%)");
+					return Component.literal("Default (200%)");
+				},
+				new OptionInstance.Enum<>(
+						List.of(0.5, 1.0, 1.5, 2.0),
+						Codec.DOUBLE
+				),
+				2.0,   // default: 200%
+				value -> {}
+		);
 	}
 }

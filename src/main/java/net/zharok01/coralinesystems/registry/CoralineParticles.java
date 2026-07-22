@@ -34,6 +34,16 @@ public class CoralineParticles {
     public static final RegistryObject<SimpleParticleType> CAULDRON_BUBBLE =
             PARTICLE_TYPES.register("cauldron_bubble", () -> new SimpleParticleType(false));
 
+    /**
+     * Tinted 1-pixel fizz dot for finished Kombucha's ambient idle effect.
+     * Wobbles upward from the fluid surface and fades quickly, giving a
+     * light carbonated "fizz" feel distinct from the heavier brewing bubbles.
+     * Uses the same r/g/b-in-velocity-slots color convention as CAULDRON_BUBBLE,
+     * so it can be reused for any other tinted drink in the future.
+     */
+    public static final RegistryObject<SimpleParticleType> CAULDRON_FIZZ =
+            PARTICLE_TYPES.register("cauldron_fizz", () -> new SimpleParticleType(false));
+
     public static void register(IEventBus eventBus) {
         PARTICLE_TYPES.register(eventBus);
     }
