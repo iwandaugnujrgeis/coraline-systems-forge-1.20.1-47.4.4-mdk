@@ -30,6 +30,7 @@ import net.zharok01.coralinesystems.client.entity.orb.OrbPulseRenderer;
 import net.zharok01.coralinesystems.client.entity.orb.OrbRenderer;
 import net.zharok01.coralinesystems.client.model.BrewingCauldronGeometry;
 import net.zharok01.coralinesystems.client.particle.CauldronBubbleParticle;
+import net.zharok01.coralinesystems.client.particle.CauldronFizzParticle;
 import net.zharok01.coralinesystems.client.particle.CauldronSplashParticle;
 import net.zharok01.coralinesystems.client.particle.OrbSparkleParticle;
 import net.zharok01.coralinesystems.mixin.accessors.BiomeColorsAccessor;
@@ -59,6 +60,7 @@ public class CoralineClientModEvents {
         event.registerSpriteSet(CoralineParticles.ORB_SPARKLE.get(), OrbSparkleParticle.Factory::new);
         event.registerSpriteSet(CoralineParticles.CAULDRON_SPLASH.get(), CauldronSplashParticle.Provider::new);
         event.registerSpriteSet(CoralineParticles.CAULDRON_BUBBLE.get(), CauldronBubbleParticle.Provider::new);
+        event.registerSpriteSet(CoralineParticles.CAULDRON_FIZZ.get(), CauldronFizzParticle.Provider::new);
     }
 
     /**
@@ -78,6 +80,7 @@ public class CoralineClientModEvents {
 
             CauldronSplashParticle.TYPE = CoralineParticles.CAULDRON_SPLASH.get();
             CauldronBubbleParticle.TYPE = CoralineParticles.CAULDRON_BUBBLE.get();
+            CauldronFizzParticle.TYPE   = CoralineParticles.CAULDRON_FIZZ.get();
 
             CoralineSystems.LOGGER.info("Successfully injected Coraline Systems Bidirectional Biome Color Noise!");
         });

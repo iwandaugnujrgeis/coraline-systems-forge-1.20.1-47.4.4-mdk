@@ -15,25 +15,6 @@ import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
 
 import java.util.function.Function;
 
-/**
- * Custom geometry for the Brewing Cauldron.
- *
- * JSON shape (under "loader": "coraline_systems:brewing_cauldron"):
- * <pre>
- * {
- *   "loader":   "coraline_systems:brewing_cauldron",
- *   "cauldron": "<shell model location>",
- *   "fluid":    "<fluid-surface model location>"
- * }
- * </pre>
- *
- * The shell is rendered in the solid/cutout pass with normal shading.
- * The fluid surface is rendered in the translucent pass with ambient
- * occlusion disabled, keeping the two passes cleanly separated.
- * Tinting is handled entirely by our existing CoralineBlockColors
- * BlockColor registration — Forge calls it automatically for any quad
- * whose tintIndex >= 0.
- */
 public class BrewingCauldronGeometry implements IUnbakedGeometry<BrewingCauldronGeometry> {
 
     private final UnbakedModel shellModel;
@@ -43,8 +24,6 @@ public class BrewingCauldronGeometry implements IUnbakedGeometry<BrewingCauldron
         this.shellModel = shellModel;
         this.fluidModel = fluidModel;
     }
-
-    // ── Baking ───────────────────────────────────────────────────────────────
 
     @Override
     public BakedModel bake(
@@ -58,9 +37,14 @@ public class BrewingCauldronGeometry implements IUnbakedGeometry<BrewingCauldron
         BakedModel bakedShell = shellModel.bake(baker, spriteGetter, modelState, modelLocation);
         BakedModel bakedFluid = fluidModel.bake(baker, spriteGetter, modelState, modelLocation);
 
-        // Particle sprite comes from the shell (same as the cauldron side texture).
+        // Fetch the particle sprite directly by resource location rather than
+        // going through context.getMaterial("particle"), which has nothing to
+        // resolve because the Loader never registers that texture slot.
+        // cauldron_side is the correct break-particle for any cauldron variant.
         TextureAtlasSprite particle = spriteGetter.apply(
-                context.getMaterial("particle"));
+                new Material(
+                        net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS,
+                        new ResourceLocation("minecraft", "block/cauldron_side")));
 
         return new BrewingCauldronBakedModel(bakedShell, bakedFluid, particle);
     }
@@ -73,7 +57,7 @@ public class BrewingCauldronGeometry implements IUnbakedGeometry<BrewingCauldron
         fluidModel.resolveParents(modelGetter);
     }
 
-    // ── Loader (inner class, registered as "coraline_systems:brewing_cauldron") ──
+    // ── Loader ───────────────────────────────────────────────────────────────
 
     public static final class Loader implements IGeometryLoader<BrewingCauldronGeometry> {
 
@@ -91,12 +75,6 @@ public class BrewingCauldronGeometry implements IUnbakedGeometry<BrewingCauldron
             return new BrewingCauldronGeometry(shell, fluid);
         }
 
-        /**
-         * Mirrors the pattern in Amendments' CauldronModelLoader#parseModel:
-         * the value can be either a plain string (model resource location)
-         * or an inline JSON object (anonymous block model with a "parent" key
-         * and optional "textures" overrides).
-         */
         private static UnbakedModel parseInlineOrRef(
                 JsonElement element,
                 JsonDeserializationContext context) {
@@ -105,15 +83,9 @@ public class BrewingCauldronGeometry implements IUnbakedGeometry<BrewingCauldron
                 throw new JsonParseException(
                         "BrewingCauldronGeometry: missing required 'cauldron' or 'fluid' field");
             }
-            // Inline object → deserialise as a BlockModel directly.
-            // String reference → wrap in a minimal inline model that parents to it,
-            // which causes ModelBaker to resolve it during resolveParents().
             if (element.isJsonObject()) {
                 return context.deserialize(element, BlockModel.class);
             } else {
-                // Plain string — create a minimal block model that just parents to
-                // the referenced location. Forge's ModelBaker resolves parents
-                // during the bake phase, so this is sufficient.
                 String loc = element.getAsString();
                 JsonObject wrapper = new JsonObject();
                 wrapper.addProperty("parent", loc);

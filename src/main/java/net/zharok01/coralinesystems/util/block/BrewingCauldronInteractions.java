@@ -20,6 +20,7 @@ import net.zharok01.coralinesystems.block.CultureType;
 import net.zharok01.coralinesystems.item.CoralineFluidUtils;
 import net.zharok01.coralinesystems.registry.CoralineBlocks;
 import net.zharok01.coralinesystems.registry.CoralineItems;
+import net.zharok01.coralinesystems.registry.CoralineParticles;
 import net.zharok01.coralinesystems.registry.CoralineSounds;
 
 import java.util.Map;
@@ -147,7 +148,7 @@ public final class BrewingCauldronInteractions {
 
                 level.playSound(null, pos, CoralineSounds.CAULDRON_ADD_CULTURE.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
                 if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-                    serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.SPLASH,
+                    serverLevel.sendParticles(CoralineParticles.CAULDRON_SPLASH.get(),
                             pos.getX() + 0.5, pos.getY() + 0.4, pos.getZ() + 0.5,
                             12, 0.25, 0.1, 0.25, 0.0);
                 }

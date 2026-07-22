@@ -505,12 +505,23 @@
   },
   "cauldron_add_solid": {
     "category": "block",
-    "subtitle": "coraline_systems.sound.subtitle.add_berry",
+    "subtitle": "coraline_systems.sound.subtitle.add_solid_bloop",
     "sounds": [
-      "block/composter/fill_success1",
-      "block/composter/fill_success2",
-      "block/composter/fill_success3",
-      "block/composter/fill_success4"
+      {
+        "name": "coraline_systems:ambient/bloop1",
+        "pitch": 0.8,
+        "volume": 1.3
+      },
+      {
+        "name": "coraline_systems:ambient/bloop1",
+        "pitch": 0.9,
+        "volume": 1.3
+      },
+      {
+        "name": "coraline_systems:ambient/bloop1",
+        "pitch": 1.0,
+        "volume": 1.3
+      }
     ]
   },
   "cauldron_add_culture": {
@@ -786,16 +797,16 @@
     "subtitle": "coraline_systems.sound.subtitle.cauldron_kombucha_ambient",
     "sounds": [
       {
-        "name": "block/bubble_column/bubble1",
-        "pitch": 0.6
-      },
-      {
-        "name": "block/bubble_column/bubble2",
-        "pitch": 0.7
-      },
-      {
-        "name": "block/bubble_column/bubble3",
+        "name": "coraline_systems:ambient/fresh_fizz1",
         "pitch": 0.8
+      },
+      {
+        "name": "coraline_systems:ambient/fresh_fizz1",
+        "pitch": 0.9
+      },
+      {
+        "name": "coraline_systems:ambient/fresh_fizz1",
+        "pitch": 1.0
       }
     ]
   }

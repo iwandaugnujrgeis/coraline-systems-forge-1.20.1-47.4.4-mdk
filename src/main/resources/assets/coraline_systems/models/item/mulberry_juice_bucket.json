@@ -1,6 +1,7 @@
 {
     "parent": "item/generated",
     "textures": {
-        "layer0": "coraline_systems:item/mulberry_juice_bucket"
+        "layer0": "coraline_systems:item/bucket_fluid_overlay",
+        "layer1": "coraline_systems:item/bucket_overlay"
     }
 }

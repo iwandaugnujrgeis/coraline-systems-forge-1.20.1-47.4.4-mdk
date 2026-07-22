@@ -291,13 +291,25 @@ public class BrewingCauldronBlock extends AbstractCauldronBlock implements Entit
             }
         }
 
-        // Kombucha: fresh, fizzy — light bubble pops rising from the surface.
+        // Kombucha: fresh, fizzy — tinted 1-pixel fizz dots rising from the surface.
         if (culture == CultureType.KOMBUCHA && brewState == BrewState.FINISHED) {
             if (random.nextInt(8) == 0) {
-                double bx = pos.getX() + 0.2 + random.nextDouble() * 0.6;
-                double bz = pos.getZ() + 0.2 + random.nextDouble() * 0.6;
-                level.addParticle(ParticleTypes.BUBBLE_POP, bx, surfaceY - 0.02, bz,
-                        0.0, 0.05, 0.0);
+                int fizzRgb = CoralineBlockColors.CAULDRON_CONTENT.getColor(state, level, pos, 1);
+                if (fizzRgb != -1) {
+                    float fr = ((fizzRgb >> 16) & 0xFF) / 255.0f;
+                    float fg = ((fizzRgb >>  8) & 0xFF) / 255.0f;
+                    float fb = ( fizzRgb        & 0xFF) / 255.0f;
+
+                    // Spawn a small cluster of fizz dots for a carbonated feel.
+                    int fizzCount = 1 + random.nextInt(3);
+                    for (int i = 0; i < fizzCount; i++) {
+                        double bx = pos.getX() + 0.2 + random.nextDouble() * 0.6;
+                        double bz = pos.getZ() + 0.2 + random.nextDouble() * 0.6;
+                        level.addParticle(CoralineParticles.CAULDRON_FIZZ.get(),
+                                bx, surfaceY - 0.02, bz,
+                                fr, fg, fb);
+                    }
+                }
             }
             if (random.nextInt(50) == 0) {
                 level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,

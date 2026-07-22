@@ -61,7 +61,7 @@ public class CauldronBubbleParticle extends TextureSheetParticle {
         this.lifetime = 14 + rand.nextInt(7);
 
         // Particle size
-        this.quadSize = 0.11f + rand.nextFloat() * 0.03f;
+        this.quadSize = 0.15f + rand.nextFloat() * 0.03f;
 
         this.setSpriteFromAge(sprites);
     }

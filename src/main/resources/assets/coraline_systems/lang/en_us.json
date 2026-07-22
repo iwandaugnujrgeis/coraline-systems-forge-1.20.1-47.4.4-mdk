@@ -73,9 +73,17 @@
 	"tooltip.coraline_systems.strength": "Strength: Level %s",
 	"coraline_systems.sound.subtitle.brew_success": "Cauldron chimes",
 	"coraline_systems.sound.subtitle.brew_fail": "Cauldron sputters",
-	"coraline_systems.sound.subtitle.add_berry": "Berry squishes",
+	"coraline_systems.sound.subtitle.add_solid_bloop": "Cauldron bloops",
 	"coraline_systems.sound.subtitle.add_culture_fizz": "Culture fizzes",
 	"coraline_systems.sound.subtitle.cauldron_bubble_ambient": "Cauldron bubbles",
 	"coraline_systems.sound.subtitle.cauldron_dregs_ambient": "Dregs gurgles",
-	"coraline_systems.sound.subtitle.cauldron_kombucha_ambient": "Kombucha fizzes"
+	"coraline_systems.sound.subtitle.cauldron_kombucha_ambient": "Kombucha fizzes",
+	"effect.coraline_systems.persistence": "Persistence",
+    "effect.coraline_systems.instant_stamina": "Instant Stamina",
+    "item.coraline_systems.wine_bottle.strength": "Strength: Level %s",
+    "item.coraline_systems.wine_bucket.strength": "Strength: Level %s",
+    "item.coraline_systems.tea_bottle.strength": "Strength: Level %s",
+    "item.coraline_systems.tea_bucket.strength": "Strength: Level %s",
+    "item.coraline_systems.mulberry_juice_bottle.strength": "Strength: Level %s",
+    "item.coraline_systems.mulberry_juice_bucket.strength": "Strength: Level %s"
 }
