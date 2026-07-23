@@ -1,5 +1,6 @@
 package net.zharok01.coralinesystems.mixin;
 
+import com.legacy.rediscovered.RediscoveredConfig;
 import com.legacy.rediscovered.client.render.world.SkylandsCloudRenderer;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -8,6 +9,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.CloudStatus;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
@@ -17,39 +19,55 @@ import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Coraline Systems — Rediscovered compatibility optimization mixin.
  *
- * Targets {@link SkylandsCloudRenderer} with two surgical {@link Overwrite}s:
+ * Targets {@link SkylandsCloudRenderer} with three {@link Overwrite}s:
  *
  * <h3>Overwrite 1: {@code renderLayers} (static)</h3>
  * <ul>
  *   <li><b>Sort fix:</b> Rediscovered's original condition {@code !inMiddle || inMiddle != wasInMiddle}
  *       sorts the renderer list on <em>every</em> frame when the camera is outside the y=15..200 band —
  *       which is exactly where Skylands clouds are most visible to the player. The corrected condition
- *       {@code inMiddle != wasInMiddle || inMiddle} sorts only when band membership changes, or during
- *       every frame <em>inside</em> the middle band (where translucency depth order matters).</li>
+ *       {@code inMiddle != wasInMiddle || inMiddle} sorts only when band membership changes, or while
+ *       inside the band (where translucency depth order actually varies per-frame with camY).</li>
  *   <li><b>GL state hoisting:</b> All six renderer instances share the same blend function, depth
- *       mask, and cull state. Rediscovered calls {@code disableCull + enableBlend + blendFuncSeparate +
- *       depthMask} on entry and {@code enableCull + disableBlend + defaultBlendFunc} on exit for every
- *       one of the six layers — 48 GL state changes per frame. We hoist these to a single bracket
+ *       mask, and cull state. Rediscovered calls disableCull + enableBlend + blendFuncSeparate +
+ *       depthMask on entry and enableCull + disableBlend + defaultBlendFunc on exit for every one
+ *       of the six layers — 48 GL state changes per frame. We hoist these to a single bracket
  *       around the entire loop: 8 GL state changes per frame.</li>
  * </ul>
  *
  * <h3>Overwrite 2: {@code buildClouds} (instance)</h3>
  * <ul>
  *   <li><b>Dead {@code setShader} removed:</b> Rediscovered calls
- *       {@code RenderSystem.setShader(this::getShader)} at the top of buffer construction. A
+ *       {@code RenderSystem.setShader(this::getShader)} at the top of buffer construction.
  *       {@link com.mojang.blaze3d.vertex.VertexBuffer} is an immutable GPU buffer; the RenderSystem
- *       shader at the time {@code BufferBuilder.begin()} is called has no effect on the upload — only
- *       the {@link VertexFormat} matters. The correct shader is already set unconditionally in
- *       {@code renderClouds()} at draw-time. This call was purely wasted work, plus it allocated a
- *       new {@code Supplier} lambda ({@code this::getShader}) on every invocation.</li>
- *   <li><b>{@code prevCloudsType} read cached:</b> The shadow-accessed field is read twice inside
- *       the original (once for the FANCY branch, once implicitly). Using a local final avoids
- *       repeated volatile/synchronized field reads from a different class's instance.</li>
+ *       shader at the time {@code BufferBuilder.begin()} is called has no effect on the upload.
+ *       The correct shader is already set unconditionally in {@code renderClouds()} at draw-time.
+ *       This call was purely wasted work, plus it allocated a new Supplier lambda on every
+ *       invocation.</li>
+ *   <li><b>{@code prevCloudsType} cached locally:</b> The shadow field is read once and stored
+ *       in a local final, avoiding repeated field reads throughout the method.</li>
+ * </ul>
+ *
+ * <h3>Overwrite 3: {@code renderCloudOverride} (static)</h3>
+ * <p>Rediscovered's original implementation renders only a single cloud layer in the Overworld
+ * when {@code override_vanilla_clouds = true} is set — one call to {@code VANILLA_OVERRIDE.renderClouds()}.
+ * This overwrite replaces that with a multi-layer overworld renderer equivalent to the Skylands
+ * treatment: three dedicated {@link SkylandsCloudRenderer} instances at staggered heights around
+ * the vanilla cloud floor, rendered with the same GL-hoisted loop pattern used in {@code renderLayers}.
+ * </p>
+ * <ul>
+ *   <li>Layer 0 — slightly below vanilla cloud height, offset west/south, slower: provides a
+ *       distant lower deck that gives the sky visual depth from above.</li>
+ *   <li>Layer 1 — at vanilla cloud height, no offset: the primary layer that matches vanilla
+ *       positioning exactly so the override feels native.</li>
+ *   <li>Layer 2 — slightly above vanilla cloud height, offset east/north, faster: a thinner
+ *       high-altitude streaked layer visible when looking up from the surface.</li>
  * </ul>
  */
 @Mixin(value = SkylandsCloudRenderer.class, remap = false)
@@ -60,14 +78,14 @@ public abstract class SkylandsCloudRendererMixin {
     // =========================================================================
 
     /**
-     * The ordered list of cloud layer renderers.
+     * The ordered list of Skylands cloud layer renderers.
      * Private static in {@link SkylandsCloudRenderer}.
      */
     @Shadow
     private static List<SkylandsCloudRenderer> RENDERERS;
 
     /**
-     * Tracks whether the camera was in the middle altitude band on the previous frame.
+     * Tracks whether the Skylands camera was in the middle altitude band on the previous frame.
      * Private static in {@link SkylandsCloudRenderer}.
      */
     @Shadow
@@ -81,7 +99,49 @@ public abstract class SkylandsCloudRendererMixin {
     private CloudStatus prevCloudsType;
 
     // =========================================================================
-    // Overwrite 1 — renderLayers (static)
+    // @Unique — Overworld multi-layer renderer state
+    // =========================================================================
+
+    /**
+     * Vanilla Overworld cloud height in 1.20.1. {@code DimensionSpecialEffects} for the Overworld
+     * returns this constant from {@code getCloudHeight()}, so we bake it in directly rather than
+     * doing a live lookup on each frame.
+     *
+     * <p>If you ever need to support dimensions that share the vanilla {@code DimensionSpecialEffects}
+     * but use a different cloud height, replace this with a dynamic read inside
+     * {@link #coralineSystems$renderOverworldLayers} via
+     * {@code Minecraft.getInstance().level.effects().getCloudHeight()}.
+     */
+    @Unique
+    private static final float CORALINE_OVERWORLD_CLOUD_HEIGHT = 150.0F;
+
+    /**
+     * Three dedicated cloud layer renderers for the Overworld override path.
+     *
+     * <p>These are distinct instances from the Skylands {@link #RENDERERS} list.
+     * Each carries its own {@code VertexBuffer} + dirty-check state, so they never
+     * interfere with Skylands rendering regardless of which dimension is active.
+     */
+    @Unique
+    private static final List<SkylandsCloudRenderer> CORALINE_OVERWORLD_RENDERERS = new ArrayList<>(List.of(
+            new SkylandsCloudRenderer(-25.0F, CORALINE_OVERWORLD_CLOUD_HEIGHT + 65.0F,  20.0F, 0.025F),
+            new SkylandsCloudRenderer(0.0F, CORALINE_OVERWORLD_CLOUD_HEIGHT,          0.0F, 0.030F),
+            new SkylandsCloudRenderer(15.0F, CORALINE_OVERWORLD_CLOUD_HEIGHT + 130.0F, -15.0F, 0.035F)
+    ));
+
+    /**
+     * Overworld-path equivalent of {@link #wasInMiddle}: tracks whether the camera was inside
+     * the depth-sort band on the previous frame for the overworld renderer loop.
+     *
+     * <p>The band is defined relative to the overworld cloud floor
+     * ({@link #CORALINE_OVERWORLD_CLOUD_HEIGHT ± 30 blocks}) rather than Skylands' fixed
+     * {@code y=15..200} range.
+     */
+    @Unique
+    private static boolean coralineSystems$overworldWasInMiddle = false;
+
+    // =========================================================================
+    // Overwrite 1 — renderLayers (static, Skylands)
     // =========================================================================
 
     /**
@@ -103,7 +163,7 @@ public abstract class SkylandsCloudRendererMixin {
 
         // --- Sort fix --------------------------------------------------------
         // Original: (!inMiddle || inMiddle != wasInMiddle)
-        //   → sorts every frame when player is OUTSIDE the band (i.e. most of the time)
+        //   → sorts every frame when the player is OUTSIDE the band (most of the time in Skylands)
         //
         // Corrected: (inMiddle != wasInMiddle || inMiddle)
         //   → sorts only when the band is entered/exited, OR while inside the band
@@ -120,9 +180,6 @@ public abstract class SkylandsCloudRendererMixin {
         // --- GL state hoisting -----------------------------------------------
         // These 5 calls were executed once per layer (×6) in renderClouds().
         // All 6 layers use identical values, so we set them once here.
-        // renderClouds() still performs its own internal state management for
-        // the depth pre-pass (colorMask) and the per-layer shader/texture binding,
-        // which are layer-specific and intentionally left untouched.
         RenderSystem.disableCull();
         RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
@@ -138,7 +195,7 @@ public abstract class SkylandsCloudRendererMixin {
             renderer.renderClouds(level, ticks, poseStack, projectionMatrix, partialTick, camX, camY, camZ);
         }
 
-        // Single shared teardown. Was previously called at the end of every renderClouds().
+        // Single shared teardown — was previously called at the end of every renderClouds().
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
         RenderSystem.defaultBlendFunc();
@@ -161,18 +218,14 @@ public abstract class SkylandsCloudRendererMixin {
             double z,
             Vec3 cloudColor
     ) {
-        // Cache the cloud type once — the shadow field is read by both the FANCY
-        // branch check and (in the original) by the now-removed setShader call.
         final CloudStatus cloudsType = this.prevCloudsType;
 
-        // UV scale constants, unchanged from original.
         final float uvScale = 0.00390625F;   // 1/256
         final float epsilon = 9.765625E-4F;  // prevents z-fighting on top face
 
         final float originU = (float) Mth.floor(x) * uvScale;
         final float originV = (float) Mth.floor(z) * uvScale;
 
-        // Cloud colour components, factored out once.
         final float r = (float) cloudColor.x;
         final float g = (float) cloudColor.y;
         final float b = (float) cloudColor.z;
@@ -189,15 +242,12 @@ public abstract class SkylandsCloudRendererMixin {
         final float nsB   = b * 0.8F;
 
         // --- REMOVED: RenderSystem.setShader(this::getShader) ----------------
-        // This was Rediscovered's first line here. Explanation:
-        //   - BufferBuilder.begin() + endVertex() calls only write into a CPU-side
-        //     ByteBuffer according to the VertexFormat. No GPU state is consulted.
-        //   - VertexBuffer.upload() transfers that ByteBuffer to VRAM. Again, no
-        //     shader involvement.
-        //   - The shader is consumed only at VertexBuffer.drawWithShader(), which
-        //     happens in renderClouds() and receives the shader as an explicit argument.
-        //   - Therefore: setShader() here was dead, and 'this::getShader' created a
-        //     heap-allocated Supplier object that was immediately eligible for GC.
+        // BufferBuilder.begin() + endVertex() only write into a CPU-side ByteBuffer according
+        // to the VertexFormat. VertexBuffer.upload() transfers that buffer to VRAM. Neither
+        // operation consults the RenderSystem shader. The shader is consumed only at
+        // VertexBuffer.drawWithShader(), which receives it as an explicit argument in
+        // renderClouds(). Therefore setShader() here was dead, and 'this::getShader' created
+        // a heap-allocated Supplier that was immediately eligible for GC.
         // ---------------------------------------------------------------------
 
         builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR_NORMAL);
@@ -206,11 +256,10 @@ public abstract class SkylandsCloudRendererMixin {
         if (cloudsType == CloudStatus.FANCY) {
             for (int k = -7; k <= 8; ++k) {
                 for (int l = -7; l <= 8; ++l) {
-                    final float cx = (float) (k * 8);  // chunk X origin in cloud space
-                    final float cz = (float) (l * 8);  // chunk Z origin in cloud space
+                    final float cx = (float) (k * 8);
+                    final float cz = (float) (l * 8);
 
                     if (cloudFloorY > -5.0F) {
-                        // Bottom face (normal pointing down)
                         builder.vertex(cx,       cloudFloorY, cz + 8F).uv(cx        * uvScale + originU, (cz + 8F) * uvScale + originV).color(botR, botG, botB, 0.8F).normal(0F, -1F, 0F).endVertex();
                         builder.vertex(cx + 8F,  cloudFloorY, cz + 8F).uv((cx + 8F) * uvScale + originU, (cz + 8F) * uvScale + originV).color(botR, botG, botB, 0.8F).normal(0F, -1F, 0F).endVertex();
                         builder.vertex(cx + 8F,  cloudFloorY, cz     ).uv((cx + 8F) * uvScale + originU, cz        * uvScale + originV).color(botR, botG, botB, 0.8F).normal(0F, -1F, 0F).endVertex();
@@ -218,7 +267,6 @@ public abstract class SkylandsCloudRendererMixin {
                     }
 
                     if (cloudFloorY <= 5.0F) {
-                        // Top face (normal pointing up), epsilon offset prevents z-fighting
                         final float topY = cloudFloorY + 4.0F - epsilon;
                         builder.vertex(cx,       topY, cz + 8F).uv(cx        * uvScale + originU, (cz + 8F) * uvScale + originV).color(r, g, b, 0.8F).normal(0F, 1F, 0F).endVertex();
                         builder.vertex(cx + 8F,  topY, cz + 8F).uv((cx + 8F) * uvScale + originU, (cz + 8F) * uvScale + originV).color(r, g, b, 0.8F).normal(0F, 1F, 0F).endVertex();
@@ -227,7 +275,6 @@ public abstract class SkylandsCloudRendererMixin {
                     }
 
                     if (k > -1) {
-                        // West faces — one sub-quad per block column (8 total)
                         for (int i1 = 0; i1 < 8; ++i1) {
                             final float wx  = cx + i1;
                             final float wuv = (wx + 0.5F) * uvScale + originU;
@@ -239,7 +286,6 @@ public abstract class SkylandsCloudRendererMixin {
                     }
 
                     if (k <= 1) {
-                        // East faces
                         for (int j2 = 0; j2 < 8; ++j2) {
                             final float ex  = cx + j2 + 1.0F - epsilon;
                             final float euv = (cx + j2 + 0.5F) * uvScale + originU;
@@ -251,7 +297,6 @@ public abstract class SkylandsCloudRendererMixin {
                     }
 
                     if (l > -1) {
-                        // North faces
                         for (int k2 = 0; k2 < 8; ++k2) {
                             final float nz  = cz + k2;
                             final float nuv = (nz + 0.5F) * uvScale + originV;
@@ -263,7 +308,6 @@ public abstract class SkylandsCloudRendererMixin {
                     }
 
                     if (l <= 1) {
-                        // South faces
                         for (int l2 = 0; l2 < 8; ++l2) {
                             final float sz  = cz + l2 + 1.0F - epsilon;
                             final float suv = (cz + l2 + 0.5F) * uvScale + originV;
@@ -291,13 +335,101 @@ public abstract class SkylandsCloudRendererMixin {
     }
 
     // =========================================================================
+    // Overwrite 3 — renderCloudOverride (static)
+    // =========================================================================
+
+    /**
+     * @author Coraline Systems (zharok01)
+     * @reason Rediscovered's original calls {@code VANILLA_OVERRIDE.renderClouds()} exactly
+     *   once, producing a single cloud layer at vanilla cloud height. This overwrite replaces
+     *   that with {@link #coralineSystems$renderOverworldLayers}, which renders all three
+     *   layers in {@link #CORALINE_OVERWORLD_RENDERERS} with the same GL-hoisted loop pattern
+     *   used in the Skylands {@link #renderLayers} overwrite above.
+     */
+    @Overwrite
+    public static boolean renderCloudOverride(
+            PoseStack poseStack,
+            Matrix4f projectionMatrix,
+            float partialTick,
+            double camX,
+            double camY,
+            double camZ
+    ) {
+        if (RediscoveredConfig.CLIENT.overrideVanillaClouds()) {
+            Minecraft mc = Minecraft.getInstance();
+            coralineSystems$renderOverworldLayers(
+                    mc.level,
+                    mc.levelRenderer.getTicks(),
+                    partialTick,
+                    poseStack,
+                    camX, camY, camZ,
+                    projectionMatrix
+            );
+            return true;
+        }
+        return false;
+    }
+
+    // =========================================================================
     // @Unique private helpers
     // =========================================================================
 
     /**
-     * Reads the Y height of a renderer through its public accessor.
-     * Used in the sort comparator inside {@link #renderLayers} to avoid any
-     * direct private-field access across class boundaries.
+     * Renders the three overworld cloud layers with a single hoisted GL state bracket,
+     * mirroring the Skylands {@link #renderLayers} pattern.
+     *
+     * <p>The depth-sort band is centred on {@link #CORALINE_OVERWORLD_CLOUD_HEIGHT} ±30 blocks,
+     * which corresponds to the altitude range where the player can be simultaneously above one
+     * layer and below another (i.e. inside the cloud deck). Outside that band the sort is stable
+     * and we skip it.
+     */
+    @Unique
+    private static void coralineSystems$renderOverworldLayers(
+            ClientLevel level,
+            int ticks,
+            float partialTick,
+            PoseStack poseStack,
+            double camX,
+            double camY,
+            double camZ,
+            Matrix4f projectionMatrix
+    ) {
+        // Sort band: between the lowest and highest layer heights (with a little margin).
+        final boolean inMiddle = camY > (CORALINE_OVERWORLD_CLOUD_HEIGHT - 30.0)
+                && camY < (CORALINE_OVERWORLD_CLOUD_HEIGHT + 30.0);
+
+        if (inMiddle != coralineSystems$overworldWasInMiddle || inMiddle) {
+            CORALINE_OVERWORLD_RENDERERS.sort((r1, r2) -> Double.compare(
+                    Math.abs(camY - coralineSystems$heightOf(r2)),
+                    Math.abs(camY - coralineSystems$heightOf(r1))
+            ));
+        }
+        coralineSystems$overworldWasInMiddle = inMiddle;
+
+        // Hoist shared GL state — same rationale as in renderLayers().
+        RenderSystem.disableCull();
+        RenderSystem.enableBlend();
+        RenderSystem.enableDepthTest();
+        RenderSystem.blendFuncSeparate(
+                GlStateManager.SourceFactor.SRC_ALPHA,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                GlStateManager.SourceFactor.ONE,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA
+        );
+        RenderSystem.depthMask(true);
+
+        for (SkylandsCloudRenderer renderer : CORALINE_OVERWORLD_RENDERERS) {
+            renderer.renderClouds(level, ticks, poseStack, projectionMatrix, partialTick, camX, camY, camZ);
+        }
+
+        RenderSystem.enableCull();
+        RenderSystem.disableBlend();
+        RenderSystem.defaultBlendFunc();
+    }
+
+    /**
+     * Reads the Y height of a renderer through its public accessor, used in sort comparators
+     * to avoid any direct private-field access across class boundaries.
      */
     @Unique
     private static float coralineSystems$heightOf(SkylandsCloudRenderer renderer) {
