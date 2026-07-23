@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.client.sprite;
+package net.zharok01.coralinesystems.registry;
 
 import mod.adrenix.nostalgic.util.common.sprite.GuiSprite;
 import mod.adrenix.nostalgic.util.common.sprite.SpriteAtlas;
@@ -23,9 +23,9 @@ import mod.adrenix.nostalgic.util.common.sprite.SpriteAtlas;
  *
  * Visual guideline: deep purple (#7B2FBE) tint, same shape as stamina_level.png.
  */
-public final class CoralineModSprite {
+public final class CoralineModSprites {
 
-    private CoralineModSprite() {}
+    private CoralineModSprites() {}
 
     // ── Persistence (Wine) stamina icons ─────────────────────────────────────
 

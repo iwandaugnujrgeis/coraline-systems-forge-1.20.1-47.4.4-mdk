@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.event;
+package net.zharok01.coralinesystems.event.stamina;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
@@ -14,7 +14,7 @@ import java.util.Set;
  * Handles client-side GUI manipulation on the Forge Event Bus.
  */
 @Mod.EventBusSubscriber(modid = CoralineSystems.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-public class CoralineClientGuiEvents {
+public class StaminaClientGuiEvents {
 
     private static final int RAISE_PX = -6;
 

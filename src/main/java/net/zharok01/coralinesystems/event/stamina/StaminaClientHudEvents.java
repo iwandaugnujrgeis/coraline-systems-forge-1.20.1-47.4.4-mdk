@@ -1,5 +1,6 @@
-package net.zharok01.coralinesystems.event;
+package net.zharok01.coralinesystems.event.stamina;
 
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -10,35 +11,30 @@ import net.minecraftforge.fml.common.Mod;
 import net.zharok01.coralinesystems.CoralineSystems;
 import net.zharok01.coralinesystems.registry.CoralineItems;
 
-/**
- * Client-side FORGE bus listener that triggers the Stamina bar drink-flash
- * when the local player finishes drinking Tea or Mulberry Juice.
- */
 @Mod.EventBusSubscriber(modid = CoralineSystems.MOD_ID,
         bus = Mod.EventBusSubscriber.Bus.FORGE,
         value = Dist.CLIENT)
-public class CoralineClientHudEvents {
+public class StaminaClientHudEvents {
 
-    // ── CORALINE: Drink-flash state ───────────────────────────────────────────
+    // ── CORALINE: Absolute Time Drink-flash state ─────────────────────────────
 
     /**
-     * Set to 4 (two blinks = 4 half-cycles at 150 ms each) when Tea or
-     * Mulberry Juice is drunk.
+     * Stores the exact millisecond timestamp when the flash should stop.
      */
-    public static int drinkFlashRemaining = 0;
+    public static long drinkFlashEndTime = 0;
 
     /**
      * Called when the drink items finish their use animation.
+     * Schedules 600ms of flashing (two 150ms ON / 150ms OFF cycles).
      */
     public static void triggerDrinkFlash() {
-        drinkFlashRemaining = 4; // 4 half-cycles = 2 full blinks
+        drinkFlashEndTime = Util.getMillis() + 600;
     }
 
     // ── Event Listener ────────────────────────────────────────────────────────
 
     @SubscribeEvent
     public static void onItemFinishUse(LivingEntityUseItemEvent.Finish event) {
-        // Only act for the local player.
         Minecraft mc = Minecraft.getInstance();
         if (!(event.getEntity() instanceof Player player)) return;
         if (player != mc.player) return;

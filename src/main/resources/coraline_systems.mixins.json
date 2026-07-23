@@ -20,6 +20,7 @@
     "LecternRendererMixin",
     "LightTextureMixin",
     "MinecraftMixin",
+    "ModelBlockRendererMixin",
     "OptionsMixin",
     "PlayerRendererMixin",
     "SoundEngineMixin",
@@ -27,6 +28,7 @@
     "SunrisePinkMixin",
     "accessors.BiomeColorsAccessor",
     "accessors.LightTextureAccessor",
+    "accessors.ModelBlockRendererAccessor",
     "advancements.AdvancementTabMixin",
     "advancements.AdvancementWidgetMixin"
   ],

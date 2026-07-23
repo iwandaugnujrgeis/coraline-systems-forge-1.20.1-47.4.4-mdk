@@ -26,7 +26,7 @@ import net.zharok01.coralinesystems.registry.CoralineEffects;
 public class WineBottleItem extends AbstractCoralineDrinkItem {
 
     /** Ticks of Persistence granted per strength level. 20 ticks = 1 second. */
-    private static final int TICKS_PER_STRENGTH = 60 * 20;
+    private static final int TICKS_PER_STRENGTH = 20 * 20;
 
     public WineBottleItem(Properties properties) {
         super(properties, Items.GLASS_BOTTLE,

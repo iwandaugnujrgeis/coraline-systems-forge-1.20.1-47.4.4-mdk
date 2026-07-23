@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.client.gui;
+package net.zharok01.coralinesystems.util;
 
 import mod.adrenix.nostalgic.util.client.gui.GuiUtil;
 
