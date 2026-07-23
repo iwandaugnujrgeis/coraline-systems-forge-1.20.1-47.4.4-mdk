@@ -1,6 +1,7 @@
 package net.zharok01.coralinesystems.mixin;
 
 import com.mojang.serialization.Codec;
+import net.minecraft.client.CloudStatus;
 import net.minecraft.client.GraphicsStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
@@ -25,11 +26,15 @@ import java.util.List;
 @Mixin(Options.class)
 public class OptionsMixin {
 
-	// Shadow the field we want to replace after <init> runs.
-	@Mutable
-    @Final
-    @Shadow
+	// Shadow fields we replace after <init> runs.
+	@Mutable @Final @Shadow
 	private OptionInstance<Double> entityDistanceScaling;
+
+	@Mutable @Final @Shadow
+	private OptionInstance<GraphicsStatus> graphicsMode;
+
+	@Mutable @Final @Shadow
+	private OptionInstance<CloudStatus> cloudStatus;
 
 	// =========================================================================
 	// 1. REMOVE FABULOUS GRAPHICS (unchanged)
@@ -69,7 +74,7 @@ public class OptionsMixin {
 	}
 
 	// =========================================================================
-	// 3. FOV LABEL: "Quake Semi-Pro" at max (unchanged, confirmed correct)
+	// 3. FOV LABEL: "Quake Semi-Pro" at max (unchanged)
 	// =========================================================================
 	@Inject(
 			method = "genericValueLabel(Lnet/minecraft/network/chat/Component;I)Lnet/minecraft/network/chat/Component;",
@@ -87,14 +92,12 @@ public class OptionsMixin {
 	}
 
 	// =========================================================================
-	// 4. ENTITY DISTANCE: replace with a 4-step cycle button
+	// 4. ENTITY DISTANCE: replace with a 4-step cycle button (unchanged)
 	//    Steps: 0.5 (Tiny), 1.0 (Short), 1.5 (Decent), 2.0 (Default)
 	// =========================================================================
 	@Inject(method = "<init>", at = @At("TAIL"))
-	private void coraline$replaceEntityDistance(Minecraft minecraft, File gameDirectory, CallbackInfo ci) {
-		// Entity Distance as a 4-step cycle button.
-		// The CaptionBasedToString lambda must return ONLY the value portion —
-		// the OptionInstance rendering prepends the caption automatically.
+	private void coraline$replaceOptionsAtTail(Minecraft minecraft, File gameDirectory, CallbackInfo ci) {
+		// ---- 4a. Entity Distance cycle button --------------------------------
 		this.entityDistanceScaling = new OptionInstance<>(
 				"options.entityDistanceScaling",
 				OptionInstance.noTooltip(),
@@ -108,8 +111,69 @@ public class OptionsMixin {
 						List.of(0.5, 1.0, 1.5, 2.0),
 						Codec.DOUBLE
 				),
-				2.0,   // default: 200%
+				2.0,
 				value -> {}
 		);
+
+		// ---- 4b. Graphics Mode: re-build with an onValueUpdate that syncs clouds ---
+		//
+		// We preserve the exact same AltEnum setup that Vanilla uses (Fast/Fancy only,
+		// since Fabulous is already stripped by the @Redirect above), but now the
+		// onValueUpdate consumer also pushes the matching CloudStatus automatically.
+		//
+		// NOTE: The Codec and tooltip suppliers are copied verbatim from Options.java.
+		// The AltEnum's altCondition (isSkippingFabulous) is kept so nothing else breaks.
+
+		Options self = (Options)(Object)this;
+
+		this.graphicsMode = new OptionInstance<>(
+				"options.graphics",
+				arg -> switch (arg) {
+					case FANCY -> net.minecraft.client.gui.components.Tooltip.create(
+							Component.translatable("options.graphics.fancy.tooltip"));
+					case FAST  -> net.minecraft.client.gui.components.Tooltip.create(
+							Component.translatable("options.graphics.fast.tooltip"));
+					case FABULOUS -> net.minecraft.client.gui.components.Tooltip.create(
+							Component.translatable("options.graphics.fabulous.tooltip",
+									Component.translatable("options.graphics.fabulous")
+											.withStyle(net.minecraft.ChatFormatting.ITALIC)));
+				},
+				(caption, status) -> {
+					net.minecraft.network.chat.MutableComponent label =
+							Component.translatable(status.getKey());
+					return status == GraphicsStatus.FABULOUS
+							? label.withStyle(net.minecraft.ChatFormatting.ITALIC)
+							: label;
+				},
+				new OptionInstance.AltEnum<>(
+						List.of(GraphicsStatus.FAST, GraphicsStatus.FANCY),
+						List.of(GraphicsStatus.FAST, GraphicsStatus.FANCY),
+						() -> Minecraft.getInstance().isRunning()
+								&& Minecraft.getInstance().getGpuWarnlistManager().isSkippingFabulous(),
+						(opt, status) -> {
+							net.minecraft.client.renderer.GpuWarnlistManager gpuWarn =
+									Minecraft.getInstance().getGpuWarnlistManager();
+							if (status == GraphicsStatus.FABULOUS && gpuWarn.willShowWarning()) {
+								gpuWarn.showWarning();
+							} else {
+								opt.set(status);
+								Minecraft.getInstance().levelRenderer.allChanged();
+							}
+						},
+						Codec.INT.xmap(GraphicsStatus::byId, GraphicsStatus::getId)
+				),
+				GraphicsStatus.FANCY,
+				// onValueUpdate: sync clouds to match the chosen graphics quality
+				status -> {
+					CloudStatus target = (status == GraphicsStatus.FAST)
+							? CloudStatus.FAST
+							: CloudStatus.FANCY;
+					self.cloudStatus().set(target);
+				}
+		);
+
+		// Sync clouds once immediately so the saved value matches on first load.
+		GraphicsStatus current = this.graphicsMode.get();
+		this.cloudStatus.set(current == GraphicsStatus.FAST ? CloudStatus.FAST : CloudStatus.FANCY);
 	}
 }
