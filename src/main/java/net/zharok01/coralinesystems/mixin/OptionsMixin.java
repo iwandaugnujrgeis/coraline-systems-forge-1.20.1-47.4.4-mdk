@@ -99,10 +99,10 @@ public class OptionsMixin {
 				"options.entityDistanceScaling",
 				OptionInstance.noTooltip(),
 				(caption, value) -> {
-					if (value == 0.5) return Component.literal("Tiny (50%)");
-					if (value == 1.0) return Component.literal("Short (100%)");
-					if (value == 1.5) return Component.literal("Decent (150%)");
-					return Component.literal("Default (200%)");
+					if (value == 0.5) return Component.literal("Tiny");
+					if (value == 1.0) return Component.literal("Short");
+					if (value == 1.5) return Component.literal("Decent");
+					return Component.literal("Default");
 				},
 				new OptionInstance.Enum<>(
 						List.of(0.5, 1.0, 1.5, 2.0),
