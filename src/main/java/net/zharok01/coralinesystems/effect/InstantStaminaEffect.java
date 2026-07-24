@@ -55,7 +55,9 @@ public class InstantStaminaEffect extends MobEffect {
         if (durationInTicks <= 0) return;
 
         boolean isExhausted = accessor.coraline$getIsExhausted();
-        int staminaPoints = (amplifier + 1) * 2;
+        // Amplifier IS the number of stamina points to restore.
+        // Callers (Tea, Mulberry Juice) set the amplifier to the exact point value they want.
+        int staminaPoints = amplifier;
         int currentTicks = accessor.coraline$getTickTimer();
         int newTicks;
 
