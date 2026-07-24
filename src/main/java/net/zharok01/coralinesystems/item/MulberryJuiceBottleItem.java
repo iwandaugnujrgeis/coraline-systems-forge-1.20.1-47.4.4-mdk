@@ -17,8 +17,8 @@ import net.zharok01.coralinesystems.registry.CoralineEffects;
  */
 public class MulberryJuiceBottleItem extends AbstractCoralineDrinkItem {
 
-    /** Fixed amplifier: (1 + 1) * 2 = 4 stamina points restored. */
-    private static final int FIXED_AMPLIFIER = 1;
+    /** Restores 4 stamina points (2 full icons). Amplifier IS the point value. */
+    private static final int FIXED_AMPLIFIER = 4;
 
     public MulberryJuiceBottleItem(Properties properties) {
         super(properties, Items.GLASS_BOTTLE,

@@ -16,7 +16,8 @@ import net.zharok01.coralinesystems.registry.CoralineEffects;
  */
 public class MulberryJuiceBucketItem extends AbstractCoralineDrinkItem {
 
-    private static final int FIXED_AMPLIFIER = 1;
+    /** Restores 4 stamina points (2 full icons). Amplifier IS the point value. */
+    private static final int FIXED_AMPLIFIER = 4;
 
     public MulberryJuiceBucketItem(Properties properties) {
         super(properties, Items.BUCKET,
