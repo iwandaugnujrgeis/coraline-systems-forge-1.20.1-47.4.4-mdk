@@ -128,16 +128,7 @@ public class OptionsMixin {
 
 		this.graphicsMode = new OptionInstance<>(
 				"options.graphics",
-				arg -> switch (arg) {
-					case FANCY -> net.minecraft.client.gui.components.Tooltip.create(
-							Component.translatable("options.graphics.fancy.tooltip"));
-					case FAST  -> net.minecraft.client.gui.components.Tooltip.create(
-							Component.translatable("options.graphics.fast.tooltip"));
-					case FABULOUS -> net.minecraft.client.gui.components.Tooltip.create(
-							Component.translatable("options.graphics.fabulous.tooltip",
-									Component.translatable("options.graphics.fabulous")
-											.withStyle(net.minecraft.ChatFormatting.ITALIC)));
-				},
+				OptionInstance.noTooltip(),
 				(caption, status) -> {
 					net.minecraft.network.chat.MutableComponent label =
 							Component.translatable(status.getKey());
