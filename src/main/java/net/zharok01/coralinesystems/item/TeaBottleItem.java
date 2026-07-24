@@ -10,14 +10,16 @@ import net.minecraft.world.level.Level;
 import net.zharok01.coralinesystems.registry.CoralineEffects;
 
 /**
- * Bottle-form Tea. Applies Instant Stamina on drink, with amplifier derived
- * from the brew's strength level (1–5):
+ * Bottle-form Tea. Applies Instant Stamina on drink, with stamina points
+ * scaling with the brew's strength level (1–5). The amplifier passed to
+ * {@link net.zharok01.coralinesystems.effect.InstantStaminaEffect} IS the
+ * number of stamina points to restore directly.
  *
- *   Strength 1 → amplifier 0 →  2 stamina points
- *   Strength 2 → amplifier 1 →  4 stamina points
- *   Strength 3 → amplifier 2 →  6 stamina points
- *   Strength 4 → amplifier 3 →  8 stamina points
- *   Strength 5 → amplifier 4 → 10 stamina points
+ *   Strength 1 (Bland)  → 2 stamina points  (1 full icon)
+ *   Strength 2 (Mild)   → 3 stamina points
+ *   Strength 3 (Decent) → 4 stamina points  (2 full icons)
+ *   Strength 4 (Strong) → 5 stamina points
+ *   Strength 5 (Fiery)  → 6 stamina points  (3 full icons)
  */
 public class TeaBottleItem extends AbstractCoralineDrinkItem {
 
@@ -31,17 +33,15 @@ public class TeaBottleItem extends AbstractCoralineDrinkItem {
         if (!(livingEntity instanceof Player player)) return;
 
         int strength = CoralineFluidUtils.getStrength(stack);
-        int amplifier = strength - 1; // strength 1–5 → amplifier 0–4
+        // strength 1–5 → stamina points 2–6 (one point added per tier above the base of 1)
+        int staminaPoints = strength + 1;
 
-        // Duration 1 tick — InstantStaminaEffect.isInstantenous() returns true,
-        // so the effect fires applyInstantenousEffect immediately and is never
-        // stored as a lingering effect on the player.
         player.addEffect(new MobEffectInstance(
                 CoralineEffects.INSTANT_STAMINA.get(),
                 1,
-                amplifier,
+                staminaPoints, // amplifier = stamina points (see InstantStaminaEffect)
                 false,
-                false,  // no particles for an instant effect
+                false,
                 false
         ));
     }

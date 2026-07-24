@@ -10,8 +10,14 @@ import net.minecraft.world.level.Level;
 import net.zharok01.coralinesystems.registry.CoralineEffects;
 
 /**
- * Bucket-form Tea. Identical Instant Stamina effect to {@link TeaBottleItem}.
- * See that class for amplifier/points mapping.
+ * Bucket-form Tea. Restores 3× the stamina points of {@link TeaBottleItem}
+ * at the same strength level, since a bucket holds 3 bottles' worth of liquid.
+ *
+ *   Strength 1 (Bland)  →  6 stamina points
+ *   Strength 2 (Mild)   →  9 stamina points
+ *   Strength 3 (Decent) → 12 stamina points
+ *   Strength 4 (Strong) → 15 stamina points
+ *   Strength 5 (Fiery)  → 18 stamina points
  */
 public class TeaBucketItem extends AbstractCoralineDrinkItem {
 
@@ -25,12 +31,12 @@ public class TeaBucketItem extends AbstractCoralineDrinkItem {
         if (!(livingEntity instanceof Player player)) return;
 
         int strength = CoralineFluidUtils.getStrength(stack);
-        int amplifier = strength - 1;
+        int staminaPoints = (strength + 1) * 3; // 3× the bottle value
 
         player.addEffect(new MobEffectInstance(
                 CoralineEffects.INSTANT_STAMINA.get(),
                 1,
-                amplifier,
+                staminaPoints,
                 false,
                 false,
                 false
