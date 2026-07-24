@@ -50,8 +50,8 @@ public abstract class AbstractCoralineDrinkItem extends Item {
      *                                ignored if strengthTranslationKey is null.
      */
     protected AbstractCoralineDrinkItem(Properties properties, Item emptyContainerItem,
-                                         @Nullable String strengthTranslationKey,
-                                         @Nullable ChatFormatting strengthTooltipColor) {
+                                        @Nullable String strengthTranslationKey,
+                                        @Nullable ChatFormatting strengthTooltipColor) {
         super(properties);
         this.emptyContainerItem = emptyContainerItem;
         this.hasStrength = strengthTranslationKey != null;
@@ -111,11 +111,21 @@ public abstract class AbstractCoralineDrinkItem extends Item {
         return ItemUtils.startUsingInstantly(level, player, usedHand);
     }
 
+    /**
+     * Maps a 1-5 strength level to its named translation key.
+     * Keys are defined in en_us.json as "tooltip.coraline_systems.strength.N".
+     */
+    private static Component strengthName(int strength) {
+        int clamped = Math.max(1, Math.min(5, strength));
+        return Component.translatable("tooltip.coraline_systems.strength." + clamped);
+    }
+
     @Override
     public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltipComponents, @NotNull TooltipFlag isAdvanced) {
         if (this.hasStrength) {
             int strength = CoralineFluidUtils.getStrength(stack);
-            Component line = Component.translatable(this.strengthTranslationKey, strength);
+            Component nameComponent = strengthName(strength);
+            Component line = Component.translatable(this.strengthTranslationKey, nameComponent);
             if (this.strengthTooltipColor != null) {
                 line = line.copy().withStyle(this.strengthTooltipColor);
             }
