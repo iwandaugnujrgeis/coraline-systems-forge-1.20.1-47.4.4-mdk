@@ -1,4 +1,4 @@
-package net.zharok01.coralinesystems.event;
+package net.zharok01.coralinesystems.event.stamina;
 
 import mod.adrenix.nostalgic.helper.gameplay.stamina.StaminaData;
 import mod.adrenix.nostalgic.helper.gameplay.stamina.StaminaHelper;
@@ -32,7 +32,7 @@ import net.zharok01.coralinesystems.registry.CoralineEffects;
  * timing of its own tick relative to PlayerTickEvent this may need adjustment.
  */
 @Mod.EventBusSubscriber(modid = CoralineSystems.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class CoralineStaminaEvents {
+public class StaminaEvents {
 
     // Per-player alternating toggle for the half-drain mechanic.
     // We key it off the player UUID string so it's isolated per player.

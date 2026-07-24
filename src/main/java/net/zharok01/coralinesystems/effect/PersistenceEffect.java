@@ -2,12 +2,13 @@ package net.zharok01.coralinesystems.effect;
 
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
+import net.zharok01.coralinesystems.event.stamina.StaminaEvents;
 
 /**
  * Persistence — a beneficial MobEffect applied when the player drinks Wine.
  *
  * The actual stamina drain-halving logic lives in
- * {@link net.zharok01.coralinesystems.event.CoralineStaminaEvents}, which
+ * {@link StaminaEvents}, which
  * runs a server-side PlayerTickEvent listener. This class is intentionally
  * a pure flag effect (no applyEffectTick override needed) — the effect's
  * presence on the player is the only signal the tick listener checks.
