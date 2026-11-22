@@ -1,0 +1,35 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_bright_green_terracotta": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "coraline_systems:bright_green_terracotta"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "coraline_systems:bright_green_terracotta_wall"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_bright_green_terracotta",
+      "has_the_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "coraline_systems:bright_green_terracotta_wall"
+    ]
+  },
+  "sends_telemetry_event": false
+}

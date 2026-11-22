@@ -1,0 +1,11 @@
+{
+  "type": "coraline_systems:fallen_tree",
+  "config": {
+    "log": {
+      "type": "minecraft:simple_state_provider",
+      "state": {
+        "Name": "minecraft:jungle_log"
+      }
+    }
+  }
+}

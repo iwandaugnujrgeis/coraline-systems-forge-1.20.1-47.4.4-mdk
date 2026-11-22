@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:stonecutting",
+  "group": "basalt_wall",
+  "count": 1,
+  "ingredient": {
+    "item": "minecraft:polished_basalt"
+  },
+  "result": "coraline_systems:polished_basalt_wall"
+}

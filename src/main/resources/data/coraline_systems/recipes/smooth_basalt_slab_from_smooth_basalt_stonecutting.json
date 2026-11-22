@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:stonecutting",
+  "group": "basalt_slab",
+  "count": 2,
+  "ingredient": {
+    "item": "minecraft:smooth_basalt"
+  },
+  "result": "coraline_systems:smooth_basalt_slab"
+}

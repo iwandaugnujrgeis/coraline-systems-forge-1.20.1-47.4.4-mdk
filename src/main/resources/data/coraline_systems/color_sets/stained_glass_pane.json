@@ -1,0 +1,57 @@
+{
+  "id": "minecraft:stained_glass_pane",
+  "colors": {
+    "default": {
+      "block": "minecraft:glass_pane",
+      "item": "minecraft:glass_pane"
+    },
+    "bright_green": {
+      "block": "coraline_systems:bright_green_stained_glass_pane",
+      "item": "coraline_systems:bright_green_stained_glass_pane"
+    },
+    "spring_green": {
+      "block": "coraline_systems:spring_green_stained_glass_pane",
+      "item": "coraline_systems:spring_green_stained_glass_pane"
+    },
+    "sky_blue": {
+      "block": "coraline_systems:sky_blue_stained_glass_pane",
+      "item": "coraline_systems:sky_blue_stained_glass_pane"
+    },
+    "slate_blue": {
+      "block": "coraline_systems:slate_blue_stained_glass_pane",
+      "item": "coraline_systems:slate_blue_stained_glass_pane"
+    },
+    "lavender": {
+      "block": "coraline_systems:lavender_stained_glass_pane",
+      "item": "coraline_systems:lavender_stained_glass_pane"
+    },
+    "rose": {
+      "block": "coraline_systems:rose_stained_glass_pane",
+      "item": "coraline_systems:rose_stained_glass_pane"
+    },
+    "wine": {
+      "block": "coraline_systems:wine_stained_glass_pane",
+      "item": "coraline_systems:wine_stained_glass_pane"
+    },
+    "coral": {
+      "block": "coraline_systems:coral_stained_glass_pane",
+      "item": "coraline_systems:coral_stained_glass_pane"
+    },
+    "phtalo": {
+      "block": "coraline_systems:phtalo_stained_glass_pane",
+      "item": "coraline_systems:phtalo_stained_glass_pane"
+    },
+    "plum": {
+      "block": "coraline_systems:plum_stained_glass_pane",
+      "item": "coraline_systems:plum_stained_glass_pane"
+    },
+    "toxic_yellow": {
+      "block": "coraline_systems:toxic_yellow_stained_glass_pane",
+      "item": "coraline_systems:toxic_yellow_stained_glass_pane"
+    },
+    "navy_blue": {
+      "block": "coraline_systems:navy_blue_stained_glass_pane",
+      "item": "coraline_systems:navy_blue_stained_glass_pane"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:stonecutting",
+  "group": "terracotta_stairs",
+  "count": 1,
+  "ingredient": {
+    "item": "coraline_systems:coral_terracotta"
+  },
+  "result": "coraline_systems:coral_terracotta_stairs"
+}

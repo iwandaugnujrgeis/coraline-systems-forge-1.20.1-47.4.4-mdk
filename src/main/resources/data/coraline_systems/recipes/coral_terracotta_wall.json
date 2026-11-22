@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "group": "terracotta_wall",
+  "key": {
+    "#": {
+      "item": "coraline_systems:coral_terracotta"
+    }
+  },
+  "pattern": [
+    "###",
+    "###"
+  ],
+  "result": {
+    "count": 6,
+    "item": "coraline_systems:coral_terracotta_wall"
+  },
+  "show_notification": true
+}

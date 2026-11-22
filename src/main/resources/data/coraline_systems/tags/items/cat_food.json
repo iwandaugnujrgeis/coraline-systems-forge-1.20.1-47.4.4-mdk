@@ -1,0 +1,15 @@
+{
+  "values": [
+    "minecraft:cod",
+    "minecraft:cooked_cod",
+    "rediscovered:raw_fish",
+    "rediscovered:cooked_fish",
+    "minecraft:salmon",
+    "minecraft:cooked_salmon",
+    "minecraft:tropical_fish",
+    "alexsmobs:flying_fish",
+    "caverns_and_chasms:cavefish",
+    "alexsmobs:raw_catfish",
+    "alexsmobs:cooked_catfish"
+  ]
+}

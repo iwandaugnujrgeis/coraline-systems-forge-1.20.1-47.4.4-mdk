@@ -1,0 +1,27 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "coraline_systems:block/subwoofer"
+    },
+    "facing=up": {
+      "model": "coraline_systems:block/subwoofer",
+      "x": -90
+    },
+    "facing=down": {
+      "model": "coraline_systems:block/subwoofer",
+      "x": 90
+    },
+    "facing=south": {
+      "model": "coraline_systems:block/subwoofer",
+      "y": 180
+    },
+    "facing=east": {
+      "model": "coraline_systems:block/subwoofer",
+      "y": 90
+    },
+    "facing=west": {
+      "model": "coraline_systems:block/subwoofer",
+      "y": -90
+    }
+  }
+}

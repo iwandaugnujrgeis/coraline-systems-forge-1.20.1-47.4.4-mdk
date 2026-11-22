@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "coraline_systems:helper_spawn_egg",
+    "coraline_systems:monster_spawn_egg",
+    "coraline_systems:brume_spawn_egg",
+    "coraline_systems:orb_spawn_egg"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/inner_stairs",
+  "textures": {
+    "bottom": "coraline_systems:block/wine_terracotta",
+    "side": "coraline_systems:block/wine_terracotta",
+    "top": "coraline_systems:block/wine_terracotta"
+  }
+}

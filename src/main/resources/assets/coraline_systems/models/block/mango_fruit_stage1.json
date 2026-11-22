@@ -1,0 +1,74 @@
+{
+  "textures": {
+    "particle": "coraline_systems:block/mango_fruit_stage1",
+    "fruit": "coraline_systems:block/mango_fruit_stage1"
+  },
+  "elements": [
+    {
+      "from": [
+        1,
+        2,
+        8
+      ],
+      "to": [
+        15,
+        16,
+        8
+      ],
+      "shade": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fruit"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fruit"
+        }
+      }
+    },
+    {
+      "from": [
+        8,
+        2,
+        1
+      ],
+      "to": [
+        8,
+        16,
+        15
+      ],
+      "shade": false,
+      "faces": {
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fruit"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fruit"
+        }
+      }
+    }
+  ]
+}

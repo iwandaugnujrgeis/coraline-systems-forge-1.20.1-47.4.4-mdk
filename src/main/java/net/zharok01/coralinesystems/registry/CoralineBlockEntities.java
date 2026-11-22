@@ -1,0 +1,55 @@
+package net.zharok01.coralinesystems.registry;
+
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
+import net.zharok01.coralinesystems.CoralineSystems;
+import net.zharok01.coralinesystems.block.*;
+
+public class CoralineBlockEntities {
+    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
+            DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, CoralineSystems.MOD_ID);
+
+    public static final RegistryObject<BlockEntityType<net.zharok01.coralinesystems.block.ContainerBlockEntity>> CONTAINER_BLOCK_ENTITY =
+            BLOCK_ENTITIES.register("container_block_entity", () ->
+                    BlockEntityType.Builder.of(net.zharok01.coralinesystems.block.ContainerBlockEntity::new,
+                            CoralineBlocks.CONTAINER_BLOCK.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<CentrifugeBlockEntity>> CENTRIFUGE =
+            BLOCK_ENTITIES.register(
+                    "centrifuge",
+                    () -> BlockEntityType.Builder
+                            .of(CentrifugeBlockEntity::new, CoralineBlocks.CENTRIFUGE.get())
+                            .build(null)
+            );
+
+    public static final RegistryObject<BlockEntityType<ReactorBlockEntity>> REACTOR =
+            BLOCK_ENTITIES.register(
+                    "reactor",
+                    () -> BlockEntityType.Builder
+                            .of(ReactorBlockEntity::new, CoralineBlocks.REACTOR.get())
+                            .build(null)
+            );
+
+    public static final RegistryObject<BlockEntityType<net.zharok01.coralinesystems.block.BrewingCauldronBlockEntity>> BREWING_CAULDRON =
+            BLOCK_ENTITIES.register(
+                    "brewing_cauldron",
+                    () -> BlockEntityType.Builder
+                            .of(net.zharok01.coralinesystems.block.BrewingCauldronBlockEntity::new, CoralineBlocks.BREWING_CAULDRON.get())
+                            .build(null)
+            );
+
+    public static final RegistryObject<BlockEntityType<TesseractBlockEntity>> TESSERACT =
+            BLOCK_ENTITIES.register(
+                    "tesseract",
+                    () -> BlockEntityType.Builder
+                            .of(TesseractBlockEntity::new, CoralineBlocks.TESSERACT.get())
+                            .build(null)
+            );
+
+    public static void register(IEventBus eventBus) {
+        BLOCK_ENTITIES.register(eventBus);
+    }
+}

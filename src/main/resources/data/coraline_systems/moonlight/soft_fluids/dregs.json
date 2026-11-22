@@ -1,0 +1,21 @@
+{
+  "id": "coraline_systems:dregs",
+  "color": "#402f39",
+  "containers": [
+    {
+      "filled": [
+        "coraline_systems:dregs_bottle"
+      ],
+      "empty": "minecraft:glass_bottle",
+      "capacity": 1
+    }
+  ],
+  "flowing_texture": "moonlight:block/soft_fluids/potion_flow",
+  "food": {
+    "divider": 1,
+    "item": "coraline_systems:dregs_bottle"
+  },
+  "from_mod": "coraline_systems",
+  "still_texture": "moonlight:block/soft_fluids/potion_still",
+  "translation_key": "item.coraline_systems.dregs_bottle"
+}

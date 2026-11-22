@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "values": [
+    "coraline_systems:bright_green_stained_glass_pane",
+    "coraline_systems:spring_green_stained_glass_pane",
+    "coraline_systems:sky_blue_stained_glass_pane",
+    "coraline_systems:slate_blue_stained_glass_pane",
+    "coraline_systems:lavender_stained_glass_pane",
+    "coraline_systems:rose_stained_glass_pane",
+    "coraline_systems:wine_stained_glass_pane",
+    "coraline_systems:coral_stained_glass_pane",
+    "coraline_systems:phtalo_stained_glass_pane",
+    "coraline_systems:plum_stained_glass_pane",
+    "coraline_systems:toxic_yellow_stained_glass_pane",
+    "coraline_systems:navy_blue_stained_glass_pane"
+  ]
+}

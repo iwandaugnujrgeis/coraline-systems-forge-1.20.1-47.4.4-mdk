@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/wall_inventory",
+  "textures": {
+    "wall": "coraline_systems:block/spring_green_terracotta"
+  }
+}

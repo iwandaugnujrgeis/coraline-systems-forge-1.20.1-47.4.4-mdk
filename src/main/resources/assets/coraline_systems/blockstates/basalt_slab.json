@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "coraline_systems:block/basalt_slab"
+    },
+    "type=double": {
+      "model": "minecraft:block/basalt"
+    },
+    "type=top": {
+      "model": "coraline_systems:block/basalt_slab_top"
+    }
+  }
+}

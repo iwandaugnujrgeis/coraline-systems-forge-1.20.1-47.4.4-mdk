@@ -1,0 +1,108 @@
+package net.zharok01.coralinesystems.registry;
+
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
+import net.zharok01.coralinesystems.CoralineSystems;
+
+public class CoralineSounds {
+    public static final DeferredRegister<SoundEvent> SOUND_EVENTS =
+            DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, CoralineSystems.MOD_ID);
+
+    public static final RegistryObject<SoundEvent> BAG_BREAK = createSoundEvent("bag_break");
+    public static final RegistryObject<SoundEvent> BEAR_DISMOUNT = createSoundEvent("bear_dismount");
+    public static final RegistryObject<SoundEvent> BLAZE_SHOOT = createSoundEvent("blaze_shoot");
+    public static final RegistryObject<SoundEvent> BLAZE_SONG = createSoundEvent("blaze_song");
+    public static final RegistryObject<SoundEvent> BRUME_AMBIENT = createSoundEvent("brume_ambient");
+    public static final RegistryObject<SoundEvent> BRUME_DEATH = createSoundEvent("brume_death");
+    public static final RegistryObject<SoundEvent> BRUME_HURT = createSoundEvent("brume_hurt");
+    public static final RegistryObject<SoundEvent> CART_STORAGE_BREAK = createSoundEvent("cart_storage_break");
+    public static final RegistryObject<SoundEvent> CART_STORAGE_CLOSE = createSoundEvent("cart_storage_close");
+    public static final RegistryObject<SoundEvent> CART_STORAGE_HIT = createSoundEvent("cart_storage_hit");
+    public static final RegistryObject<SoundEvent> CART_STORAGE_OPEN = createSoundEvent("cart_storage_open");
+    public static final RegistryObject<SoundEvent> CAULDRON_ADD_CULTURE = createSoundEvent("cauldron_add_culture");
+    public static final RegistryObject<SoundEvent> CAULDRON_ADD_SOLID = createSoundEvent("cauldron_add_solid");
+    public static final RegistryObject<SoundEvent> CAULDRON_BREW_SPOILED = createSoundEvent("cauldron_brew_spoiled");
+    public static final RegistryObject<SoundEvent> CAULDRON_BREW_SUCCESS = createSoundEvent("cauldron_brew_success");
+    public static final RegistryObject<SoundEvent> CAULDRON_BUBBLING = createSoundEvent("cauldron_bubbling");
+    public static final RegistryObject<SoundEvent> CAULDRON_DREGS_AMBIENT = createSoundEvent("cauldron_dregs_ambient");
+    public static final RegistryObject<SoundEvent> CAULDRON_KOMBUCHA_AMBIENT = createSoundEvent("cauldron_kombucha_ambient");
+    public static final RegistryObject<SoundEvent> CAVE_CHIMES = createSoundEvent("cave_chimes");
+    public static final RegistryObject<SoundEvent> CEMENT_HARDENING = createSoundEvent("cement_hardening");
+    public static final RegistryObject<SoundEvent> CONTAINER_ACCESS = createSoundEvent("container_access");
+    public static final RegistryObject<SoundEvent> CRYPTID_DEATH = createSoundEvent("cryptid_death");
+    public static final RegistryObject<SoundEvent> CRYPTID_HURT  = createSoundEvent("cryptid_hurt");
+    public static final RegistryObject<SoundEvent> CRYPTID_IDLE  = createSoundEvent("cryptid_idle");
+    public static final RegistryObject<SoundEvent> CRYPTID_KNOCK = createSoundEvent("cryptid_knock");
+    public static final RegistryObject<SoundEvent> DEATH = createSoundEvent("death");
+    public static final RegistryObject<SoundEvent> DOG_HOWL = createSoundEvent("dog_howl");
+    public static final RegistryObject<SoundEvent> DRIP_BLOOD = createSoundEvent("drip_blood");
+    public static final RegistryObject<SoundEvent> ESCAPE = createSoundEvent("escape");
+    public static final RegistryObject<SoundEvent> GIANT_AMBIENT = createSoundEvent("giant_ambient");
+    public static final RegistryObject<SoundEvent> GIANT_DEATH = createSoundEvent("giant_death");
+    public static final RegistryObject<SoundEvent> GIANT_HURT = createSoundEvent("giant_hurt");
+    public static final RegistryObject<SoundEvent> GIANT_STOMP = createSoundEvent("giant_stomp");
+    public static final RegistryObject<SoundEvent> HELPER_DEATH = createSoundEvent("helper_death");
+    public static final RegistryObject<SoundEvent> HELPER_HURT = createSoundEvent("helper_hurt");
+    public static final RegistryObject<SoundEvent> HELPER_IDLE = createSoundEvent("helper_idle");
+    public static final RegistryObject<SoundEvent> LEAVES_BREAK = createSoundEvent("leaves_break");
+    public static final RegistryObject<SoundEvent> LEAVES_FALL = createSoundEvent("leaves_fall");
+    public static final RegistryObject<SoundEvent> LEAVES_HIT = createSoundEvent("leaves_hit");
+    public static final RegistryObject<SoundEvent> LEAVES_PLACE = createSoundEvent("leaves_place");
+    public static final RegistryObject<SoundEvent> LEAVES_STEP = createSoundEvent("leaves_step");
+    public static final RegistryObject<SoundEvent> MINESHAFT_SPOOK = createSoundEvent("mineshaft_spook");
+    public static final RegistryObject<SoundEvent> MONSTER_DEATH = createSoundEvent("monster_death");
+    public static final RegistryObject<SoundEvent> MONSTER_DEMATERIALIZE = createSoundEvent("monster_dematerialize");
+    public static final RegistryObject<SoundEvent> MONSTER_HURT = createSoundEvent("monster_hurt");
+    public static final RegistryObject<SoundEvent> MONSTER_IDLE = createSoundEvent("monster_idle");
+    public static final RegistryObject<SoundEvent> MONSTER_MATERIALIZE = createSoundEvent("monster_materialize");
+    public static final RegistryObject<SoundEvent> MONSTER_SCREAM = createSoundEvent("monster_scream");
+    public static final RegistryObject<SoundEvent> MONSTER_STARE = createSoundEvent("monster_stare");
+    public static final RegistryObject<SoundEvent> MONSTER_SURGE = createSoundEvent("monster_surge");
+    public static final RegistryObject<SoundEvent> MONSTER_TELEPORT = createSoundEvent("monster_teleport");
+    public static final RegistryObject<SoundEvent> MONSTER_VANISH = createSoundEvent("monster_vanish");
+    public static final RegistryObject<SoundEvent> MUSHROOM_BREAK = createSoundEvent("mushroom_break");
+    public static final RegistryObject<SoundEvent> MUSHROOM_FALL = createSoundEvent("mushroom_fall");
+    public static final RegistryObject<SoundEvent> MUSHROOM_HIT = createSoundEvent("mushroom_hit");
+    public static final RegistryObject<SoundEvent> MUSHROOM_PLACE = createSoundEvent("mushroom_place");
+    public static final RegistryObject<SoundEvent> MUSHROOM_STEP = createSoundEvent("mushroom_step");
+    public static final RegistryObject<SoundEvent> ORB_CHARGE = createSoundEvent("orb_charge");
+    public static final RegistryObject<SoundEvent> ORB_DEATH = createSoundEvent("orb_death");
+    public static final RegistryObject<SoundEvent> ORB_DESPAWN = createSoundEvent("orb_despawn");
+    public static final RegistryObject<SoundEvent> ORB_FORCE_FIELD_BURST = createSoundEvent("orb_force_field_burst");
+    public static final RegistryObject<SoundEvent> ORB_HURT = createSoundEvent("orb_hurt");
+    public static final RegistryObject<SoundEvent> ORB_IDLE = createSoundEvent("orb_idle");
+    public static final RegistryObject<SoundEvent> ORB_PULSE_IMPACT = createSoundEvent("orb_pulse_impact");
+    public static final RegistryObject<SoundEvent> ORB_SHOOT = createSoundEvent("orb_shoot");
+    public static final RegistryObject<SoundEvent> ORB_SPAWN = createSoundEvent("orb_spawn");
+    public static final RegistryObject<SoundEvent> PET_TELEPORT = createSoundEvent("pet_teleport");
+    public static final RegistryObject<SoundEvent> PIG_EAT = createSoundEvent("pig_eat");
+    public static final RegistryObject<SoundEvent> SHARD_IMPACT = createSoundEvent("shard_impact");
+    public static final RegistryObject<SoundEvent> SPECIAL_SCORE = createSoundEvent("special_score");
+    public static final RegistryObject<SoundEvent> STAR_IDLE = createSoundEvent("star_idle");
+    public static final RegistryObject<SoundEvent> STATIC_BUZZ = createSoundEvent("static_buzz");
+    public static final RegistryObject<SoundEvent> STATIC_PORTAL_AMBIENT = createSoundEvent("static_portal_ambient");
+    public static final RegistryObject<SoundEvent> STATIC_PORTAL_OPEN = createSoundEvent("static_portal_open");
+    public static final RegistryObject<SoundEvent> STONE_PICKAXE_BLOCK_REMOVE = createSoundEvent("stone_pickaxe_block_remove");
+    public static final RegistryObject<SoundEvent> STONE_PICKAXE_BLOCK_RESTORE = createSoundEvent("stone_pickaxe_block_restore");
+    public static final RegistryObject<SoundEvent> STONE_PICKAXE_REGROW_START = createSoundEvent("stone_pickaxe_regrow_start");
+    public static final RegistryObject<SoundEvent> STEVE_HURT = createSoundEvent("steve_hurt");
+    public static final RegistryObject<SoundEvent> SUBWOOFER_BOOM = createSoundEvent("subwoofer_boom");
+    public static final RegistryObject<SoundEvent> TELEPORT_SUCCESS = createSoundEvent("teleport_success");
+    public static final RegistryObject<SoundEvent> TORCH_BURN_OFF = createSoundEvent("torch_burn_off");
+    public static final RegistryObject<SoundEvent> WOLF_EAT = createSoundEvent("wolf_eat");
+    public static final RegistryObject<SoundEvent> ZIPLINE_ATTACH = createSoundEvent("zipline_attach");
+    public static final RegistryObject<SoundEvent> ZIPLINE_DETACH = createSoundEvent("zipline_detach");
+
+    @SuppressWarnings("removal")
+    private static RegistryObject<SoundEvent> createSoundEvent(final String soundName) {
+        return SOUND_EVENTS.register(soundName, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(CoralineSystems.MOD_ID, soundName)));
+    }
+
+    public static void register(IEventBus eventBus) {
+        SOUND_EVENTS.register(eventBus);
+    }
+}

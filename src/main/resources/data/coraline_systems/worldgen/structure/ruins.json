@@ -1,0 +1,7 @@
+{
+  "type": "coraline_systems:ruins",
+  "biomes": "#rediscovered:is_skylands",
+  "step": "raw_generation",
+  "terrain_adaptation": "none",
+  "spawn_overrides": {}
+}

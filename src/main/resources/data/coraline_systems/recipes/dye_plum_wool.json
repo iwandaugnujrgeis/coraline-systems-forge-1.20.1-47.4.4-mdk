@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "group": "wool",
+  "pattern": [
+    "AAA",
+    "ABA",
+    "AAA"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:white_wool"
+    },
+    "B": {
+      "item": "coraline_systems:plum_dye"
+    }
+  },
+  "result": {
+    "item": "coraline_systems:plum_wool",
+    "count": 8
+  }
+}

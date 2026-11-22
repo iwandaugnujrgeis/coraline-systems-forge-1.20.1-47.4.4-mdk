@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smelting",
+  "ingredient": {
+    "item": "coraline_systems:raw_venison"
+  },
+  "result": "coraline_systems:cooked_venison",
+  "experience": 0.35,
+  "cookingtime": 200
+}

@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:stonecutting",
+  "group": "terracotta_slab",
+  "count": 2,
+  "ingredient": {
+    "item": "coraline_systems:plum_terracotta"
+  },
+  "result": "coraline_systems:plum_terracotta_slab"
+}

@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:stonecutting",
+  "group": "terracotta_slab",
+  "count": 2,
+  "ingredient": {
+    "item": "coraline_systems:rose_terracotta"
+  },
+  "result": "coraline_systems:rose_terracotta_slab"
+}

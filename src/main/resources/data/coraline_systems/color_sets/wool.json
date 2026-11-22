@@ -1,0 +1,53 @@
+{
+  "id": "minecraft:wool",
+  "colors": {
+    "bright_green": {
+      "block": "coraline_systems:bright_green_wool",
+      "item": "coraline_systems:bright_green_wool"
+    },
+    "spring_green": {
+      "block": "coraline_systems:spring_green_wool",
+      "item": "coraline_systems:spring_green_wool"
+    },
+    "sky_blue": {
+      "block": "coraline_systems:sky_blue_wool",
+      "item": "coraline_systems:sky_blue_wool"
+    },
+    "slate_blue": {
+      "block": "coraline_systems:slate_blue_wool",
+      "item": "coraline_systems:slate_blue_wool"
+    },
+    "lavender": {
+      "block": "coraline_systems:lavender_wool",
+      "item": "coraline_systems:lavender_wool"
+    },
+    "rose": {
+      "block": "coraline_systems:rose_wool",
+      "item": "coraline_systems:rose_wool"
+    },
+    "wine": {
+      "block": "coraline_systems:wine_wool",
+      "item": "coraline_systems:wine_wool"
+    },
+    "coral": {
+      "block": "coraline_systems:coral_wool",
+      "item": "coraline_systems:coral_wool"
+    },
+    "phtalo": {
+      "block": "coraline_systems:phtalo_wool",
+      "item": "coraline_systems:phtalo_wool"
+    },
+    "plum": {
+      "block": "coraline_systems:plum_wool",
+      "item": "coraline_systems:plum_wool"
+    },
+    "toxic_yellow": {
+      "block": "coraline_systems:toxic_yellow_wool",
+      "item": "coraline_systems:toxic_yellow_wool"
+    },
+    "navy_blue": {
+      "block": "coraline_systems:navy_blue_wool",
+      "item": "coraline_systems:navy_blue_wool"
+    }
+  }
+}

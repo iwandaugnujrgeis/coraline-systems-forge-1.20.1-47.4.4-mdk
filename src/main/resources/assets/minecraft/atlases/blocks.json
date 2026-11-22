@@ -1,0 +1,8 @@
+{
+  "sources": [
+    {
+      "type": "single",
+      "resource": "coraline_systems:entity/orb/shell"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "values": [
+    "coraline_systems:radiant_leaves",
+    "atmospheric:grimwood_log",
+    "atmospheric:grimwood",
+    "atmospheric:stripped_grimwood_log",
+    "atmospheric:stripped_grimwood",
+    "atmospheric:grimwood_planks",
+    "atmospheric:grimwood_stairs",
+    "atmospheric:grimwood_slab",
+    "atmospheric:grimwood_fence",
+    "atmospheric:grimwood_fence_gate",
+    "atmospheric:grimwood_door",
+    "atmospheric:grimwood_trapdoor"
+  ]
+}

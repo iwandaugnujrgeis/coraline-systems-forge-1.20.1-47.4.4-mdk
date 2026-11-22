@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "group": "carpet",
+  "ingredients": [
+    {
+      "item": "coraline_systems:toxic_yellow_dye"
+    },
+    {
+      "item": "minecraft:white_carpet"
+    }
+  ],
+  "result": {
+    "item": "coraline_systems:toxic_yellow_carpet"
+  }
+}

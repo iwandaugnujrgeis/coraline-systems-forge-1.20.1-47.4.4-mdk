@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/template_wall_side_tall",
+  "textures": {
+    "wall": "coraline_systems:block/slate_blue_terracotta"
+  }
+}

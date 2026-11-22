@@ -1,0 +1,53 @@
+{
+  "id": "minecraft:carpet",
+  "colors": {
+    "bright_green": {
+      "block": "coraline_systems:bright_green_carpet",
+      "item": "coraline_systems:bright_green_carpet"
+    },
+    "spring_green": {
+      "block": "coraline_systems:spring_green_carpet",
+      "item": "coraline_systems:spring_green_carpet"
+    },
+    "sky_blue": {
+      "block": "coraline_systems:sky_blue_carpet",
+      "item": "coraline_systems:sky_blue_carpet"
+    },
+    "slate_blue": {
+      "block": "coraline_systems:slate_blue_carpet",
+      "item": "coraline_systems:slate_blue_carpet"
+    },
+    "lavender": {
+      "block": "coraline_systems:lavender_carpet",
+      "item": "coraline_systems:lavender_carpet"
+    },
+    "rose": {
+      "block": "coraline_systems:rose_carpet",
+      "item": "coraline_systems:rose_carpet"
+    },
+    "wine": {
+      "block": "coraline_systems:wine_carpet",
+      "item": "coraline_systems:wine_carpet"
+    },
+    "coral": {
+      "block": "coraline_systems:coral_carpet",
+      "item": "coraline_systems:coral_carpet"
+    },
+    "phtalo": {
+      "block": "coraline_systems:phtalo_carpet",
+      "item": "coraline_systems:phtalo_carpet"
+    },
+    "plum": {
+      "block": "coraline_systems:plum_carpet",
+      "item": "coraline_systems:plum_carpet"
+    },
+    "toxic_yellow": {
+      "block": "coraline_systems:toxic_yellow_carpet",
+      "item": "coraline_systems:toxic_yellow_carpet"
+    },
+    "navy_blue": {
+      "block": "coraline_systems:navy_blue_carpet",
+      "item": "coraline_systems:navy_blue_carpet"
+    }
+  }
+}

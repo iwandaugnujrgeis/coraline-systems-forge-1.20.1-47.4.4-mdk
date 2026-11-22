@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/template_torch",
+  "textures": {
+    "particle": "coraline_systems:block/burnt_torch",
+    "torch": "coraline_systems:block/burnt_torch"
+  }
+}

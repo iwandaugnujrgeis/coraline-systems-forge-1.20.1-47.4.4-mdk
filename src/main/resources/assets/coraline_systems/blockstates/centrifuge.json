@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "activated=false": {
+      "model": "coraline_systems:block/centrifuge"
+    },
+    "activated=true": {
+      "model": "coraline_systems:block/centrifuge_on"
+    }
+  }
+}

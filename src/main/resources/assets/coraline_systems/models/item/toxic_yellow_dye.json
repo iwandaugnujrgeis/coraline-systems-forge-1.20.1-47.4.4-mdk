@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "coraline_systems:item/toxic_yellow_dye"
+  }
+}

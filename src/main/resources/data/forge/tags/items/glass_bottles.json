@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "coraline_systems:milk_bottle",
+    "coraline_systems:wine_bottle",
+    "coraline_systems:kombucha_bottle",
+    "coraline_systems:tea_bottle",
+    "coraline_systems:dregs_bottle",
+    "coraline_systems:mulberry_juice_bottle"
+  ]
+}

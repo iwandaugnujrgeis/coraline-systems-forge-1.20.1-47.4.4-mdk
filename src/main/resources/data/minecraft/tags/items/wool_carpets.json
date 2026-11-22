@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "values": [
+    "coraline_systems:bright_green_carpet",
+    "coraline_systems:spring_green_carpet",
+    "coraline_systems:sky_blue_carpet",
+    "coraline_systems:slate_blue_carpet",
+    "coraline_systems:lavender_carpet",
+    "coraline_systems:rose_carpet",
+    "coraline_systems:wine_carpet",
+    "coraline_systems:coral_carpet",
+    "coraline_systems:phtalo_carpet",
+    "coraline_systems:plum_carpet",
+    "coraline_systems:toxic_yellow_carpet",
+    "coraline_systems:navy_blue_carpet"
+  ]
+}

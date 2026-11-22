@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:stonecutting",
+  "group": "terracotta_wall",
+  "count": 1,
+  "ingredient": {
+    "item": "coraline_systems:bright_green_terracotta"
+  },
+  "result": "coraline_systems:bright_green_terracotta_wall"
+}

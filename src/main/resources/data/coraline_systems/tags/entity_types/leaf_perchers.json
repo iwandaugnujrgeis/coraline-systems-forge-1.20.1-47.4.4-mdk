@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:allay",
+    "minecraft:bat",
+    "alexsmobs:blue_jay",
+    "alexsmobs:crow",
+    "alexsmobs:hummingbird",
+    "minecraft:parrot",
+    "alexsmobs:sugar_glider",
+    "alexsmobs:potoo"
+  ]
+}

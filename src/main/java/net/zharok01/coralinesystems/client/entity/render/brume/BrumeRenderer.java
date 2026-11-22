@@ -1,0 +1,25 @@
+package net.zharok01.coralinesystems.client.entity.render.brume;
+
+import net.minecraft.client.model.PlayerModel;
+import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.MobRenderer;
+import net.minecraft.resources.ResourceLocation;
+import net.zharok01.coralinesystems.CoralineSystems;
+import net.zharok01.coralinesystems.entity.BrumeEntity;
+import org.jetbrains.annotations.NotNull;
+
+public class BrumeRenderer extends MobRenderer<BrumeEntity, PlayerModel<BrumeEntity>> {
+
+    @SuppressWarnings("removal")
+    private static final ResourceLocation TEXTURE = new ResourceLocation(CoralineSystems.MOD_ID, "textures/entity/brume/brume.png");
+
+    public BrumeRenderer(EntityRendererProvider.Context context) {
+        super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5f);
+    }
+
+    @Override
+    public @NotNull ResourceLocation getTextureLocation(@NotNull BrumeEntity entity) {
+        return TEXTURE;
+    }
+}

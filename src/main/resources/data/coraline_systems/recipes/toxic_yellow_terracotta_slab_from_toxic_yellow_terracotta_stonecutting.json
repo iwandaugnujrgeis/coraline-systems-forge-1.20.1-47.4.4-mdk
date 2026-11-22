@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:stonecutting",
+  "group": "terracotta_slab",
+  "count": 2,
+  "ingredient": {
+    "item": "coraline_systems:toxic_yellow_terracotta"
+  },
+  "result": "coraline_systems:toxic_yellow_terracotta_slab"
+}

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "spring_green_dye",
+  "ingredients": [
+    {
+      "item": "coraline_systems:phtalo_dye"
+    },
+    {
+      "item": "minecraft:white_dye"
+    }
+  ],
+  "result": {
+    "count": 2,
+    "item": "coraline_systems:spring_green_dye"
+  }
+}

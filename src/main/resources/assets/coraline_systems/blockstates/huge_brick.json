@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "coraline_systems:block/huge_brick_1"
+      },
+      {
+        "model": "coraline_systems:block/huge_brick_2"
+      }
+    ]
+  }
+}

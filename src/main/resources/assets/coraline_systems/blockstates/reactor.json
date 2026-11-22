@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=false": {
+      "model": "coraline_systems:block/reactor"
+    },
+    "active=true": {
+      "model": "coraline_systems:block/reactor_on"
+    }
+  }
+}

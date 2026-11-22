@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:random_selector",
+  "config": {
+    "default": "coraline_systems:fallen_tree_oak_checked",
+    "features": [
+      {
+        "chance": 0.6,
+        "feature": "coraline_systems:fallen_tree_birch_checked"
+      }
+    ]
+  }
+}

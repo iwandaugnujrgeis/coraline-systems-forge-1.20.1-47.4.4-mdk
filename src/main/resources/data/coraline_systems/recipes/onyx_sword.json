@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "combat",
+  "pattern": [
+    "O",
+    "O",
+    "S"
+  ],
+  "key": {
+    "O": {
+      "item": "coralinesystems:onyx"
+    },
+    "S": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "item": "coralinesystems:onyx_sword",
+    "count": 1
+  }
+}

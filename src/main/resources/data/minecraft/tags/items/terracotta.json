@@ -1,0 +1,53 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "coraline_systems:bright_green_terracotta",
+      "required": false
+    },
+    {
+      "id": "coraline_systems:spring_green_terracotta",
+      "required": false
+    },
+    {
+      "id": "coraline_systems:sky_blue_terracotta",
+      "required": false
+    },
+    {
+      "id": "coraline_systems:slate_blue_terracotta",
+      "required": false
+    },
+    {
+      "id": "coraline_systems:lavender_terracotta",
+      "required": false
+    },
+    {
+      "id": "coraline_systems:rose_terracotta",
+      "required": false
+    },
+    {
+      "id": "coraline_systems:wine_terracotta",
+      "required": false
+    },
+    {
+      "id": "coraline_systems:coral_terracotta",
+      "required": false
+    },
+    {
+      "id": "coraline_systems:phtalo_terracotta",
+      "required": false
+    },
+    {
+      "id": "coraline_systems:plum_terracotta",
+      "required": false
+    },
+    {
+      "id": "coraline_systems:toxic_yellow_terracotta",
+      "required": false
+    },
+    {
+      "id": "coraline_systems:navy_blue_terracotta",
+      "required": false
+    }
+  ]
+}

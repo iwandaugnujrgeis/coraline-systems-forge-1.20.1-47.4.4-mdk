@@ -1,0 +1,15 @@
+{
+  "type": "coraline_systems:rock_salt_patch",
+  "config": {
+    "block": {
+      "Name": "minecraft:calcite"
+    },
+    "radius": {
+      "type": "minecraft:uniform",
+      "value": {
+        "min_inclusive": 2,
+        "max_inclusive": 4
+      }
+    }
+  }
+}

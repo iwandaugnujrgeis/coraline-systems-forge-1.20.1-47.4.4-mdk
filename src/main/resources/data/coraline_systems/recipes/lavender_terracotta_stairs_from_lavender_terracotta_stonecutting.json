@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:stonecutting",
+  "group": "terracotta_stairs",
+  "count": 1,
+  "ingredient": {
+    "item": "coraline_systems:lavender_terracotta"
+  },
+  "result": "coraline_systems:lavender_terracotta_stairs"
+}

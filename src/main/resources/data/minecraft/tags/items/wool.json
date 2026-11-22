@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "values": [
+    "coraline_systems:bright_green_wool",
+    "coraline_systems:spring_green_wool",
+    "coraline_systems:sky_blue_wool",
+    "coraline_systems:slate_blue_wool",
+    "coraline_systems:lavender_wool",
+    "coraline_systems:rose_wool",
+    "coraline_systems:wine_wool",
+    "coraline_systems:coral_wool",
+    "coraline_systems:phtalo_wool",
+    "coraline_systems:plum_wool",
+    "coraline_systems:toxic_yellow_wool",
+    "coraline_systems:navy_blue_wool"
+  ]
+}

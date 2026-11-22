@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "coraline_systems:block/spring_green_terracotta",
+    "side": "coraline_systems:block/spring_green_terracotta",
+    "top": "coraline_systems:block/spring_green_terracotta"
+  }
+}

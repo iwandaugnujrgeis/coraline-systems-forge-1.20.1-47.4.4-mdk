@@ -1,0 +1,57 @@
+{
+  "id": "minecraft:stained_glass",
+  "colors": {
+    "default": {
+      "block": "minecraft:glass",
+      "item": "minecraft:glass"
+    },
+    "bright_green": {
+      "block": "coraline_systems:bright_green_stained_glass",
+      "item": "coraline_systems:bright_green_stained_glass"
+    },
+    "spring_green": {
+      "block": "coraline_systems:spring_green_stained_glass",
+      "item": "coraline_systems:spring_green_stained_glass"
+    },
+    "sky_blue": {
+      "block": "coraline_systems:sky_blue_stained_glass",
+      "item": "coraline_systems:sky_blue_stained_glass"
+    },
+    "slate_blue": {
+      "block": "coraline_systems:slate_blue_stained_glass",
+      "item": "coraline_systems:slate_blue_stained_glass"
+    },
+    "lavender": {
+      "block": "coraline_systems:lavender_stained_glass",
+      "item": "coraline_systems:lavender_stained_glass"
+    },
+    "rose": {
+      "block": "coraline_systems:rose_stained_glass",
+      "item": "coraline_systems:rose_stained_glass"
+    },
+    "wine": {
+      "block": "coraline_systems:wine_stained_glass",
+      "item": "coraline_systems:wine_stained_glass"
+    },
+    "coral": {
+      "block": "coraline_systems:coral_stained_glass",
+      "item": "coraline_systems:coral_stained_glass"
+    },
+    "phtalo": {
+      "block": "coraline_systems:phtalo_stained_glass",
+      "item": "coraline_systems:phtalo_stained_glass"
+    },
+    "plum": {
+      "block": "coraline_systems:plum_stained_glass",
+      "item": "coraline_systems:plum_stained_glass"
+    },
+    "toxic_yellow": {
+      "block": "coraline_systems:toxic_yellow_stained_glass",
+      "item": "coraline_systems:toxic_yellow_stained_glass"
+    },
+    "navy_blue": {
+      "block": "coraline_systems:navy_blue_stained_glass",
+      "item": "coraline_systems:navy_blue_stained_glass"
+    }
+  }
+}

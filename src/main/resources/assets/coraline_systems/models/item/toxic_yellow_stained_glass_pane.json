@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "coraline_systems:block/toxic_yellow_stained_glass"
+  }
+}

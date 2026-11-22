@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:cod",
+    "alexsmobs:catfish",
+    "rediscovered:fish",
+    "alexsmobs:flying_fish",
+    "caverns_and_chasms:cavefish",
+    "minecraft:salmon",
+    "minecraft:pufferfish",
+    "minecraft:tropical_fish"
+  ]
+}

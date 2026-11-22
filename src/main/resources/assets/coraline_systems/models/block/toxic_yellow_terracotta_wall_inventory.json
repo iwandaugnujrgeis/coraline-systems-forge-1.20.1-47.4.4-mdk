@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/wall_inventory",
+  "textures": {
+    "wall": "coraline_systems:block/toxic_yellow_terracotta"
+  }
+}

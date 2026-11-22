@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "values": [
+    "coraline_systems:bright_green_dye",
+    "coraline_systems:spring_green_dye",
+    "coraline_systems:sky_blue_dye",
+    "coraline_systems:slate_blue_dye",
+    "coraline_systems:lavender_dye",
+    "coraline_systems:rose_dye",
+    "coraline_systems:wine_dye",
+    "coraline_systems:coral_dye",
+    "coraline_systems:phtalo_dye",
+    "coraline_systems:plum_dye",
+    "coraline_systems:toxic_yellow_dye",
+    "coraline_systems:navy_blue_dye"
+  ]
+}

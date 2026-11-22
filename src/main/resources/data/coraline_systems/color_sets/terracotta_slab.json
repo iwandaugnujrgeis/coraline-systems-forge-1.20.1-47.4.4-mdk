@@ -1,0 +1,57 @@
+{
+  "id": "clayworks:terracotta_slab",
+  "colors": {
+    "default": {
+      "block": "clayworks:terracotta_slab",
+      "item": "clayworks:terracotta_slab"
+    },
+    "bright_green": {
+      "block": "coraline_systems:bright_green_terracotta_slab",
+      "item": "coraline_systems:bright_green_terracotta_slab"
+    },
+    "spring_green": {
+      "block": "coraline_systems:spring_green_terracotta_slab",
+      "item": "coraline_systems:spring_green_terracotta_slab"
+    },
+    "sky_blue": {
+      "block": "coraline_systems:sky_blue_terracotta_slab",
+      "item": "coraline_systems:sky_blue_terracotta_slab"
+    },
+    "slate_blue": {
+      "block": "coraline_systems:slate_blue_terracotta_slab",
+      "item": "coraline_systems:slate_blue_terracotta_slab"
+    },
+    "lavender": {
+      "block": "coraline_systems:lavender_terracotta_slab",
+      "item": "coraline_systems:lavender_terracotta_slab"
+    },
+    "rose": {
+      "block": "coraline_systems:rose_terracotta_slab",
+      "item": "coraline_systems:rose_terracotta_slab"
+    },
+    "wine": {
+      "block": "coraline_systems:wine_terracotta_slab",
+      "item": "coraline_systems:wine_terracotta_slab"
+    },
+    "coral": {
+      "block": "coraline_systems:coral_terracotta_slab",
+      "item": "coraline_systems:coral_terracotta_slab"
+    },
+    "phtalo": {
+      "block": "coraline_systems:phtalo_terracotta_slab",
+      "item": "coraline_systems:phtalo_terracotta_slab"
+    },
+    "plum": {
+      "block": "coraline_systems:plum_terracotta_slab",
+      "item": "coraline_systems:plum_terracotta_slab"
+    },
+    "toxic_yellow": {
+      "block": "coraline_systems:toxic_yellow_terracotta_slab",
+      "item": "coraline_systems:toxic_yellow_terracotta_slab"
+    },
+    "navy_blue": {
+      "block": "coraline_systems:navy_blue_terracotta_slab",
+      "item": "coraline_systems:navy_blue_terracotta_slab"
+    }
+  }
+}

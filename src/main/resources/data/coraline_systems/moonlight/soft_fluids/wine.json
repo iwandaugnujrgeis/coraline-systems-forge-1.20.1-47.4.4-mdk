@@ -1,0 +1,24 @@
+{
+  "id": "coraline_systems:wine",
+  "color": "#af33b7",
+  "containers": [
+    {
+      "filled": [
+        "coraline_systems:wine_bottle"
+      ],
+      "empty": "minecraft:glass_bottle",
+      "capacity": 1
+    }
+  ],
+  "flowing_texture": "moonlight:block/soft_fluids/potion_flow",
+  "food": {
+    "divider": 1,
+    "item": "coraline_systems:wine_bottle"
+  },
+  "from_mod": "coraline_systems",
+  "preserved_tags_from_item": [
+    "Strength"
+  ],
+  "still_texture": "moonlight:block/soft_fluids/potion_still",
+  "translation_key": "item.coraline_systems.wine_bottle"
+}

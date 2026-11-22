@@ -1,0 +1,24 @@
+package net.zharok01.coralinesystems.client.entity.render.helper;
+
+import net.minecraft.client.model.PlayerModel;
+import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.MobRenderer;
+import net.minecraft.resources.ResourceLocation;
+import net.zharok01.coralinesystems.CoralineSystems;
+import net.zharok01.coralinesystems.entity.HelperEntity;
+import org.jetbrains.annotations.NotNull;
+
+public class HelperRenderer extends MobRenderer<HelperEntity, PlayerModel<HelperEntity>> {
+    public HelperRenderer(EntityRendererProvider.Context context) {
+        super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5f);
+        this.addLayer(new HelperStaticLayer(this));
+    }
+
+    @SuppressWarnings("removal")
+    @Override
+    public @NotNull ResourceLocation getTextureLocation(HelperEntity entity) {
+        return new ResourceLocation(CoralineSystems.MOD_ID,
+                "textures/entity/helper/helper_" + (entity.getSkinId() + 1) + ".png");
+    }
+}

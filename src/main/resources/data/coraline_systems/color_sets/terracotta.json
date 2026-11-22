@@ -1,0 +1,57 @@
+{
+  "id": "minecraft:terracotta",
+  "colors": {
+    "default": {
+      "block": "minecraft:terracotta",
+      "item": "minecraft:terracotta"
+    },
+    "bright_green": {
+      "block": "coraline_systems:bright_green_terracotta",
+      "item": "coraline_systems:bright_green_terracotta"
+    },
+    "spring_green": {
+      "block": "coraline_systems:spring_green_terracotta",
+      "item": "coraline_systems:spring_green_terracotta"
+    },
+    "sky_blue": {
+      "block": "coraline_systems:sky_blue_terracotta",
+      "item": "coraline_systems:sky_blue_terracotta"
+    },
+    "slate_blue": {
+      "block": "coraline_systems:slate_blue_terracotta",
+      "item": "coraline_systems:slate_blue_terracotta"
+    },
+    "lavender": {
+      "block": "coraline_systems:lavender_terracotta",
+      "item": "coraline_systems:lavender_terracotta"
+    },
+    "rose": {
+      "block": "coraline_systems:rose_terracotta",
+      "item": "coraline_systems:rose_terracotta"
+    },
+    "wine": {
+      "block": "coraline_systems:wine_terracotta",
+      "item": "coraline_systems:wine_terracotta"
+    },
+    "coral": {
+      "block": "coraline_systems:coral_terracotta",
+      "item": "coraline_systems:coral_terracotta"
+    },
+    "phtalo": {
+      "block": "coraline_systems:phtalo_terracotta",
+      "item": "coraline_systems:phtalo_terracotta"
+    },
+    "plum": {
+      "block": "coraline_systems:plum_terracotta",
+      "item": "coraline_systems:plum_terracotta"
+    },
+    "toxic_yellow": {
+      "block": "coraline_systems:toxic_yellow_terracotta",
+      "item": "coraline_systems:toxic_yellow_terracotta"
+    },
+    "navy_blue": {
+      "block": "coraline_systems:navy_blue_terracotta",
+      "item": "coraline_systems:navy_blue_terracotta"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "replace": false,
+  "values": [
+    "coraline_systems:bright_green_terracotta_wall",
+    "coraline_systems:spring_green_terracotta_wall",
+    "coraline_systems:sky_blue_terracotta_wall",
+    "coraline_systems:slate_blue_terracotta_wall",
+    "coraline_systems:lavender_terracotta_wall",
+    "coraline_systems:rose_terracotta_wall",
+    "coraline_systems:wine_terracotta_wall",
+    "coraline_systems:coral_terracotta_wall",
+    "coraline_systems:phtalo_terracotta_wall",
+    "coraline_systems:plum_terracotta_wall",
+    "coraline_systems:toxic_yellow_terracotta_wall",
+    "coraline_systems:navy_blue_terracotta_wall",
+    "coraline_systems:basalt_wall",
+    "coraline_systems:smooth_basalt_wall",
+    "coraline_systems:polished_basalt_wall"
+  ]
+}

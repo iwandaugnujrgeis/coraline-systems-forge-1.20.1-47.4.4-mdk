@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "coraline_systems:block/altar_bottom",
+    "side": "coraline_systems:block/altar_side",
+    "top": "coraline_systems:block/altar_top"
+  }
+}

@@ -1,0 +1,1187 @@
+{
+  "bag_break": {
+    "subtitle": "subtitles.coraline_systems.bag_break",
+    "sounds": [
+      "supplementaries:block/rope_break_0",
+      "supplementaries:block/rope_break_1",
+      "supplementaries:block/rope_break_2",
+      "supplementaries:block/rope_break_3"
+    ]
+  },
+  "steve_hurt": {
+    "subtitle": "subtitles.coraline_systems.steve_hurt",
+    "sounds": [
+      {
+        "name": "coraline_systems:random/hurt1"
+      }
+    ]
+  },
+  "monster_materialize": {
+    "subtitle": "subtitles.coraline_systems.monster_materialize",
+    "sounds": [
+      "coraline_systems:random/shard_impact1",
+      "coraline_systems:random/shard_impact2",
+      "coraline_systems:random/shard_impact3"
+    ]
+  },
+  "monster_dematerialize": {
+    "subtitle": "subtitles.coraline_systems.monster_dematerialize",
+    "sounds": [
+      "coraline_systems:random/shard_impact1",
+      "coraline_systems:random/shard_impact2",
+      "coraline_systems:random/shard_impact3"
+    ]
+  },
+  "monster_surge": {
+    "sounds": []
+  },
+  "container_access": {
+    "subtitle": "coraline_systems.sound.subtitle.container_access",
+    "sounds": [
+      "coraline_systems:random/container1",
+      "coraline_systems:random/container2"
+    ]
+  },
+  "zipline_attach": {
+    "category": "neutral",
+    "sounds": [
+      "entity/leashknot/place1",
+      "entity/leashknot/place2",
+      "entity/leashknot/place3"
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.zipline_attach"
+  },
+  "zipline_detach": {
+    "category": "neutral",
+    "sounds": [
+      "entity/leashknot/break1",
+      "entity/leashknot/break2",
+      "entity/leashknot/break3"
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.zipline_detach"
+  },
+  "shard_impact": {
+    "category": "neutral",
+    "sounds": [
+      "coraline_systems:random/shard_impact1",
+      "coraline_systems:random/shard_impact2",
+      "coraline_systems:random/shard_impact3"
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.shard_impact"
+  },
+  "cement_hardening": {
+    "category": "neutral",
+    "sounds": [
+      "caverns_and_chasms:block/gunpowder/break1",
+      "caverns_and_chasms:block/gunpowder/break2",
+      "caverns_and_chasms:block/gunpowder/break3",
+      "caverns_and_chasms:block/gunpowder/break4"
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.cement_hardening"
+  },
+  "static_buzz": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:static_buzz1"
+      },
+      {
+        "name": "coraline_systems:static_buzz2"
+      },
+      {
+        "name": "coraline_systems:static_buzz3"
+      },
+      {
+        "name": "coraline_systems:static_buzz4"
+      },
+      {
+        "name": "coraline_systems:static_buzz5"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.helper_buzz"
+  },
+  "helper_idle": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/helper/whistle1",
+        "weight": 2
+      },
+      {
+        "name": "coraline_systems:entity/helper/whistle2",
+        "weight": 2
+      },
+      {
+        "name": "coraline_systems:entity/helper/intermission1",
+        "weight": 3
+      },
+      {
+        "name": "coraline_systems:entity/helper/exhale3",
+        "volume": 0.9,
+        "weight": 5
+      },
+      {
+        "name": "coraline_systems:entity/helper/exhale2",
+        "volume": 0.9,
+        "weight": 5
+      },
+      {
+        "name": "coraline_systems:entity/helper/exhale1",
+        "volume": 0.9,
+        "weight": 5
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.helper_idle"
+  },
+  "helper_hurt": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/helper/exhale3",
+        "volume": 0.9
+      },
+      {
+        "name": "coraline_systems:entity/helper/exhale2",
+        "volume": 0.9
+      },
+      {
+        "name": "coraline_systems:entity/helper/exhale1",
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.helper_hurt"
+  },
+  "helper_death": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/helper/exhale3",
+        "pitch": 0.9,
+        "volume": 0.9
+      },
+      {
+        "name": "coraline_systems:entity/helper/exhale2",
+        "pitch": 0.8,
+        "volume": 0.9
+      },
+      {
+        "name": "coraline_systems:entity/helper/exhale1",
+        "pitch": 0.7,
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.helper_death"
+  },
+  "monster_stare": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "minecraft:ambient/cave/cave14"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.monster_stare"
+  },
+  "monster_idle": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/monster/say1",
+        "weight": 8
+      },
+      {
+        "name": "coraline_systems:entity/monster/say2",
+        "weight": 7
+      },
+      {
+        "name": "coraline_systems:entity/monster/say3",
+        "weight": 10
+      },
+      {
+        "name": "coraline_systems:entity/monster/say4",
+        "weight": 8
+      },
+      {
+        "name": "coraline_systems:entity/monster/say5",
+        "weight": 7
+      },
+      {
+        "name": "coraline_systems:entity/monster/say6",
+        "weight": 8
+      },
+      {
+        "name": "coraline_systems:entity/monster/say7",
+        "weight": 8
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.monster_idle"
+  },
+  "monster_death": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/monster/hurt1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.monster_death"
+  },
+  "monster_vanish": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/monster/vanish1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.monster_vanish"
+  },
+  "monster_hurt": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/monster/hurt1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.monster_hurt"
+  },
+  "monster_scream": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/monster/vanish1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.monster_scream"
+  },
+  "monster_teleport": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/monster/eerie_teleport1"
+      },
+      {
+        "name": "coraline_systems:entity/monster/eerie_teleport2"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.monster_teleport"
+  },
+  "giant_stomp": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/giant/stomp1"
+      },
+      {
+        "name": "coraline_systems:entity/giant/stomp2"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.giant_stomp"
+  },
+  "static_portal_ambient": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:ambient/static_portal_ambient1"
+      },
+      {
+        "name": "coraline_systems:ambient/static_portal_ambient2"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.static_portal_ambient"
+  },
+  "static_portal_open": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "alexsmobs:farseer_beam_0"
+      },
+      {
+        "name": "alexsmobs:farseer_beam_1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.static_portal_open"
+  },
+  "stone_pickaxe_block_remove": {
+    "category": "block",
+    "sounds": [
+      "coraline_systems:random/shard_impact1",
+      "coraline_systems:random/shard_impact2",
+      "coraline_systems:random/shard_impact3"
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.stone_pickaxe_block_remove"
+  },
+  "stone_pickaxe_regrow_start": {
+    "category": "block",
+    "sounds": [
+      "coraline_systems:random/shard_impact1",
+      "coraline_systems:random/shard_impact2",
+      "coraline_systems:random/shard_impact3"
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.stone_pickaxe_regrow_start"
+  },
+  "stone_pickaxe_block_restore": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "minecraft:entity.wolf.step",
+        "type": "event"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.stone_pickaxe_block_restore"
+  },
+  "mineshaft_spook": {
+    "category": "neutral",
+    "sounds": [
+      "ambient/cave/cave1",
+      "ambient/cave/cave10",
+      "ambient/cave/cave11",
+      "ambient/cave/cave16",
+      "ambient/cave/cave17",
+      "ambient/cave/cave18"
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.mineshaft_spook"
+  },
+  "giant_ambient": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/giant/say1"
+      },
+      {
+        "name": "coraline_systems:entity/giant/say2"
+      },
+      {
+        "name": "coraline_systems:entity/giant/say3"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.giant_ambient"
+  },
+  "giant_death": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/giant/say1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.giant_death"
+  },
+  "giant_hurt": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/giant/say1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.giant_hurt"
+  },
+  "vibration_sensor_ping": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/giant/say1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.vibration_sensor_ping"
+  },
+  "detector_activated": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/giant/say1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.detector_activated"
+  },
+  "special_score": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:special_score"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.special_score"
+  },
+  "subwoofer_boom": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:subwoofer_boom",
+        "pitch": 1.0
+      },
+      {
+        "name": "coraline_systems:subwoofer_boom",
+        "pitch": 0.9
+      },
+      {
+        "name": "coraline_systems:subwoofer_boom",
+        "pitch": 0.8
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.subwoofer_boom"
+  },
+  "brume_ambient": {
+    "category": "neutral",
+    "sounds": [
+      "mob/husk/idle1",
+      "mob/husk/idle2",
+      "mob/husk/idle3"
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.brume_ambient"
+  },
+  "brume_death": {
+    "category": "neutral",
+    "sounds": [
+      "mob/husk/death1",
+      "mob/husk/death2"
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.brume_death"
+  },
+  "brume_hurt": {
+    "category": "neutral",
+    "sounds": [
+      "mob/husk/hurt1",
+      "mob/husk/hurt2"
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.brume_hurt"
+  },
+  "pig_eat": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "subtle_effects:entity.cow.eat",
+        "type": "event"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.pig_eat"
+  },
+  "wolf_eat": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "entity.generic.eat",
+        "type": "event"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.wolf_eat"
+  },
+  "orb_charge": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 1.0
+      },
+      {
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 1.1
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.orb_charge"
+  },
+  "orb_shoot": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 0.8
+      },
+      {
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 0.9
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.orb_shoot"
+  },
+  "orb_spawn": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 0.8
+      },
+      {
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 0.9
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.orb_spawn"
+  },
+  "orb_despawn": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/orb/orb_vanish1"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.orb_despawn"
+  },
+  "orb_pulse_impact": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/orb/orb_hit1",
+        "pitch": 0.8
+      },
+      {
+        "name": "coraline_systems:entity/orb/orb_hit1",
+        "pitch": 0.9
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.orb_pulse_impact"
+  },
+  "orb_force_field_burst": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 0.5
+      },
+      {
+        "name": "coraline_systems:entity/orb/pulse_send1",
+        "pitch": 0.6
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.orb_force_field_burst"
+  },
+  "orb_idle": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/orb/say1"
+      },
+      {
+        "name": "coraline_systems:entity/orb/say2"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.orb_idle"
+  },
+  "star_idle": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/star/star_flutter1"
+      },
+      {
+        "name": "coraline_systems:entity/star/star_flutter2"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.star_idle"
+  },
+  "orb_hurt": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/orb/orb_hit1"
+      },
+      {
+        "name": "coraline_systems:entity/orb/orb_hit2"
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.orb_hurt"
+  },
+  "orb_death": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:entity/orb/orb_death1",
+        "pitch": 1.0
+      },
+      {
+        "name": "coraline_systems:entity/orb/orb_death2",
+        "pitch": 1.0
+      },
+      {
+        "name": "coraline_systems:entity/orb/orb_death3",
+        "pitch": 1.0
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.orb_death"
+  },
+  "pet_teleport": {
+    "category": "neutral",
+    "sounds": [
+      {
+        "name": "coraline_systems:random/pet_teleport1",
+        "volume": 0.8,
+        "pitch": 1.0
+      },
+      {
+        "name": "coraline_systems:random/pet_teleport1",
+        "volume": 0.8,
+        "pitch": 0.9
+      },
+      {
+        "name": "coraline_systems:random/pet_teleport1",
+        "volume": 0.8,
+        "pitch": 0.8
+      }
+    ],
+    "subtitle": "coraline_systems.sound.subtitle.pet_teleport"
+  },
+  "mushroom_break": {
+    "category": "block",
+    "subtitle": "subtitles.coraline_systems.block.mushroom_break",
+    "sounds": [
+      "coraline_systems:block/mushroom_break1",
+      "coraline_systems:block/mushroom_break2",
+      "coraline_systems:block/mushroom_break3"
+    ]
+  },
+  "mushroom_step": {
+    "category": "block",
+    "subtitle": "subtitles.coraline_systems.block.mushroom_step",
+    "sounds": [
+      "coraline_systems:block/mushroom_break1",
+      "coraline_systems:block/mushroom_break2",
+      "coraline_systems:block/mushroom_break3"
+    ]
+  },
+  "mushroom_place": {
+    "category": "block",
+    "subtitle": "subtitles.coraline_systems.block.mushroom_place",
+    "sounds": [
+      "coraline_systems:block/mushroom_place1"
+    ]
+  },
+  "mushroom_hit": {
+    "category": "block",
+    "subtitle": "subtitles.coraline_systems.block.mushroom_hit",
+    "sounds": [
+      "coraline_systems:block/mushroom_break1",
+      "coraline_systems:block/mushroom_break2",
+      "coraline_systems:block/mushroom_break3"
+    ]
+  },
+  "mushroom_fall": {
+    "category": "block",
+    "subtitle": "subtitles.coraline_systems.block.mushroom_fall",
+    "sounds": [
+      "coraline_systems:block/mushroom_break1",
+      "coraline_systems:block/mushroom_break2",
+      "coraline_systems:block/mushroom_break3"
+    ]
+  },
+  "cauldron_add_solid": {
+    "category": "block",
+    "subtitle": "coraline_systems.sound.subtitle.add_solid_bloop",
+    "sounds": [
+      {
+        "name": "coraline_systems:ambient/bloop1",
+        "pitch": 0.8,
+        "volume": 1.5
+      },
+      {
+        "name": "coraline_systems:ambient/bloop1",
+        "pitch": 0.9,
+        "volume": 1.5
+      },
+      {
+        "name": "coraline_systems:ambient/bloop1",
+        "pitch": 1.0,
+        "volume": 1.5
+      }
+    ]
+  },
+  "cauldron_add_culture": {
+    "category": "block",
+    "subtitle": "coraline_systems.sound.subtitle.add_culture_fizz",
+    "sounds": [
+      {
+        "name": "coraline_systems:random/culture_add1",
+        "pitch": 0.8,
+        "volume": 1.5
+      },
+      {
+        "name": "coraline_systems:random/culture_add1",
+        "pitch": 0.9,
+        "volume": 1.5
+      },
+      {
+        "name": "coraline_systems:random/culture_add1",
+        "pitch": 1.0,
+        "volume": 1.5
+      }
+    ]
+  },
+  "cauldron_bubbling": {
+    "category": "block",
+    "subtitle": "coraline_systems.sound.subtitle.cauldron_bubble_ambient",
+    "sounds": [
+      {
+        "name": "coraline_systems:ambient/bubbling1",
+        "pitch": 1.0,
+        "volume": 1.0
+      },
+      {
+        "name": "coraline_systems:ambient/bubbling1",
+        "pitch": 0.9,
+        "volume": 1.0
+      },
+      {
+        "name": "coraline_systems:ambient/bubbling1",
+        "pitch": 0.8,
+        "volume": 1.0
+      }
+    ]
+  },
+  "cauldron_brew_success": {
+    "category": "block",
+    "subtitle": "coraline_systems.sound.subtitle.brew_success",
+    "sounds": [
+      {
+        "name": "coraline_systems:random/brewing_end1",
+        "pitch": 1.0,
+        "volume": 1.0
+      },
+      {
+        "name": "coraline_systems:random/brewing_end1",
+        "pitch": 0.9,
+        "volume": 1.0
+      }
+    ]
+  },
+  "cauldron_brew_spoiled": {
+    "category": "block",
+    "subtitle": "coraline_systems.sound.subtitle.brew_fail",
+    "sounds": [
+      "random/fizz"
+    ]
+  },
+  "torch_burn_off": {
+    "category": "block",
+    "subtitle": "coraline_systems.sound.subtitle.torch_burn_off",
+    "sounds": [
+      {
+        "name": "caverns_and_chasms:block.sparkler.break",
+        "type": "event",
+        "volume": 1.0,
+        "pitch": 0.9
+      }
+    ]
+  },
+  "leaves_break": {
+    "category": "block",
+    "subtitle": "subtitles.block.generic.break",
+    "sounds": [
+      {
+        "name": "minecraft:block/azalea_leaves/break1",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break1",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break2",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break2",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break3",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break3",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break4",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break4",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break5",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break5",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break6",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break6",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break7",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break7",
+        "pitch": 0.92,
+        "volume": 0.85
+      }
+    ]
+  },
+  "leaves_fall": {
+    "category": "block",
+    "sounds": [
+      "minecraft:block/azalea_leaves/step1",
+      "minecraft:block/azalea_leaves/step2",
+      "minecraft:block/azalea_leaves/step3",
+      "minecraft:block/azalea_leaves/step4",
+      "minecraft:block/azalea_leaves/step5"
+    ]
+  },
+  "leaves_hit": {
+    "category": "block",
+    "subtitle": "subtitles.block.generic.hit",
+    "sounds": [
+      {
+        "name": "minecraft:block/azalea_leaves/step1",
+        "volume": 0.8
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/step2",
+        "volume": 0.8
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/step3",
+        "volume": 0.8
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/step4",
+        "volume": 0.8
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/step5",
+        "volume": 0.8
+      }
+    ]
+  },
+  "leaves_place": {
+    "category": "block",
+    "subtitle": "subtitles.block.generic.place",
+    "sounds": [
+      {
+        "name": "minecraft:block/azalea_leaves/break1",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break1",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break2",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break2",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break3",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break3",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break4",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break4",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break5",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break5",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break6",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break6",
+        "pitch": 0.92,
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break7",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/break7",
+        "pitch": 0.92,
+        "volume": 0.85
+      }
+    ]
+  },
+  "leaves_step": {
+    "category": "block",
+    "subtitle": "subtitles.block.generic.footsteps",
+    "sounds": [
+      {
+        "name": "minecraft:block/azalea_leaves/step1",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/step2",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/step3",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/step4",
+        "volume": 0.85
+      },
+      {
+        "name": "minecraft:block/azalea_leaves/step5",
+        "volume": 0.85
+      }
+    ]
+  },
+  "dog_howl": {
+    "subtitle": "coraline_systems.sound.subtitle.dog_howl",
+    "sounds": [
+      "mob/wolf/howl1",
+      "mob/wolf/howl2"
+    ]
+  },
+  "bear_dismount": {
+    "subtitle": "coraline_systems.sound.subtitle.bear_dismount",
+    "sounds": [
+      {
+        "name": "alexsmobs:grizzly_bear_hurt",
+        "type": "event"
+      }
+    ]
+  },
+  "cauldron_dregs_ambient": {
+    "category": "block",
+    "subtitle": "coraline_systems.sound.subtitle.cauldron_dregs_ambient",
+    "sounds": [
+      {
+        "name": "mob/frog/tongue1",
+        "volume": 0.6
+      },
+      {
+        "name": "mob/frog/tongue1",
+        "volume": 0.7
+      },
+      {
+        "name": "mob/frog/tongue1",
+        "volume": 0.8
+      },
+      {
+        "name": "mob/frog/tongue1",
+        "volume": 0.9
+      }
+    ]
+  },
+  "cauldron_kombucha_ambient": {
+    "category": "block",
+    "subtitle": "coraline_systems.sound.subtitle.cauldron_kombucha_ambient",
+    "sounds": [
+      {
+        "name": "coraline_systems:ambient/fresh_fizz1",
+        "pitch": 0.8
+      },
+      {
+        "name": "coraline_systems:ambient/fresh_fizz1",
+        "pitch": 0.9
+      },
+      {
+        "name": "coraline_systems:ambient/fresh_fizz1",
+        "pitch": 1.0
+      }
+    ]
+  },
+  "cart_storage_hit": {
+    "subtitle": "coraline_systems.sound.subtitle.cart_storage_hit",
+    "sounds": [
+      {
+        "name": "caverns_and_chasms:block/slaughter_rail/extend",
+        "pitch": 1.0
+      },
+      {
+        "name": "caverns_and_chasms:block/slaughter_rail/extend",
+        "pitch": 0.9
+      },
+      {
+        "name": "caverns_and_chasms:block/slaughter_rail/extend",
+        "pitch": 0.8
+      }
+    ]
+  },
+  "cart_storage_break": {
+    "subtitle": "coraline_systems.sound.subtitle.cart_storage_break",
+    "sounds": [
+      {
+        "name": "caverns_and_chasms:block/halt_rail/halt"
+      }
+    ]
+  },
+  "cart_storage_open": {
+    "subtitle": "coraline_systems.sound.subtitle.cart_storage_open",
+    "sounds": [
+      {
+        "name": "caverns_and_chasms:block/halt_rail/extend",
+        "volume": 1.5,
+        "pitch": 1.0
+      },
+      {
+        "name": "caverns_and_chasms:block/halt_rail/extend",
+        "volume": 1.5,
+        "pitch": 0.9
+      },
+      {
+        "name": "caverns_and_chasms:block/halt_rail/extend",
+        "volume": 1.5,
+        "pitch": 0.8
+      }
+    ]
+  },
+  "cart_storage_close": {
+    "subtitle": "coraline_systems.sound.subtitle.cart_storage_close",
+    "sounds": [
+      {
+        "name": "caverns_and_chasms:block/halt_rail/contract",
+        "volume": 1.5,
+        "pitch": 1.0
+      },
+      {
+        "name": "caverns_and_chasms:block/halt_rail/contract",
+        "volume": 1.5,
+        "pitch": 0.9
+      },
+      {
+        "name": "caverns_and_chasms:block/halt_rail/contract",
+        "volume": 1.5,
+        "pitch": 0.8
+      }
+    ]
+  },
+  "bird_idle": {
+    "category": "neutral",
+    "subtitle": "subtitle.coraline_systems.bird_idle",
+    "sounds": [
+      "coraline_systems:entity/bird/idle"
+    ]
+  },
+  "bird_hurt": {
+    "category": "neutral",
+    "subtitle": "subtitle.coraline_systems.bird_hurt",
+    "sounds": [
+      "coraline_systems:entity/bird/hurt"
+    ]
+  },
+  "bird_death": {
+    "category": "neutral",
+    "subtitle": "subtitle.coraline_systems.bird_death",
+    "sounds": [
+      "coraline_systems:entity/bird/death"
+    ]
+  },
+  "mourning_dove": {
+    "category": "neutral",
+    "subtitle": "subtitle.coraline_systems.mourning_dove",
+    "sounds": [
+      "coraline_systems:entity/bird/idle_dove1"
+    ]
+  },
+  "idle_dove": {
+    "category": "neutral",
+    "subtitle": "subtitle.coraline_systems.idle_dove",
+    "sounds": [
+      "coraline_systems:entity/bird/idle_chickadee1"
+    ]
+  },
+  "drip_blood": {
+    "category": "neutral",
+    "subtitle": "subtitle.coraline_systems.drip_blood",
+    "sounds": [
+      "minecraft:block/pointed_dripstone/drip_lava4"
+    ]
+  },
+  "escape": {
+    "category": "neutral",
+    "subtitle": "subtitle.coraline_systems.escape",
+    "sounds": [
+      {
+        "name": "gamma:suspicious/soul_escape1",
+        "volume": 1.0
+      },
+      {
+        "name": "gamma:suspicious/soul_escape2",
+        "volume": 1.0
+      },
+      {
+        "name": "gamma:suspicious/soul_escape3",
+        "volume": 1.0
+      },
+      {
+        "name": "gamma:suspicious/soul_escape4",
+        "volume": 1.0
+      },
+      {
+        "name": "gamma:suspicious/soul_escape5",
+        "volume": 1.0
+      },
+      {
+        "name": "gamma:suspicious/soul_escape6",
+        "volume": 1.0
+      },
+      {
+        "name": "gamma:suspicious/soul_escape7",
+        "volume": 1.0
+      }
+    ]
+  },
+  "death": {
+    "subtitle": "coraline_systems.sound.subtitle.death",
+    "sounds": [
+      {
+        "name": "coraline_systems:random/container_event1",
+        "pitch": 1.0
+      },
+      {
+        "name": "coraline_systems:random/container_event1",
+        "pitch": 0.9
+      },
+      {
+        "name": "coraline_systems:random/container_event1",
+        "pitch": 0.8
+      }
+    ]
+  },
+  "teleport_success": {
+    "subtitle": "subtitles.coraline_systems.teleport_success",
+    "sounds": []
+  },
+  "cave_chimes": {
+    "subtitle": "subtitles.coraline_systems.cave_chimes",
+    "sounds": [
+      {
+        "name": "coraline_systems:ambient/cave_chime1",
+        "volume": 0.6
+      }
+    ]
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "id": "clayworks:terracotta_wall",
+  "colors": {
+    "default": {
+      "block": "clayworks:terracotta_wall",
+      "item": "clayworks:terracotta_wall"
+    },
+    "bright_green": {
+      "block": "coraline_systems:bright_green_terracotta_wall",
+      "item": "coraline_systems:bright_green_terracotta_wall"
+    },
+    "spring_green": {
+      "block": "coraline_systems:spring_green_terracotta_wall",
+      "item": "coraline_systems:spring_green_terracotta_wall"
+    },
+    "sky_blue": {
+      "block": "coraline_systems:sky_blue_terracotta_wall",
+      "item": "coraline_systems:sky_blue_terracotta_wall"
+    },
+    "slate_blue": {
+      "block": "coraline_systems:slate_blue_terracotta_wall",
+      "item": "coraline_systems:slate_blue_terracotta_wall"
+    },
+    "lavender": {
+      "block": "coraline_systems:lavender_terracotta_wall",
+      "item": "coraline_systems:lavender_terracotta_wall"
+    },
+    "rose": {
+      "block": "coraline_systems:rose_terracotta_wall",
+      "item": "coraline_systems:rose_terracotta_wall"
+    },
+    "wine": {
+      "block": "coraline_systems:wine_terracotta_wall",
+      "item": "coraline_systems:wine_terracotta_wall"
+    },
+    "coral": {
+      "block": "coraline_systems:coral_terracotta_wall",
+      "item": "coraline_systems:coral_terracotta_wall"
+    },
+    "phtalo": {
+      "block": "coraline_systems:phtalo_terracotta_wall",
+      "item": "coraline_systems:phtalo_terracotta_wall"
+    },
+    "plum": {
+      "block": "coraline_systems:plum_terracotta_wall",
+      "item": "coraline_systems:plum_terracotta_wall"
+    },
+    "toxic_yellow": {
+      "block": "coraline_systems:toxic_yellow_terracotta_wall",
+      "item": "coraline_systems:toxic_yellow_terracotta_wall"
+    },
+    "navy_blue": {
+      "block": "coraline_systems:navy_blue_terracotta_wall",
+      "item": "coraline_systems:navy_blue_terracotta_wall"
+    }
+  }
+}

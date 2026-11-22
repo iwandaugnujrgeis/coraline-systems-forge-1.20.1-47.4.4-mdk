@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/rail_raised_ne",
+  "textures": {
+    "rail": "coraline_systems:block/maglev_powered_rail_off"
+  }
+}
