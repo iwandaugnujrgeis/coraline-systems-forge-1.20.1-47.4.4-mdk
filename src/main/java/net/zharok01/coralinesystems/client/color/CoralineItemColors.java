@@ -1,8 +1,8 @@
 package net.zharok01.coralinesystems.client.color;
 
 import net.minecraft.client.color.item.ItemColor;
+import net.minecraft.world.item.DyeableLeatherItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.GrassColor;
 import net.zharok01.coralinesystems.block.BrewingCauldronColors;
 import net.zharok01.coralinesystems.item.CoralineFluidUtils;
 import net.zharok01.coralinesystems.util.CoralineTintUtils;
@@ -45,4 +45,10 @@ public final class CoralineItemColors {
     public static final ItemColor TEA = strengthGradient(TEA_START, TEA_END);
     public static final ItemColor KOMBUCHA = flatColor(KOMBUCHA_COLOR);
     public static final ItemColor DREGS = flatColor(DREGS_COLOR);
+    public static final ItemColor BOOK = (ItemStack stack, int tintIndex) -> {
+        if (tintIndex != 1 || !(stack.getItem() instanceof DyeableLeatherItem dyeable)) {
+            return NO_TINT;
+        }
+        return dyeable.getColor(stack);
+    };
 }

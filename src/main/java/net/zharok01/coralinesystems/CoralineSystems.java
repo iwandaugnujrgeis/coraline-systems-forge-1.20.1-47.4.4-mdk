@@ -1,6 +1,7 @@
 package net.zharok01.coralinesystems;
 
 import com.mojang.logging.LogUtils;
+import net.minecraft.core.cauldron.CauldronInteraction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.stats.StatFormatter;
 import net.minecraft.stats.Stats;
@@ -73,6 +74,8 @@ public class CoralineSystems {
         event.enqueueWork(() -> {
             CoralineTriggers.init();
             BrewingCauldronInteractions.bootstrap();
+            CauldronInteraction.WATER.put(Items.WRITABLE_BOOK, CauldronInteraction.DYED_ITEM);
+            CauldronInteraction.WATER.put(Items.WRITTEN_BOOK, CauldronInteraction.DYED_ITEM);
             CentrifugeBlockEntity.registerDispenserBehavior(CoralineItems.ORB.get());
             CoralineBlocks.registerFlammables();
 

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "coraline_systems:item/writable_book_details",
+    "layer1": "coraline_systems:item/writable_book_cover"
+  }
+}

@@ -8,6 +8,7 @@ import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.*;
@@ -182,6 +183,7 @@ public class CoralineClientModEvents {
         event.register(CoralineItemColors.TEA, CoralineItems.TEA_BOTTLE.get());
         event.register(CoralineItemColors.KOMBUCHA, CoralineItems.KOMBUCHA_BOTTLE.get());
         event.register(CoralineItemColors.DREGS, CoralineItems.DREGS_BOTTLE.get());
+        event.register(CoralineItemColors.BOOK, Items.WRITABLE_BOOK, Items.WRITTEN_BOOK);
 
         // event.register(CoralineItemColors.WOOD_SORREL, SweetyGardenModItems.WOOD_SORREL.get());
 
