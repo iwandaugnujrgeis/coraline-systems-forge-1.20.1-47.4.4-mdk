@@ -19,11 +19,8 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.zharok01.coralinesystems.event.static_portal.StaticPortalLinkData;
 import net.zharok01.coralinesystems.event.static_portal.StaticPortalManager;
-import net.zharok01.coralinesystems.event.static_portal.StaticPortalTeleporter;
 import net.zharok01.coralinesystems.registry.CoralineSounds;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Set;
 
 @SuppressWarnings("deprecation")
 public class StaticPortalBlock extends Block {
@@ -53,7 +50,7 @@ public class StaticPortalBlock extends Block {
         if (entity instanceof Player player) {
             if (!player.canChangeDimensions() || player.isPassenger() || player.isVehicle()) return;
 
-            StaticPortalManager.setInPortal(player);
+            StaticPortalManager.setInPortal(player, pos.immutable());
 
             if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
                 int progress = StaticPortalManager.getTicksInPortal(player);
@@ -106,18 +103,8 @@ public class StaticPortalBlock extends Block {
 
     @Override
     public void onRemove(@NotNull BlockState state, Level level, @NotNull BlockPos pos, @NotNull BlockState newState, boolean isMoving) {
-        if (!level.isClientSide() && level instanceof ServerLevel serverLevel) {
-            Set<BlockPos> group = StaticPortalTeleporter.findPortalGroup(serverLevel, pos);
-            if (!group.isEmpty()) {
-                StaticPortalLinkData linkData = StaticPortalLinkData.get(serverLevel);
-                BlockPos sisterSpawn = linkData.getLinkedDestination(pos);
-                linkData.unlinkGroup(group);
-                if (sisterSpawn != null) {
-                    Set<BlockPos> sisterGroup = StaticPortalTeleporter.findPortalGroup(serverLevel, sisterSpawn);
-                    linkData.unlinkGroup(sisterGroup);
-                    linkData.unlinkAllPointingTo(sisterSpawn);
-                }
-            }
+        if (!state.is(newState.getBlock()) && !level.isClientSide() && level instanceof ServerLevel serverLevel) {
+            StaticPortalLinkData.get(serverLevel).unlinkPair(serverLevel.dimension(), pos);
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }

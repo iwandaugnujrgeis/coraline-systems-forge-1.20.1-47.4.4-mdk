@@ -1,5 +1,6 @@
 package net.zharok01.coralinesystems.event.static_portal;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.event.TickEvent;
@@ -24,6 +25,7 @@ public class StaticPortalManager {
         public boolean inPortalThisTick = false;
         public int ticksInPortal = 0;
         public boolean justTeleported = false;
+        public BlockPos coraline$contactPos = null;
     }
 
     private static PortalState getState(Player player) {
@@ -31,8 +33,12 @@ public class StaticPortalManager {
         return states.computeIfAbsent(player.getUUID(), id -> new PortalState());
     }
 
-    public static void setInPortal(Player player) {
-        getState(player).inPortalThisTick = true;
+    public static void setInPortal(Player player, BlockPos contactPos) {
+        PortalState state = getState(player);
+        state.inPortalThisTick = true;
+        if (state.coraline$contactPos == null) {
+            state.coraline$contactPos = contactPos;
+        }
     }
 
     public static int getTicksInPortal(Player player) {
@@ -57,7 +63,7 @@ public class StaticPortalManager {
                     state.justTeleported = true;
 
                     if (!player.level().isClientSide() && player.level() instanceof ServerLevel serverLevel) {
-                        StaticPortalTeleporter.teleportToFarlands(player, serverLevel, player.blockPosition());
+                        StaticPortalTeleporter.teleportToFarlands(player, serverLevel, state.coraline$contactPos);
                         player.setPortalCooldown(PORTAL_COOLDOWN_TICKS);
                     }
                 }
@@ -70,6 +76,7 @@ public class StaticPortalManager {
         }
 
         state.inPortalThisTick = false;
+        state.coraline$contactPos = null;
     }
 
     @SubscribeEvent
@@ -77,5 +84,6 @@ public class StaticPortalManager {
         UUID id = event.getEntity().getUUID();
         SERVER_STATES.remove(id);
         CLIENT_STATES.remove(id);
+        StaticPortalTeleporter.coraline$forgetCooldown(id);
     }
 }

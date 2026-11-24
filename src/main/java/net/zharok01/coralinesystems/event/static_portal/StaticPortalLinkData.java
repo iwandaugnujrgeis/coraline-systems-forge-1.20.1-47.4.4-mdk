@@ -1,11 +1,17 @@
 package net.zharok01.coralinesystems.event.static_portal;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.zharok01.coralinesystems.registry.CoralineBlocks;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -15,55 +21,87 @@ import java.util.Map;
 public class StaticPortalLinkData extends SavedData {
 
     private static final String DATA_NAME = "coraline_portal_links";
+    private static final String TAG_DIMENSION = "Dim";
 
-    private final Map<BlockPos, BlockPos> links = new HashMap<>();
+    private final Map<GlobalPos, BlockPos> links = new HashMap<>();
+    // ASSUMPTION: Legacy coordinate-only links are claimed by the first dimension with a portal at that position.
+    private final Map<BlockPos, BlockPos> coraline$legacyLinks = new HashMap<>();
 
-    public BlockPos getLinkedDestination(BlockPos portalBlock) {
-        return links.get(portalBlock);
-    }
-
-    public boolean isGroupLinked(Collection<BlockPos> group) {
-        for (BlockPos pos : group) {
-            if (links.containsKey(pos)) return true;
+    public BlockPos getLinkedDestination(ServerLevel level, BlockPos portalBlock) {
+        BlockPos destination = links.get(GlobalPos.of(level.dimension(), portalBlock));
+        if (destination == null
+                && coraline$legacyLinks.containsKey(portalBlock)
+                && level.getBlockState(portalBlock).is(CoralineBlocks.STATIC_PORTAL_BLOCK.get())) {
+            destination = coraline$claimLegacy(level.dimension(), portalBlock);
         }
-        return false;
+        return destination;
     }
 
-    public void linkPortals(Collection<BlockPos> groupA, BlockPos spawnForA, Collection<BlockPos> groupB, BlockPos spawnForB) {
-        for (BlockPos pos : groupA) links.put(pos.immutable(), spawnForB.immutable());
-        for (BlockPos pos : groupB) links.put(pos.immutable(), spawnForA.immutable());
+    public void linkPortals(ResourceKey<Level> dimension, Collection<BlockPos> groupA, BlockPos spawnForA, Collection<BlockPos> groupB, BlockPos spawnForB) {
+        for (BlockPos pos : groupA) unlinkPair(dimension, pos);
+        for (BlockPos pos : groupB) unlinkPair(dimension, pos);
+
+        for (BlockPos pos : groupA) links.put(GlobalPos.of(dimension, pos.immutable()), spawnForB.immutable());
+        for (BlockPos pos : groupB) links.put(GlobalPos.of(dimension, pos.immutable()), spawnForA.immutable());
         setDirty();
     }
 
-    public void unlinkGroup(Collection<BlockPos> group) {
-        boolean changed = false;
-        for (BlockPos pos : group) {
-            if (links.remove(pos) != null) changed = true;
+    public void unlinkPair(ResourceKey<Level> dimension, BlockPos portalBlock) {
+        BlockPos destination = links.get(GlobalPos.of(dimension, portalBlock));
+        if (destination == null) {
+            destination = coraline$claimLegacy(dimension, portalBlock);
         }
-        if (changed) setDirty();
+        if (destination == null) return;
+
+        BlockPos returnSpawn = links.get(GlobalPos.of(dimension, destination));
+        if (returnSpawn == null) {
+            returnSpawn = coraline$claimLegacy(dimension, destination);
+        }
+
+        coraline$unlinkAllPointingTo(dimension, destination);
+        if (returnSpawn != null) {
+            coraline$unlinkAllPointingTo(dimension, returnSpawn);
+        }
+        setDirty();
     }
 
-    public void unlinkAllPointingTo(BlockPos destination) {
-        if (links.values().removeIf(pos -> pos.equals(destination))) {
+    private void coraline$unlinkAllPointingTo(ResourceKey<Level> dimension, BlockPos destination) {
+        links.entrySet().removeIf(entry -> entry.getKey().dimension().equals(dimension) && entry.getValue().equals(destination));
+    }
+
+    private BlockPos coraline$claimLegacy(ResourceKey<Level> dimension, BlockPos portalBlock) {
+        BlockPos destination = coraline$legacyLinks.remove(portalBlock);
+        if (destination != null) {
+            links.put(GlobalPos.of(dimension, portalBlock.immutable()), destination);
             setDirty();
         }
+        return destination;
     }
 
     @Override
     public @NotNull CompoundTag save(@NotNull CompoundTag tag) {
         ListTag list = new ListTag();
-        for (Map.Entry<BlockPos, BlockPos> entry : links.entrySet()) {
-            CompoundTag pair = new CompoundTag();
-            pair.putInt("SX", entry.getKey().getX());
-            pair.putInt("SY", entry.getKey().getY());
-            pair.putInt("SZ", entry.getKey().getZ());
-            pair.putInt("DX", entry.getValue().getX());
-            pair.putInt("DY", entry.getValue().getY());
-            pair.putInt("DZ", entry.getValue().getZ());
+        for (Map.Entry<GlobalPos, BlockPos> entry : links.entrySet()) {
+            CompoundTag pair = coraline$writePair(entry.getKey().pos(), entry.getValue());
+            pair.putString(TAG_DIMENSION, entry.getKey().dimension().location().toString());
             list.add(pair);
+        }
+        for (Map.Entry<BlockPos, BlockPos> entry : coraline$legacyLinks.entrySet()) {
+            list.add(coraline$writePair(entry.getKey(), entry.getValue()));
         }
         tag.put("Links", list);
         return tag;
+    }
+
+    private static CompoundTag coraline$writePair(BlockPos source, BlockPos destination) {
+        CompoundTag pair = new CompoundTag();
+        pair.putInt("SX", source.getX());
+        pair.putInt("SY", source.getY());
+        pair.putInt("SZ", source.getZ());
+        pair.putInt("DX", destination.getX());
+        pair.putInt("DY", destination.getY());
+        pair.putInt("DZ", destination.getZ());
+        return pair;
     }
 
     public static StaticPortalLinkData load(CompoundTag tag) {
@@ -72,8 +110,13 @@ public class StaticPortalLinkData extends SavedData {
         for (int i = 0; i < list.size(); i++) {
             CompoundTag pair = list.getCompound(i);
             BlockPos source = new BlockPos(pair.getInt("SX"), pair.getInt("SY"), pair.getInt("SZ"));
-            BlockPos dest = new BlockPos(pair.getInt("DX"), pair.getInt("DY"), pair.getInt("DZ"));
-            data.links.put(source, dest);
+            BlockPos destination = new BlockPos(pair.getInt("DX"), pair.getInt("DY"), pair.getInt("DZ"));
+            if (pair.contains(TAG_DIMENSION, Tag.TAG_STRING)) {
+                ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(pair.getString(TAG_DIMENSION)));
+                data.links.put(GlobalPos.of(dimension, source), destination);
+            } else {
+                data.coraline$legacyLinks.put(source, destination);
+            }
         }
         return data;
     }
