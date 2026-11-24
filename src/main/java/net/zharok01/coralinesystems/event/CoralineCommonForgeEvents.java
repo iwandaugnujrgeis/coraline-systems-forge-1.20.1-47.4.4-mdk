@@ -14,6 +14,7 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.event.entity.living.LivingChangeTargetEvent;
+import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.entity.living.MobSpawnEvent;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -27,6 +28,11 @@ public class CoralineCommonForgeEvents {
 
     private static final SoundEvent SOUL_STEAL_SOUND =
             SoundEvent.createVariableRangeEvent(Objects.requireNonNull(ResourceLocation.tryBuild("gamma", "suspicious.soul_steal")));
+
+    @SubscribeEvent
+    public static void coraline$adjustFallDamageThreshold(LivingFallEvent event) {
+        event.setDistance(Math.max(0.0F, event.getDistance() - 2.0F));
+    }
 
     @SubscribeEvent
     public static void onWolfChangeTarget(LivingChangeTargetEvent event) {
