@@ -462,7 +462,7 @@ public class PigmanTradesMixin {
                         .build(),
                 new PigmanTrades.Trade.Builder()
                         .firstItem(RediscoveredItems.ruby, 8)
-                        .result(AMItemRegistry.SOUL_HEART.get(), 1)
+                        .result(CoralineItems.SOUL_HEART.get(), 1)
                         .maxUses(6).build()
         });
 

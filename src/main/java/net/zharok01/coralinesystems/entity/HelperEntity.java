@@ -1,6 +1,5 @@
 package net.zharok01.coralinesystems.entity;
 
-import com.github.alexthe666.alexsmobs.client.particle.AMParticleRegistry;
 import net.mehvahdjukaar.supplementaries.common.entities.ThrowableBrickEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -38,6 +37,7 @@ import net.minecraft.world.phys.Vec3;
 import net.zharok01.coralinesystems.entity.ai.HelperFleePlayerGoal;
 import net.zharok01.coralinesystems.entity.ai.HelperJumpForJoyGoal;
 import net.zharok01.coralinesystems.event.static_portal.StaticPortalTeleporter;
+import net.zharok01.coralinesystems.registry.CoralineParticles;
 import net.zharok01.coralinesystems.registry.CoralineSounds;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -75,11 +75,7 @@ public class HelperEntity extends Monster implements RangedAttackMob {
                             CoralineSounds.STATIC_BUZZ.get(), this.getSoundSource(), 1.0F, 1.0F);
                 }
 
-                if (this.level() instanceof ServerLevel serverLevel) {
-                    serverLevel.sendParticles(AMParticleRegistry.STATIC_SPARK.get(),
-                            this.getX(), this.getY() + 1.0D, this.getZ(),
-                            10, 0.2, 0.5, 0.2, 0.02);
-                }
+                this.coraline$spawnDarkSmokeBurst(10);
             }
 
             if (this.isGlitching() && this.tickCount % 10 == 0) {
@@ -201,14 +197,18 @@ public class HelperEntity extends Monster implements RangedAttackMob {
                         CoralineSounds.STATIC_BUZZ.get(), this.getSoundSource(), 1.0F, 1.0F);
             }
 
-            if (this.level() instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(AMParticleRegistry.STATIC_SPARK.get(),
-                        this.getX(), this.getY() + 1.0D, this.getZ(),
-                        10, 0.2, 0.5, 0.2, 0.02);
-            }
+            this.coraline$spawnDarkSmokeBurst(10);
         }
 
         return super.hurt(source, amount);
+    }
+
+    private void coraline$spawnDarkSmokeBurst(int count) {
+        if (this.level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(CoralineParticles.DARK_SMOKE.get(),
+                    this.getX(), this.getY() + 1.0D, this.getZ(),
+                    count, 0.35D, 0.9D, 0.35D, 0.05D);
+        }
     }
 
     public void makeStuckInBlock(BlockState state, @NotNull Vec3 motionMultiplier) {

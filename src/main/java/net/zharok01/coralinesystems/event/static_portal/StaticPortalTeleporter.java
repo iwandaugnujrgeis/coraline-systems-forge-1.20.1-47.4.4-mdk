@@ -181,9 +181,7 @@ public class StaticPortalTeleporter {
 
         float invertedYaw = entity.getYRot() + 180.0F;
 
-        entity.teleportToWithTicket(spawnX, spawnY, spawnZ);
-        entity.setYRot(invertedYaw);
-        entity.setYHeadRot(invertedYaw);
+        entity.teleportTo(level, spawnX, spawnY, spawnZ, Set.of(), invertedYaw, entity.getXRot());
 
         level.playSound(null, spawnX, spawnY, spawnZ,
                 CoralineSounds.TELEPORT_SUCCESS.get(),

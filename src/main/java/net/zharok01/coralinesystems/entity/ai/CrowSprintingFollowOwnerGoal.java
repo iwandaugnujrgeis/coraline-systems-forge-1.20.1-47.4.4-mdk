@@ -4,12 +4,10 @@ import com.github.alexthe666.alexsmobs.AlexsMobs;
 import com.github.alexthe666.alexsmobs.entity.EntityCrow;
 import com.github.alexthe666.alexsmobs.message.MessageCrowMountPlayer;
 import com.github.alexthe666.alexsmobs.misc.AMBlockPos;
-import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.phys.Vec3;
-import net.zharok01.coralinesystems.util.helper.PetTeleportHelper;
 
 import java.util.EnumSet;
 
@@ -18,12 +16,10 @@ public class CrowSprintingFollowOwnerGoal extends Goal {
     private static final int COMMAND_FOLLOW = 1;
     private static final float START_DISTANCE = 4.0F;
     private static final float SPRINT_THRESHOLD = 12.0F;
-    private static final float TELEPORT_THRESHOLD = 24.0F;
     private static final float SHOULDER_LANDING_DISTANCE = 2.0F;
     private static final double CIRCLE_SPEED = 0.7;
     private static final double SPRINT_SPEED = 1.3;
     private static final float CIRCLE_ANGLE_PER_TICK = 0.13962634F;
-    private static final int TELEPORT_ATTEMPTS = 10;
 
     private final EntityCrow crow;
     private LivingEntity owner;
@@ -81,9 +77,7 @@ public class CrowSprintingFollowOwnerGoal extends Goal {
         double distanceSq = this.crow.distanceToSqr(this.owner);
         double headY = this.owner.getY() + this.owner.getEyeHeight() + 0.2;
 
-        if (distanceSq >= TELEPORT_THRESHOLD * TELEPORT_THRESHOLD && this.tryTeleportNearOwner()) {
-            this.circlingTime = 0.0F;
-        } else if (distanceSq >= SPRINT_THRESHOLD * SPRINT_THRESHOLD) {
+        if (distanceSq >= SPRINT_THRESHOLD * SPRINT_THRESHOLD) {
             this.crow.setFlying(true);
             this.crow.getMoveControl().setWantedPosition(this.owner.getX(), headY, this.owner.getZ(), SPRINT_SPEED);
             this.circlingTime = 0.0F;
@@ -115,30 +109,5 @@ public class CrowSprintingFollowOwnerGoal extends Goal {
         double extraZ = this.circleDistance * Mth.cos(angle);
         Vec3 pos = new Vec3(this.owner.getX() + extraX, this.owner.getY(), this.owner.getZ() + extraZ);
         return this.crow.level().isEmptyBlock(AMBlockPos.fromVec3(pos)) ? pos : this.owner.position();
-    }
-
-    private boolean tryTeleportNearOwner() {
-        BlockPos ownerPos = this.owner.blockPosition();
-
-        for (int attempt = 0; attempt < TELEPORT_ATTEMPTS; attempt++) {
-            int x = ownerPos.getX() + this.crow.getRandom().nextIntBetweenInclusive(-3, 3);
-            int y = ownerPos.getY() + this.crow.getRandom().nextIntBetweenInclusive(0, 2);
-            int z = ownerPos.getZ() + this.crow.getRandom().nextIntBetweenInclusive(-3, 3);
-
-            if (Math.abs(x - this.owner.getX()) < 2.0 && Math.abs(z - this.owner.getZ()) < 2.0) continue;
-
-            BlockPos target = new BlockPos(x, y, z);
-            boolean fits = this.crow.level().noCollision(this.crow, this.crow.getBoundingBox().move(target.subtract(this.crow.blockPosition())));
-            if (!fits || !this.crow.level().getFluidState(target).isEmpty()) continue;
-
-            double oldX = this.crow.getX();
-            double oldY = this.crow.getY();
-            double oldZ = this.crow.getZ();
-            this.crow.moveTo(x + 0.5, y, z + 0.5, this.crow.getYRot(), this.crow.getXRot());
-            this.crow.getNavigation().stop();
-            PetTeleportHelper.playTeleportEffects(this.crow, oldX, oldY, oldZ);
-            return true;
-        }
-        return false;
     }
 }

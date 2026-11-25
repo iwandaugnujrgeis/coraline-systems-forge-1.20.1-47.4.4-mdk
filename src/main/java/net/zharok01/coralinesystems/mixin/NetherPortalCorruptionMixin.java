@@ -8,7 +8,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.NetherPortalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.zharok01.coralinesystems.entity.projectile.ThrownDimensionalShard;
@@ -55,19 +54,18 @@ public class NetherPortalCorruptionMixin {
 
                 entity.discard();
 
-                coraline$corruptPortal(level, pos);
+                coraline$corruptPortal(level, pos, state.getValue(NetherPortalBlock.AXIS));
                 info.cancel();
             }
         }
     }
 
     @Unique
-    private void coraline$corruptPortal(Level level, BlockPos startPos) {
+    private void coraline$corruptPortal(Level level, BlockPos startPos, Direction.Axis axis) {
         Set<BlockPos> portalBlocks = new HashSet<>();
         Queue<BlockPos> queue = new LinkedList<>();
         Set<BlockPos> visited = new HashSet<>();
 
-        if (!level.getBlockState(startPos).is(Blocks.NETHER_PORTAL)) return;
         queue.add(startPos);
 
         while (!queue.isEmpty()) {
@@ -76,17 +74,16 @@ public class NetherPortalCorruptionMixin {
             visited.add(current);
 
             BlockState currentState = level.getBlockState(current);
-            if (currentState.is(Blocks.NETHER_PORTAL)) {
+            if (currentState.getBlock() instanceof NetherPortalBlock) {
                 portalBlocks.add(current);
                 coraline$addNeighbors(queue, current);
             }
         }
 
+        BlockState staticPortal = CoralineBlocks.STATIC_PORTAL_BLOCK.get()
+                .defaultBlockState()
+                .setValue(NetherPortalBlock.AXIS, axis);
         for (BlockPos p : portalBlocks) {
-            Direction.Axis axis = level.getBlockState(p).getValue(NetherPortalBlock.AXIS);
-            BlockState staticPortal = CoralineBlocks.STATIC_PORTAL_BLOCK.get()
-                    .defaultBlockState()
-                    .setValue(NetherPortalBlock.AXIS, axis);
             level.setBlock(p, staticPortal, 2);
         }
     }

@@ -1,6 +1,5 @@
 package net.zharok01.coralinesystems.event.static_portal;
 
-import com.github.alexthe666.alexsmobs.client.render.AMRenderTypes;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -8,15 +7,24 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.common.MinecraftForge;
+import net.zharok01.coralinesystems.CoralineSystems;
 import net.zharok01.coralinesystems.block.StaticPortalBlock;
 
 @OnlyIn(Dist.CLIENT)
 public class StaticPortalOverlay {
+
+    private static final float OVERLAY_U_SPAN = 1.0F;
+    private static final float OVERLAY_V_SPAN = 0.14F;
+
+    @SuppressWarnings("removal")
+    private static final ResourceLocation STATIC_PORTAL_OVERLAY_TEXTURE =
+            new ResourceLocation(CoralineSystems.MOD_ID, "textures/misc/static_portal_overlay.png");
 
     public static void init() {
         MinecraftForge.EVENT_BUS.addListener(StaticPortalOverlay::onPostGameOverlay);
@@ -40,23 +48,23 @@ public class StaticPortalOverlay {
             RenderSystem.depthMask(false);
 
             float ageInTicks = mc.level.getGameTime() + event.getPartialTick();
-            float staticIndexX = (float) Math.sin(ageInTicks * 0.2F) * 2;
-            float staticIndexY = (float) Math.cos(ageInTicks * 0.2F + 3F) * 2;
+            float staticIndexX = (float) Math.sin(ageInTicks * 0.2F) * 0.5F + 0.5F;
+            float staticIndexY = (float) Math.cos(ageInTicks * 0.2F + 3F) * 0.43F + 0.5F;
 
             RenderSystem.defaultBlendFunc();
             RenderSystem.setShader(GameRenderer::getPositionTexShader);
 
             RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
-            RenderSystem.setShaderTexture(0, AMRenderTypes.STATIC_TEXTURE);
+            RenderSystem.setShaderTexture(0, STATIC_PORTAL_OVERLAY_TEXTURE);
 
             Tesselator tesselator = Tesselator.getInstance();
             BufferBuilder bufferbuilder = tesselator.getBuilder();
             bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
 
-            float minU = 10 * staticIndexX * 0.125F;
-            float maxU = 10 * (0.5F + staticIndexX * 0.125F);
-            float minV = 10 * staticIndexY * 0.125F;
-            float maxV = 10 * (0.125F + staticIndexY * 0.125F);
+            float minU = staticIndexX;
+            float maxU = minU + OVERLAY_U_SPAN;
+            float minV = staticIndexY - OVERLAY_V_SPAN * 0.5F;
+            float maxV = minV + OVERLAY_V_SPAN;
 
             bufferbuilder.vertex(0.0D, screenHeight, -190.0D).uv(minU, maxV).endVertex();
             bufferbuilder.vertex(screenWidth, screenHeight, -190.0D).uv(maxU, maxV).endVertex();

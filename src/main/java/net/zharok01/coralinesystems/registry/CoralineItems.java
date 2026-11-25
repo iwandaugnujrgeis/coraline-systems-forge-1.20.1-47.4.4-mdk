@@ -137,6 +137,9 @@ public class CoralineItems {
 	public static final RegistryObject<Item> SOUL = register("soul",
 			() -> new Item(new Item.Properties().stacksTo(64)));
 
+	public static final RegistryObject<Item> SOUL_HEART = register("soul_heart",
+			() -> new Item(new Item.Properties()));
+
 	public static final RegistryObject<Item> WINE_BOTTLE = register("wine_bottle",
 			() -> new WineBottleItem(new Item.Properties().stacksTo(1).craftRemainder(Items.GLASS_BOTTLE)));
 

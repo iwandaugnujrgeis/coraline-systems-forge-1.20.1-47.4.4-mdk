@@ -6,13 +6,13 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.zharok01.coralinesystems.CoralineSystems;
+import net.zharok01.coralinesystems.registry.CoralineItems;
 import net.zharok01.coralinesystems.registry.CoralineSounds;
 import net.zharok01.coralinesystems.registry.CoralineTags;
 
@@ -21,9 +21,6 @@ public class SoulDropHandler {
 
     @SuppressWarnings("removal")
     private static final ResourceLocation COBALT_SWORD = new ResourceLocation("kubejs", "cobalt_sword");
-
-    @SuppressWarnings("removal")
-    private static final ResourceLocation SOUL_HEART   = new ResourceLocation("alexsmobs", "soul_heart");
 
     private static final float SOUL_DROP_CHANCE = 0.5F;
     private static final float FULL_RATE_MAX_HEALTH = 8.0F;
@@ -44,9 +41,6 @@ public class SoulDropHandler {
         float dropChance = SOUL_DROP_CHANCE * healthRatio * healthRatio * healthRatio;
         if (entity.getRandom().nextFloat() >= dropChance) return;
 
-        Item soulHeartItem = ForgeRegistries.ITEMS.getValue(SOUL_HEART);
-        if (soulHeartItem == null) return;
-
         event.setCanceled(true);
 
         ItemEntity soulDrop = new ItemEntity(
@@ -54,7 +48,7 @@ public class SoulDropHandler {
                 entity.getX(),
                 entity.getY(),
                 entity.getZ(),
-                new ItemStack(soulHeartItem)
+                new ItemStack(CoralineItems.SOUL_HEART.get())
         );
         soulDrop.setDefaultPickUpDelay();
         entity.level().addFreshEntity(soulDrop);

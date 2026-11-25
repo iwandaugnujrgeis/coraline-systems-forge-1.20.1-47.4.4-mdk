@@ -1,6 +1,5 @@
 package net.zharok01.coralinesystems.item;
 
-import com.github.alexthe666.alexsmobs.client.particle.AMParticleRegistry;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -14,6 +13,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.zharok01.coralinesystems.registry.CoralineSounds;
+import net.zharok01.coralinesystems.registry.CoralineParticles;
 import net.zharok01.coralinesystems.registry.CoralineUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -91,13 +91,13 @@ public class OnyxSwordItem extends SwordItem {
         player.playSound(CoralineSounds.MONSTER_TELEPORT.get(), 1.3F, pitchDest);
 
         serverLevel.sendParticles(
-                AMParticleRegistry.STATIC_SPARK.get(),
+                CoralineParticles.DARK_SMOKE.get(),
                 fromX, fromY + 1.0, fromZ,
                 10, 0.2, 0.5, 0.2, 0.02
         );
 
         serverLevel.sendParticles(
-                AMParticleRegistry.STATIC_SPARK.get(),
+                CoralineParticles.DARK_SMOKE.get(),
                 player.getX(), player.getY() + 1.0, player.getZ(),
                 10, 0.2, 0.5, 0.2, 0.02
         );

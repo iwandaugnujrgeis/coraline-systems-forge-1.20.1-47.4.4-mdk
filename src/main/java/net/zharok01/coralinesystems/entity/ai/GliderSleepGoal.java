@@ -3,10 +3,8 @@ package net.zharok01.coralinesystems.entity.ai;
 import com.github.alexthe666.alexsmobs.entity.EntitySugarGlider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.goal.Goal;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.EnumSet;
@@ -19,9 +17,7 @@ public class GliderSleepGoal extends Goal {
     private static final int SEARCH_ATTEMPTS = 8;
     private static final int START_CHANCE = 100;
 
-    private static final double FLUTTER_SPEED = 0.5D;
-    private static final double GROUND_LIFT = 0.4D;
-    private static final double LAND_DISTANCE_SQ = 1.0D;
+    private static final double coraline$PATH_SPEED = 1.0D;
     private static final double SETTLE_DISTANCE_SQ = 1.5D;
     private static final int APPROACH_TIMEOUT_TICKS = 200;
 
@@ -30,6 +26,7 @@ public class GliderSleepGoal extends Goal {
 
     private final EntitySugarGlider glider;
     private BlockPos perchSpot;
+    private Path coraline$perchPath;
     private int approachTicks;
 
     public GliderSleepGoal(EntitySugarGlider glider) {
@@ -52,12 +49,8 @@ public class GliderSleepGoal extends Goal {
                 && this.glider.level().canSeeSky(pos);
     }
 
-    private boolean hasClearFlight(BlockPos perch) {
-        ClipContext clip = new ClipContext(this.glider.getEyePosition(), Vec3.atCenterOf(perch), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this.glider);
-        return this.glider.level().clip(clip).getType() == HitResult.Type.MISS;
-    }
-
     private BlockPos findPerchSpot() {
+        this.coraline$perchPath = null;
         BlockPos origin = this.glider.blockPosition();
         if (this.isPerchSpot(origin)) return origin;
 
@@ -67,7 +60,14 @@ public class GliderSleepGoal extends Goal {
             int z = origin.getZ() + this.glider.getRandom().nextInt(SEARCH_RADIUS * 2 + 1) - SEARCH_RADIUS;
             for (int y = origin.getY() + SEARCH_HEIGHT_UP; y >= origin.getY() - SEARCH_HEIGHT_DOWN; y--) {
                 probe.set(x, y, z);
-                if (this.isPerchSpot(probe) && this.hasClearFlight(probe)) return probe.immutable();
+                if (this.isPerchSpot(probe)) {
+                    BlockPos perch = probe.immutable();
+                    Path path = this.glider.getNavigation().createPath(perch, 0);
+                    if (path != null && path.canReach()) {
+                        this.coraline$perchPath = path;
+                        return perch;
+                    }
+                }
             }
         }
         return null;
@@ -106,6 +106,8 @@ public class GliderSleepGoal extends Goal {
         this.approachTicks = 0;
         if (SugarGliderData.isSleeping(this.glider)) {
             this.holdStill();
+        } else if (this.coraline$perchPath != null) {
+            this.glider.getNavigation().moveTo(this.coraline$perchPath, coraline$PATH_SPEED);
         }
     }
 
@@ -115,6 +117,7 @@ public class GliderSleepGoal extends Goal {
         this.glider.setGliding(false);
         this.glider.getNavigation().stop();
         this.perchSpot = null;
+        this.coraline$perchPath = null;
     }
 
     @Override
@@ -128,25 +131,7 @@ public class GliderSleepGoal extends Goal {
         if (this.glider.onGround() && distanceSq < SETTLE_DISTANCE_SQ) {
             SugarGliderData.setSleeping(this.glider, true);
             this.holdStill();
-        } else if (distanceSq < LAND_DISTANCE_SQ) {
-            this.glider.setGliding(false);
-            this.glider.setDeltaMovement(this.glider.getDeltaMovement().multiply(0.2D, 1.0D, 0.2D));
-        } else {
-            this.flutterToward(perchFloor);
         }
-    }
-
-    private void flutterToward(Vec3 target) {
-        Vec3 flight = target.subtract(this.glider.position()).normalize().scale(FLUTTER_SPEED);
-        if (this.glider.onGround()) {
-            flight = flight.add(0.0D, GROUND_LIFT, 0.0D);
-        }
-        this.glider.setDeltaMovement(flight);
-
-        double horizontalSpeed = flight.horizontalDistance();
-        this.glider.setXRot((float) (-Mth.atan2(flight.y, horizontalSpeed) * (180.0D / Math.PI)));
-        this.glider.setYRot((float) (Mth.atan2(flight.z, flight.x) * (180.0D / Math.PI)) - 90.0F);
-        this.glider.setGliding(true);
     }
 
     private void holdStill() {

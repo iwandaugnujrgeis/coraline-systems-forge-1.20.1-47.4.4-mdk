@@ -26,8 +26,6 @@ public class MonsterRenderer extends MobRenderer<MonsterEntity, PlayerModel<Mons
         }
     }
 
-    private static final float ROAM_LEAN_DEGREES = 14.0F;
-
     private static final float SHAKE_MIN_DEGREES = 2.0F;
     private static final float SHAKE_EXTRA_DEGREES = 9.0F;
     private static final float SHAKE_SPEED = 2.6F;
@@ -76,9 +74,6 @@ public class MonsterRenderer extends MobRenderer<MonsterEntity, PlayerModel<Mons
     @Override
     protected void setupRotations(@NotNull MonsterEntity entity, @NotNull PoseStack poseStack, float ageInTicks, float rotationYaw, float partialTicks) {
         super.setupRotations(entity, poseStack, ageInTicks, rotationYaw, partialTicks);
-
-        float lean = entity.coraline$getLean(partialTicks) * ROAM_LEAN_DEGREES;
-        poseStack.mulPose(Axis.XP.rotationDegrees(-lean));
 
         if (entity.coraline$isTransitioning()) {
             float formed = this.coraline$getFormed(entity, partialTicks);

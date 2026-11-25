@@ -113,6 +113,7 @@ public class CoralineClientModEvents {
         event.registerSpriteSet(CoralineParticles.CAULDRON_BUBBLE.get(), CauldronBubbleParticle.Provider::new);
         event.registerSpriteSet(CoralineParticles.CAULDRON_FIZZ.get(), CauldronFizzParticle.Provider::new);
         event.registerSpriteSet(CoralineParticles.BLOOD_DROPLET.get(), BloodDropletParticle.Provider::new);
+        event.registerSpriteSet(CoralineParticles.DARK_SMOKE.get(), DarkSmokeParticle.Provider::new);
         event.registerSpecial(CoralineParticles.SHARD_BURST.get(), new ShardBurstParticle.Factory());
 
         event.registerSpriteSet(ParticleTypes.DAMAGE_INDICATOR, spriteSet -> (type, level, x, y, z, xSpeed, ySpeed, zSpeed) -> {

@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 public class HelperRenderer extends MobRenderer<HelperEntity, PlayerModel<HelperEntity>> {
     public HelperRenderer(EntityRendererProvider.Context context) {
         super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5f);
-        this.addLayer(new HelperStaticLayer(this));
+        this.addLayer(new HelperGlitchLayer(this));
     }
 
     @SuppressWarnings("removal")

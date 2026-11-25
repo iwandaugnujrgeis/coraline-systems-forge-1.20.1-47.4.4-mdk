@@ -9,16 +9,18 @@ import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.client.model.pipeline.VertexConsumerWrapper;
 import net.zharok01.coralinesystems.CoralineSystems;
 import net.zharok01.coralinesystems.entity.HelperEntity;
 import org.jetbrains.annotations.NotNull;
 
-public class HelperStaticLayer extends RenderLayer<HelperEntity, PlayerModel<HelperEntity>> {
+public class HelperGlitchLayer extends RenderLayer<HelperEntity, PlayerModel<HelperEntity>> {
 
     @SuppressWarnings("removal")
-    private static final ResourceLocation STATIC_TEXTURE = new ResourceLocation(CoralineSystems.MOD_ID, "textures/entity/helper/static.png");
+    private static final ResourceLocation STATIC_TEXTURE = new ResourceLocation(CoralineSystems.MOD_ID, "textures/entity/helper/helper_static.png");
+    private static final int FRAME_COUNT = 32;
 
-    public HelperStaticLayer(RenderLayerParent<HelperEntity, PlayerModel<HelperEntity>> parent) {
+    public HelperGlitchLayer(RenderLayerParent<HelperEntity, PlayerModel<HelperEntity>> parent) {
         super(parent);
     }
 
@@ -31,7 +33,14 @@ public class HelperStaticLayer extends RenderLayer<HelperEntity, PlayerModel<Hel
             float shake = (entity.getRandom().nextFloat() - 0.5F) * 0.02F;
             matrixStack.translate(shake, shake, shake);
 
-            VertexConsumer vertexconsumer = buffer.getBuffer(RenderType.entityTranslucent(STATIC_TEXTURE));
+            int frame = Math.floorMod((int) (ageInTicks / 2.0F), FRAME_COUNT);
+            VertexConsumer vertexconsumer = new VertexConsumerWrapper(
+                    buffer.getBuffer(RenderType.entityTranslucent(STATIC_TEXTURE))) {
+                @Override
+                public VertexConsumer uv(float u, float v) {
+                    return super.uv(u, (v + frame) / FRAME_COUNT);
+                }
+            };
 
             this.getParentModel().renderToBuffer(
                     matrixStack,

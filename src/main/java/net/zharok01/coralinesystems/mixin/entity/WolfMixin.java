@@ -1,5 +1,6 @@
 package net.zharok01.coralinesystems.mixin.entity;
 
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -10,6 +11,7 @@ import net.minecraft.world.entity.animal.Wolf;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.zharok01.coralinesystems.entity.MonsterEntity;
 import net.zharok01.coralinesystems.entity.ai.WolfEatItemsGoal;
 import net.zharok01.coralinesystems.item.CoralineNameTagItem;
 import org.spongepowered.asm.mixin.Mixin;
@@ -21,8 +23,25 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Wolf.class)
 public abstract class WolfMixin extends TamableAnimal {
 
+    private static final double MONSTER_ALERT_RADIUS_SQUARED = 256.0D;
+
     protected WolfMixin(EntityType<? extends TamableAnimal> entityType, Level level) {
         super(entityType, level);
+    }
+
+    @Inject(method = "getAmbientSound", at = @At("HEAD"), cancellable = true)
+    private void coraline$whineWhenMonsterIsNearby(CallbackInfoReturnable<SoundEvent> cir) {
+        Wolf wolf = (Wolf) (Object) this;
+        if (!wolf.isTame() || wolf.isAngry()) return;
+
+        boolean monsterNearby = !wolf.level().getEntitiesOfClass(
+                MonsterEntity.class,
+                wolf.getBoundingBox().inflate(16.0D),
+                monster -> monster.isAlive() && wolf.distanceToSqr(monster) <= MONSTER_ALERT_RADIUS_SQUARED
+        ).isEmpty();
+        if (monsterNearby) {
+            cir.setReturnValue(SoundEvents.WOLF_WHINE);
+        }
     }
 
     @Inject(method = "mobInteract", at = @At("HEAD"), cancellable = true)

@@ -24,7 +24,6 @@ public class StaticPortalLinkData extends SavedData {
     private static final String TAG_DIMENSION = "Dim";
 
     private final Map<GlobalPos, BlockPos> links = new HashMap<>();
-    // ASSUMPTION: Legacy coordinate-only links are claimed by the first dimension with a portal at that position.
     private final Map<BlockPos, BlockPos> coraline$legacyLinks = new HashMap<>();
 
     public BlockPos getLinkedDestination(ServerLevel level, BlockPos portalBlock) {

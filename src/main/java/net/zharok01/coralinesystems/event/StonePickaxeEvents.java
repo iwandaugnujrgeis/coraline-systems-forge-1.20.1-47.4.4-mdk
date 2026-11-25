@@ -1,6 +1,5 @@
 package net.zharok01.coralinesystems.event;
 
-import com.github.alexthe666.alexsmobs.client.particle.AMParticleRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -17,6 +16,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.zharok01.coralinesystems.CoralineSystems;
 import net.zharok01.coralinesystems.registry.CoralineSounds;
+import net.zharok01.coralinesystems.registry.CoralineParticles;
 import net.zharok01.coralinesystems.registry.CoralineTags;
 import net.zharok01.coralinesystems.util.data.StonePickaxeRegrowData;
 
@@ -74,7 +74,7 @@ public class StonePickaxeEvents {
         event.setCanceled(true);
         level.removeBlock(pos, false);
 
-        level.sendParticles(AMParticleRegistry.STATIC_SPARK.get(),
+        level.sendParticles(CoralineParticles.DARK_SMOKE.get(),
                 pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
                 8, 0.2, 0.2, 0.2, 0.04);
         level.playSound(null, pos,
@@ -91,10 +91,10 @@ public class StonePickaxeEvents {
     }
 
     private static void playRegrowStartEffects(ServerLevel level, BlockPos pos) {
-        level.sendParticles(AMParticleRegistry.STATIC_SPARK.get(),
+        level.sendParticles(CoralineParticles.DARK_SMOKE.get(),
                 pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
                 30, 0.5, 0.5, 0.5, 0.25);
-        level.sendParticles(AMParticleRegistry.STATIC_SPARK.get(),
+        level.sendParticles(CoralineParticles.DARK_SMOKE.get(),
                 pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
                 10, 0.35, 0.35, 0.35, 0.02);
         level.playSound(null, pos,

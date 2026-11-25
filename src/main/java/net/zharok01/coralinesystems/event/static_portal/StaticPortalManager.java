@@ -1,19 +1,20 @@
 package net.zharok01.coralinesystems.event.static_portal;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.zharok01.coralinesystems.CoralineSystems;
 import net.zharok01.coralinesystems.block.StaticPortalBlock;
 
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Mod.EventBusSubscriber(modid = "coraline_systems", bus = Mod.EventBusSubscriber.Bus.FORGE)
+@Mod.EventBusSubscriber(modid = CoralineSystems.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class StaticPortalManager {
 
     private static final Map<UUID, PortalState> SERVER_STATES = new ConcurrentHashMap<>();
@@ -25,6 +26,7 @@ public class StaticPortalManager {
         public boolean inPortalThisTick = false;
         public int ticksInPortal = 0;
         public boolean justTeleported = false;
+        // the portal block that actually triggered entityInside this tick (first contact wins)
         public BlockPos coraline$contactPos = null;
     }
 

@@ -82,21 +82,9 @@
   "static_buzz": {
     "category": "neutral",
     "sounds": [
-      {
-        "name": "coraline_systems:static_buzz1"
-      },
-      {
-        "name": "coraline_systems:static_buzz2"
-      },
-      {
-        "name": "coraline_systems:static_buzz3"
-      },
-      {
-        "name": "coraline_systems:static_buzz4"
-      },
-      {
-        "name": "coraline_systems:static_buzz5"
-      }
+      "coraline_systems:random/shard_impact1",
+      "coraline_systems:random/shard_impact2",
+      "coraline_systems:random/shard_impact3"
     ],
     "subtitle": "coraline_systems.sound.subtitle.helper_buzz"
   },
@@ -110,10 +98,6 @@
       {
         "name": "coraline_systems:entity/helper/whistle2",
         "weight": 2
-      },
-      {
-        "name": "coraline_systems:entity/helper/intermission1",
-        "weight": 3
       },
       {
         "name": "coraline_systems:entity/helper/exhale3",
@@ -290,12 +274,9 @@
   "static_portal_open": {
     "category": "neutral",
     "sounds": [
-      {
-        "name": "alexsmobs:farseer_beam_0"
-      },
-      {
-        "name": "alexsmobs:farseer_beam_1"
-      }
+      "coraline_systems:random/shard_impact1",
+      "coraline_systems:random/shard_impact2",
+      "coraline_systems:random/shard_impact3"
     ],
     "subtitle": "coraline_systems.sound.subtitle.static_portal_open"
   },

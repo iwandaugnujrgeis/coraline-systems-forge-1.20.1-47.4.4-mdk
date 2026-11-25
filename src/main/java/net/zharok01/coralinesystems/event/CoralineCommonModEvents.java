@@ -11,6 +11,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.animal.MushroomCow;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.ZombifiedPiglin;
 import net.minecraft.world.level.block.Blocks;
@@ -181,11 +182,10 @@ public class CoralineCommonModEvents {
 
         event.register(
                 EntityType.MOOSHROOM,
-                SpawnPlacements.Type.ON_GROUND,
+                SpawnPlacements.Type.NO_RESTRICTIONS,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                (entityType, level, spawnType, pos, random) ->
-                        level.getBlockState(pos.below()).is(BlockTags.MOOSHROOMS_SPAWNABLE_ON),
+                MushroomCow::checkMushroomSpawnRules,
                 SpawnPlacementRegisterEvent.Operation.REPLACE
-        ); // TODO: I don't think this is working
+        );
     }
 }

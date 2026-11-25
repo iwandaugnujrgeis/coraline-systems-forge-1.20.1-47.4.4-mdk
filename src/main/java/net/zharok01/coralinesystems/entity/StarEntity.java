@@ -1,6 +1,5 @@
 package net.zharok01.coralinesystems.entity;
 
-import com.github.alexthe666.alexsmobs.client.particle.AMParticleRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -113,7 +112,7 @@ public class StarEntity extends FlyingMob {
     private void coraline$despawnWithoutLoot() {
         ServerLevel serverLevel = (ServerLevel) this.level();
         serverLevel.sendParticles(
-                AMParticleRegistry.STATIC_SPARK.get(),
+                CoralineParticles.DARK_SMOKE.get(),
                 this.getX(), this.getY() + 0.5D, this.getZ(),
                 20,
                 0.3D, 0.3D, 0.3D,
@@ -130,7 +129,7 @@ public class StarEntity extends FlyingMob {
         if (!this.level().isClientSide) {
             ServerLevel serverLevel = (ServerLevel) this.level();
             serverLevel.sendParticles(
-                    AMParticleRegistry.STATIC_SPARK.get(),
+                    CoralineParticles.DARK_SMOKE.get(),
                     this.getX(), this.getY() + 0.5D, this.getZ(),
                     8,
                     0.2D, 0.2D, 0.2D,

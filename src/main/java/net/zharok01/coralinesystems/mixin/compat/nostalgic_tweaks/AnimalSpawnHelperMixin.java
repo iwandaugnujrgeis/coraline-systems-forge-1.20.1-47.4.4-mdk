@@ -19,6 +19,7 @@ import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.AABB;
+import net.zharok01.coralinesystems.util.CoralineSpawnCategories;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Unique;
@@ -42,17 +43,17 @@ public abstract class AnimalSpawnHelperMixin {
     @Unique
     private static final int POLL_RADIUS_CHUNKS = 8;
 
-    @Unique
-    private static volatile Set<EntityType<?>> coraline$spawnTypes = Set.of();
-    @Unique
-    private static volatile Set<String> coraline$lastSpawnList = Set.of();
-    @Unique
-    private static volatile String[] coraline$spawnArray = new String[0];
-    @Unique
-    private static volatile boolean coraline$cacheReady = false;
+    @Unique private static volatile Set<EntityType<?>> coraline$spawnTypes = Set.of();
+    @Unique private static volatile Set<String> coraline$lastSpawnList = Set.of();
+    @Unique private static volatile String[] coraline$spawnArray = new String[0];
+    @Unique private static volatile boolean coraline$cacheReady = false;
 
     @Inject(method = "isInList", at = @At("HEAD"), cancellable = true)
     private static void coraline$cachedIsInList(EntityType<?> entityType, CallbackInfoReturnable<Boolean> cir) {
+        if (CoralineSpawnCategories.coraline$isMooshroom(entityType)) {
+            cir.setReturnValue(false);
+            return;
+        }
         if (coraline$cacheReady) {
             cir.setReturnValue(coraline$spawnTypes.contains(entityType));
         }
@@ -69,7 +70,9 @@ public abstract class AnimalSpawnHelperMixin {
             return;
 
         coraline$lastSpawnList = new HashSet<>(current);
-        coraline$spawnArray = current.toArray(String[]::new);
+        coraline$spawnArray = current.stream()
+                .filter(entityId -> !entityId.equals(CoralineSpawnCategories.MOOSHROOM_ID))
+                .toArray(String[]::new);
 
         Set<EntityType<?>> types = new HashSet<>(current.size());
         for (String key : current) {

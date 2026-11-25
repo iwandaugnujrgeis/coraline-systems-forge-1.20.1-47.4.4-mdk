@@ -85,12 +85,16 @@ public class TasmanianDevilEatItemsGoal extends Goal {
         if (this.devil.distanceToSqr(this.targetItem) < EAT_REACH_SQ) {
             if (this.biteDelay == 0) {
                 boolean isBone = this.targetItem.getItem().is(Items.BONE);
+                boolean isRottenFlesh = this.targetItem.getItem().is(Items.ROTTEN_FLESH);
 
                 EatItemsHelper.eatOne(this.devil, this.targetItem, SoundEvents.GENERIC_EAT);
                 if (isBone) {
                     this.devil.dropBonemeal();
                 } else {
                     this.devil.heal(BITE_HEAL_AMOUNT);
+                }
+                if (isRottenFlesh && this.devil.getAnimation() != EntityTasmanianDevil.ANIMATION_HOWL) {
+                    this.devil.setAnimation(EntityTasmanianDevil.ANIMATION_HOWL);
                 }
                 this.biteDelay = EatItemsHelper.BITE_DELAY_TICKS;
             }

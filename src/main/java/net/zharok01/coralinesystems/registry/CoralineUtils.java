@@ -1,6 +1,5 @@
 package net.zharok01.coralinesystems.registry;
 
-import com.github.alexthe666.alexsmobs.client.particle.AMParticleRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
@@ -45,10 +44,10 @@ public class CoralineUtils {
             }
 
             if (showParticles && level instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(AMParticleRegistry.STATIC_SPARK.get(),
+                serverLevel.sendParticles(CoralineParticles.DARK_SMOKE.get(),
                         x, entity.getY() + 1.0D, z,
                         10, 0.2, 0.5, 0.2, 0.02);
-                serverLevel.sendParticles(AMParticleRegistry.STATIC_SPARK.get(),
+                serverLevel.sendParticles(CoralineParticles.DARK_SMOKE.get(),
                         oldX, oldY + 1.0D, oldZ,
                         10, 0.2, 0.5, 0.2, 0.02);
             }

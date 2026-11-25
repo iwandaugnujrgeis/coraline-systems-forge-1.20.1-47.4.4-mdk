@@ -1,6 +1,5 @@
 package net.zharok01.coralinesystems.block;
 
-import com.github.alexthe666.alexsmobs.client.particle.AMParticleRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -10,20 +9,25 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.LiquidBlockContainer;
 import net.minecraft.world.level.block.NetherPortalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.zharok01.coralinesystems.event.static_portal.StaticPortalLinkData;
 import net.zharok01.coralinesystems.event.static_portal.StaticPortalManager;
+import net.zharok01.coralinesystems.registry.CoralineParticles;
 import net.zharok01.coralinesystems.registry.CoralineSounds;
 import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("deprecation")
-public class StaticPortalBlock extends Block {
+public class StaticPortalBlock extends Block implements LiquidBlockContainer {
 
     protected static final VoxelShape X_AXIS_AABB = Block.box(0.0D, 0.0D, 6.0D, 16.0D, 16.0D, 10.0D);
     protected static final VoxelShape Z_AXIS_AABB = Block.box(6.0D, 0.0D, 0.0D, 10.0D, 16.0D, 16.0D);
@@ -59,13 +63,13 @@ public class StaticPortalBlock extends Block {
                     float intensity = progress / (float) PORTAL_TICKS_REQUIRED;
 
                     level.playSound(null, pos,
-                            CoralineSounds.STATIC_BUZZ.get(),
+                            CoralineSounds.SHARD_IMPACT.get(),
                             SoundSource.BLOCKS,
                             0.15F + intensity * 0.55F,
                             1.6F - intensity * 0.4F);
 
                     serverLevel.sendParticles(
-                            AMParticleRegistry.STATIC_SPARK.get(),
+                            CoralineParticles.DARK_SMOKE.get(),
                             player.getX(), player.getY() + 1.0, player.getZ(),
                             (int) (5 + intensity * 20),
                             0.3, 0.5, 0.3,
@@ -97,16 +101,26 @@ public class StaticPortalBlock extends Block {
                 j = random.nextFloat() * 2.0F * (float)k;
             }
 
-            level.addParticle(AMParticleRegistry.STATIC_SPARK.get(), d, e, f, g, h, j);
+            level.addParticle(CoralineParticles.DARK_SMOKE.get(), d, e, f, g, h, j);
         }
     }
 
     @Override
-    public void onRemove(@NotNull BlockState state, Level level, @NotNull BlockPos pos, @NotNull BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock()) && !level.isClientSide() && level instanceof ServerLevel serverLevel) {
+    public void onRemove(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState newState, boolean isMoving) {
+        if (!state.is(newState.getBlock()) && level instanceof ServerLevel serverLevel) {
             StaticPortalLinkData.get(serverLevel).unlinkPair(serverLevel.dimension(), pos);
         }
         super.onRemove(state, level, pos, newState, isMoving);
+    }
+
+    @Override
+    public boolean canPlaceLiquid(@NotNull BlockGetter level, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull Fluid fluid) {
+        return false;
+    }
+
+    @Override
+    public boolean placeLiquid(@NotNull LevelAccessor level, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull FluidState fluidState) {
+        return false;
     }
 
     @Override

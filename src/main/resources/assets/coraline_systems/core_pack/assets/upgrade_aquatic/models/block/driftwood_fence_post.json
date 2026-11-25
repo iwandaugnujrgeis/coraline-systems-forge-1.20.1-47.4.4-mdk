@@ -1,0 +1,6 @@
+{
+  "parent": "upgrade_aquatic:block/fencier_fence_post",
+  "textures": {
+    "texture": "upgrade_aquatic:block/driftwood_planks"
+  }
+}

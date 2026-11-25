@@ -1,15 +1,18 @@
 package net.zharok01.coralinesystems.util.helper;
 
+import com.github.alexthe666.alexsmobs.entity.EntityTasmanianDevil;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 public class EatItemsHelper {
 
@@ -45,7 +48,10 @@ public class EatItemsHelper {
         FoodProperties foodProperties = food.getFoodProperties(mob);
         if (foodProperties == null) return;
 
+        boolean safeRottenFlesh = mob instanceof EntityTasmanianDevil && food.is(Items.ROTTEN_FLESH);
         for (Pair<MobEffectInstance, Float> effect : foodProperties.getEffects()) {
+            if (safeRottenFlesh && effect.getFirst().getEffect() == MobEffects.POISON) continue;
+
             if (mob.getRandom().nextFloat() < effect.getSecond()) {
                 mob.addEffect(new MobEffectInstance(effect.getFirst()));
             }

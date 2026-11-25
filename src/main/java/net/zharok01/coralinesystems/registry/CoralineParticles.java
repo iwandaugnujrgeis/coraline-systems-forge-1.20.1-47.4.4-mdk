@@ -43,6 +43,9 @@ public class CoralineParticles {
     public static final RegistryObject<SimpleParticleType> STAR_SPARKLE =
             PARTICLE_TYPES.register("star_sparkle", () -> new SimpleParticleType(false));
 
+    public static final RegistryObject<SimpleParticleType> DARK_SMOKE =
+            PARTICLE_TYPES.register("dark_smoke", () -> new SimpleParticleType(false));
+
     public static final RegistryObject<ParticleType<OrbShieldBurstData>> ORB_SHIELD_BURST =
             PARTICLE_TYPES.register("orb_shield_burst", () -> new ParticleType<OrbShieldBurstData>(true, OrbShieldBurstData.DESERIALIZER) {
                 @Override

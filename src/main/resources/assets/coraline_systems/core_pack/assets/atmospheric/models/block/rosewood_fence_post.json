@@ -1,0 +1,6 @@
+{
+  "parent": "atmospheric:block/fencier_fence_post",
+  "textures": {
+    "texture": "atmospheric:block/rosewood_planks"
+  }
+}

@@ -1,6 +1,5 @@
 package net.zharok01.coralinesystems.entity;
 
-import com.github.alexthe666.alexsmobs.client.particle.AMParticleRegistry;
 import com.legacy.rediscovered.entity.pigman.PigmanEntity;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -13,7 +12,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.util.Mth;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -37,6 +35,7 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.zharok01.coralinesystems.registry.CoralineSounds;
 import net.zharok01.coralinesystems.registry.CoralineStats;
+import net.zharok01.coralinesystems.registry.CoralineParticles;
 import net.zharok01.coralinesystems.registry.CoralineTriggers;
 import net.zharok01.coralinesystems.registry.CoralineUtils;
 import net.zharok01.coralinesystems.util.helper.StealthHelper;
@@ -64,15 +63,11 @@ public class MonsterEntity extends Monster {
     private int fadeTicks = 0;
     private int playerSearchTimer = 0;
     @Nullable private Player nearestPlayer = null;
+    @Nullable private LivingEntity coraline$nearestPlateArmorEntity = null;
     @Nullable private Player coraline$stalkPlayer = null;
     private boolean coraline$isTrackingPlayer = false;
 
     private int coraline$phaseTimer;
-
-    private float coraline$lean = 0.0F;
-    private float coraline$leanOld = 0.0F;
-    private static final float LEAN_EASE_PER_TICK = 0.12F;
-    private static final float LEAN_MOVE_SPEED_THRESHOLD = 0.02F;
 
     public static final int FADE_DURATION_TICKS = 20;
     private static final int ATTACK_COOLDOWN_TICKS = 40;
@@ -118,9 +113,9 @@ public class MonsterEntity extends Monster {
             new ResourceLocation("rediscovered", "plate_boots")
     );
 
-    private static boolean isWearingPlateArmor(Player player) {
+    private static boolean coraline$isWearingPlateArmor(LivingEntity entity) {
         for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
-            Item item = player.getItemBySlot(slot).getItem();
+            Item item = entity.getItemBySlot(slot).getItem();
             ResourceLocation key = ForgeRegistries.ITEMS.getKey(item);
             if (key != null && PLATE_ARMOR_IDS.contains(key)) return true;
         }
@@ -162,16 +157,6 @@ public class MonsterEntity extends Monster {
     public float coraline$getTransitionProgress(float partialTicks) {
         float remaining = Math.max(0.0F, this.entityData.get(TRANSITION_TICKS_REMAINING) - partialTicks);
         return Math.min(1.0F, 1.0F - remaining / TRANSITION_DURATION_TICKS);
-    }
-
-    public float coraline$getLean(float partialTicks) {
-        return Mth.lerp(partialTicks, this.coraline$leanOld, this.coraline$lean);
-    }
-
-    private void coraline$tickLean() {
-        this.coraline$leanOld = this.coraline$lean;
-        float leanTarget = !this.isGlitching() && this.walkAnimation.speed() > LEAN_MOVE_SPEED_THRESHOLD ? 1.0F : 0.0F;
-        this.coraline$lean += (leanTarget - this.coraline$lean) * LEAN_EASE_PER_TICK;
     }
 
     public boolean coraline$usesGhostRender() {
@@ -275,9 +260,9 @@ public class MonsterEntity extends Monster {
         this.entityData.set(TRANSITION_TICKS_REMAINING, this.coraline$isTransitioning() ? durationTicks : 0);
     }
 
-    private void coraline$spawnStaticBurst(int count) {
+    private void coraline$spawnDarkSmokeBurst(int count) {
         if (this.level() instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(AMParticleRegistry.STATIC_SPARK.get(),
+            serverLevel.sendParticles(CoralineParticles.DARK_SMOKE.get(),
                     this.getX(), this.getY() + 1.0D, this.getZ(),
                     count, 0.35D, 0.9D, 0.35D, 0.05D);
         }
@@ -309,7 +294,7 @@ public class MonsterEntity extends Monster {
             this.coraline$phaseTimer--;
             if (phase == PHASE_MATERIALIZING || phase == PHASE_DEMATERIALIZING) {
                 this.entityData.set(TRANSITION_TICKS_REMAINING, this.coraline$phaseTimer);
-                this.coraline$spawnStaticBurst(3);
+                this.coraline$spawnDarkSmokeBurst(3);
             }
             return;
         }
@@ -319,21 +304,21 @@ public class MonsterEntity extends Monster {
                 Player target = this.coraline$stalkPlayer;
                 if (target != null && !target.getAbilities().instabuild && this.distanceToSqr(target) < ROAM_START_RANGE_SQ && !this.coraline$isTrackingPlayer) {
                     this.playSound(CoralineSounds.MONSTER_MATERIALIZE.get(), 1.5F, 0.9F + this.random.nextFloat() * 0.2F);
-                    this.coraline$spawnStaticBurst(24);
+                    this.coraline$spawnDarkSmokeBurst(24);
                     this.coraline$beginPhase(PHASE_MATERIALIZING, TRANSITION_DURATION_TICKS);
                 }
             }
             case PHASE_MATERIALIZING -> {
-                this.coraline$spawnStaticBurst(12);
+                this.coraline$spawnDarkSmokeBurst(12);
                 this.coraline$beginPhase(PHASE_ROAMING, this.coraline$randomPhaseDuration(ROAM_DURATION_TICKS));
             }
             case PHASE_ROAMING -> {
                 this.playSound(CoralineSounds.MONSTER_DEMATERIALIZE.get(), 1.5F, 0.9F + this.random.nextFloat() * 0.2F);
-                this.coraline$spawnStaticBurst(24);
+                this.coraline$spawnDarkSmokeBurst(24);
                 this.coraline$beginPhase(PHASE_DEMATERIALIZING, TRANSITION_DURATION_TICKS);
             }
             default -> {
-                this.coraline$spawnStaticBurst(16);
+                this.coraline$spawnDarkSmokeBurst(16);
                 this.coraline$beginPhase(PHASE_STANDBY, this.coraline$randomPhaseDuration(STANDBY_DURATION_TICKS));
             }
         }
@@ -341,8 +326,6 @@ public class MonsterEntity extends Monster {
 
     @Override
     public void aiStep() {
-        this.coraline$tickLean();
-
         if (!this.level().isClientSide) {
             if (this.isFading()) {
                 if (this.fadeTicks > 0) {
@@ -391,24 +374,42 @@ public class MonsterEntity extends Monster {
             if (playerSearchTimer <= 0) {
                 nearestPlayer = this.level().getNearestPlayer(this.getX(), this.getY(), this.getZ(), 64.0D, EntitySelector.NO_CREATIVE_OR_SPECTATOR.and(entity -> !StealthHelper.coraline$isHidden(entity)));
                 coraline$stalkPlayer = this.level().getNearestPlayer(this.getX(), this.getY(), this.getZ(), 64.0D, EntitySelector.NO_CREATIVE_OR_SPECTATOR);
+                coraline$nearestPlateArmorEntity = null;
+                double nearestPlateArmorDistance = 4096.0D;
+                for (LivingEntity entity : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(64.0D),
+                        candidate -> candidate != this && candidate.isAlive() && !StealthHelper.coraline$isHidden(candidate)
+                                && (!(candidate instanceof Player candidatePlayer)
+                                || (!candidatePlayer.getAbilities().instabuild && !candidatePlayer.isSpectator()))
+                                && coraline$isWearingPlateArmor(candidate))) {
+                    double distance = this.distanceToSqr(entity);
+                    if (distance <= nearestPlateArmorDistance) {
+                        coraline$nearestPlateArmorEntity = entity;
+                        nearestPlateArmorDistance = distance;
+                    }
+                }
                 playerSearchTimer = PLAYER_SEARCH_INTERVAL;
             } else {
                 playerSearchTimer--;
             }
-            Player player = nearestPlayer;
-            if (player != null && !StealthHelper.coraline$isHidden(player) && !player.getAbilities().instabuild && !player.isSpectator()) {
-                boolean wearingPlate = isWearingPlateArmor(player);
-                if (wearingPlate && (this.isSpotted() || this.isAngry())) {
+            LivingEntity plateArmorEntity = coraline$nearestPlateArmorEntity;
+            if (plateArmorEntity != null && plateArmorEntity.isAlive()
+                    && !StealthHelper.coraline$isHidden(plateArmorEntity)
+                    && coraline$isWearingPlateArmor(plateArmorEntity)) {
+                if (this.isSpotted() || this.isAngry()) {
                     screamAndFlee();
-                    CoralineTriggers.SCARE_MONSTER.trigger((ServerPlayer) player);
+                    if (plateArmorEntity instanceof ServerPlayer player) {
+                        CoralineTriggers.SCARE_MONSTER.trigger(player);
+                    }
                     return;
-                } else if (wearingPlate && this.hasLineOfSight(player)) {
+                } else if (this.hasLineOfSight(plateArmorEntity)) {
                     if (plateSpookTimer < 0) {
                         plateSpookTimer = PLATE_SPOOK_DELAY;
                     } else if (plateSpookTimer == 0) {
                         plateSpookTimer = -1;
                         this.coraline$beginFade();
-                        CoralineTriggers.SCARE_MONSTER.trigger((ServerPlayer) player);
+                        if (plateArmorEntity instanceof ServerPlayer player) {
+                            CoralineTriggers.SCARE_MONSTER.trigger(player);
+                        }
                         return;
                     } else {
                         plateSpookTimer--;
@@ -416,6 +417,12 @@ public class MonsterEntity extends Monster {
                 } else {
                     plateSpookTimer = -1;
                 }
+            } else {
+                plateSpookTimer = -1;
+            }
+            Player player = nearestPlayer;
+            if (player != null && !StealthHelper.coraline$isHidden(player) && !player.getAbilities().instabuild && !player.isSpectator()) {
+                boolean wearingPlate = coraline$isWearingPlateArmor(player);
 
                 if (!this.isSpotted() && this.distanceToSqr(player) < 36.0D) {
                     if (this.random.nextFloat() < 0.10F) {
@@ -630,7 +637,7 @@ public class MonsterEntity extends Monster {
             LivingEntity target = monster.getTarget();
             if (target == null || !monster.isAngry() || monster.isGlitching()) return false;
             if (target instanceof Player p && (p.getAbilities().instabuild || p.isSpectator())) return false;
-            if (target instanceof Player p && isWearingPlateArmor(p)) return false;
+            if (coraline$isWearingPlateArmor(target)) return false;
             return true;
         }
 
@@ -643,7 +650,10 @@ public class MonsterEntity extends Monster {
                     monster.setTarget(null);
                     return false;
                 }
-                if (isWearingPlateArmor(p)) return false;
+            }
+            if (coraline$isWearingPlateArmor(target)) {
+                monster.setTarget(null);
+                return false;
             }
             return true;
         }

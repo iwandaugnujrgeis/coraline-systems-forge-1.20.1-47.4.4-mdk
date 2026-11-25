@@ -1,0 +1,6 @@
+{
+  "parent": "atmospheric:block/fencier_fence_inventory",
+  "textures": {
+    "texture": "atmospheric:block/grimwood_planks"
+  }
+}

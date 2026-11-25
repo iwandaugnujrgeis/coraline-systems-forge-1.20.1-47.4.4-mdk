@@ -1,5 +1,7 @@
 package net.zharok01.coralinesystems.mixin;
 
+import com.legacy.rediscovered.entity.ZombiePigmanEntity;
+import com.legacy.rediscovered.entity.util.IPigman;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
@@ -33,7 +35,7 @@ public class MobMixin {
         Mob instance = (Mob) (Object) this;
         DespawnCleanupUtil.onMobPickupItem(instance, slot, stack);
 
-        if (!instance.hasCustomName()) {
+        if (!instance.hasCustomName() && !(instance instanceof ZombiePigmanEntity) && !(instance instanceof IPigman)) {
             this.persistenceRequired = false;
         }
     }
